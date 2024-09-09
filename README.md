@@ -1,2 +1,2 @@
 # kotlinx.fuzz
-General purpose fuzzer from JVM libraries
+Fuzzer from Kotlin libraries
