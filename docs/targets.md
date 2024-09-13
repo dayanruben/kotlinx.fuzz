@@ -2,8 +2,8 @@
 
 - [x] [kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime)
 - [ ] [kotlinx-cli](https://github.com/Kotlin/kotlinx-cli)
-- [ ] [kotlinx-atomicfu](https://github.com/Kotlin/kotlinx-atomicfu)
 - [ ] [kotlinx-serialization](https://github.com/Kotlin/kotlinx.serialization)
+- [ ] [kotlinx-atomicfu](https://github.com/Kotlin/kotlinx-atomicfu)
 - [ ] [kotlinx.collections.immutable](https://github.com/Kotlin/kotlinx.collections.immutable)
 - [ ] [kotlinx.html](https://github.com/Kotlin/kotlinx.html)
 - [ ] [kotlinx.io](https://github.com/Kotlin/kotlinx-io)
