@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import logging
 import sys
 import subprocess
 import os
@@ -7,13 +7,15 @@ import datetime
 import shutil
 
 # TODO, make base dir (currently "./core") customizable as well
+logging.basicConfig(level=logging.DEBUG)
 
-def get_test_command(projectName, testName):
+homeDir = os.environ["PROJECT_HOME"]
+
+
+def get_test_command(test_name):
     command = [
         "./gradlew", "--no-daemon",
-        (":%s:cleanJvmTest" % projectName),
-        (":%s:jvmTest" % projectName),
-        "--tests", testName
+        ":test", "--tests", test_name
     ]
     return command
 
@@ -21,40 +23,39 @@ def get_test_command(projectName, testName):
 def print_help():
     print("""
        Usage:
-       <project_name> <test_name> [test_name 2] [test_name 3] ...
+       <test_name> [test_name 2] [test_name 3] ...
               OR
-       <project_name> -f <file with test names> [threads]
+       -f <file with test names> [threads]
     """)
 
 
 def main():
     args = sys.argv
     print(args)
-    if len(args) >= 3 and args[2] != '-f' and args[2] != '--file':
-        project_name = args[1]
-        tests = args[2:]
+    if len(args) >= 2 and args[1] != '-f' and args[1] != '--file':
+        tests = args[1:]
         for test_name in tests:
-            run_test(project_name, test_name)
+            run_test("", test_name)
         return
-    elif (len(args) == 5 or len(args) == 4) and (args[2] == '-f' or args[2] == '--file'):
-        file_name = args[3]
+    elif (len(args) == 4 or len(args) == 3) and (args[1] == '-f' or args[1] == '--file'):
+        file_name = args[2]
         print('Running tests from file \"' + file_name + '\"')
-        project_name = args[1]
         threads = 1
-        if len(args) == 5:
-            threads = int(args[4])
+        if len(args) == 4:
+            threads = int(args[3])
             assert threads > 0
 
         with open(file_name, 'r') as f:
-            tests = list(set(map(lambda x: x.strip().replace('#', '.'), f.readlines())))
+            tests = list(set(filter(lambda x: len(x) > 1, map(lambda x: x.strip().replace('#', '.'), f.readlines()))))
             print('Running tests: ' + str(tests))
             tests_for_process = [list() for _ in range(threads)]
             for i in range(len(tests)):
                 tests_for_process[i % threads].append(tests[i])
 
+        clean()
         pps = list()
         for tests in tests_for_process:
-            p =  subprocess.Popen([args[0], project_name] + tests)
+            p = subprocess.Popen([args[0]] + tests)
             pps.append(p)
 
         for p in pps:
@@ -66,18 +67,18 @@ def main():
 
 def run_test(project_name, test_name):
     subprocess.run("pwd")
-    print(test_name)
+    logging.debug("Running test" + test_name)
 
-    clear_old_corpus(test_name)
-
-    command = get_test_command(project_name, test_name)
-    print(command)
+    command = get_test_command(test_name)
+    logging.debug("command: " + str(command))
     my_env = os.environ.copy()
     my_env["JAZZER_FUZZ"] = "1"
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-    f = open(timestamp + "--" + test_name, "w")
-    subprocess.run(command, env=my_env, stderr=subprocess.STDOUT, stdout=f)
+    # timestamp = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
+    f = open(test_name, "w")
+    errF = open(test_name + ".err", "w")
+    subprocess.run(command, env=my_env, stderr=errF, stdout=f, cwd=homeDir)
     f.close()
+    errF.close()
 
 
 # returns (class_name, method_name)
@@ -86,12 +87,20 @@ def split_to_class_and_method(test_name):
     return test_name[:i], test_name[i + 1:]
 
 
-def clear_old_corpus(test_name):
-    class_name, method_name = split_to_class_and_method(test_name)
-    corpus_dir = "./core/.cifuzz-corpus/" + class_name + "/" + method_name
-    print("Removing dir: " + corpus_dir)
+def clean():
+    print("Cleaning...")
+
+    subprocess.run(["./gradlew", "clean"], cwd=homeDir, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+
+    corpus_dir = os.path.join(homeDir, ".cifuzz-corpus/")
     if os.path.exists(corpus_dir):
+        print("Removing dir: " + corpus_dir)
         shutil.rmtree(corpus_dir)
+
+    findings = os.path.join(homeDir, "./src/resources/fuzz/")
+    if os.path.exists(findings):
+        print("Removing dir: " + findings)
+        shutil.rmtree(findings)
 
 
 if __name__ == "__main__":
