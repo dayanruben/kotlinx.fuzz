@@ -1,84 +1,72 @@
 #!/usr/bin/env python3
+
 import logging
 import sys
 import subprocess
 import os
-import datetime
+from os import path
 import shutil
 
-# TODO, make base dir (currently "./core") customizable as well
+import run_commons
+
 logging.basicConfig(level=logging.DEBUG)
 
-homeDir = os.environ["PROJECT_HOME"]
+homeDir = path.abspath(os.environ["PROJECT_HOME"])
+logsDir = path.abspath(os.environ["LOGS_DIR"])
+jacocoExecDir = path.abspath(os.environ["JACOCO_EXEC_DIR"])
 
-
-def get_test_command(test_name):
-    command = [
-        "./gradlew", "--no-daemon",
-        ":test", "--tests", test_name
-    ]
-    return command
+targetFile = path.abspath(os.environ.get("TARGET_FILE")) if os.environ.get("TARGET_FILE") is not None else None
+threads = int(os.environ.get("THREADS", "1"))
 
 
 def print_help():
     print("""
        Usage:
-       <test_name> [test_name 2] [test_name 3] ...
-              OR
-       -f <file with test names> [threads]
+       PROJECT_HOME=<project home dir>
+       LOGS_DIR=<...>
+       JACOCO_EXEC_DIR=<...> 
+       TARGET_FILE=<file with target names>
+       THREADS=[1]
     """)
 
 
 def main():
     args = sys.argv
     print(args)
-    if len(args) >= 2 and args[1] != '-f' and args[1] != '--file':
+    if len(args) >= 2 and args[1] != '-f' and args[1] != '--file' and targetFile is None:
         tests = args[1:]
         for test_name in tests:
-            run_test("", test_name)
+            run_commons.run_test(test_name, home_dir=homeDir, logs_dir=logsDir, jacoco_exec_dir=jacocoExecDir)
         return
-    elif (len(args) == 4 or len(args) == 3) and (args[1] == '-f' or args[1] == '--file'):
-        file_name = args[2]
-        print('Running tests from file \"' + file_name + '\"')
-        threads = 1
-        if len(args) == 4:
-            threads = int(args[3])
-            assert threads > 0
+    elif len(args) == 1 and targetFile is not None:
+        print('Running tests from file \"' + targetFile + '\"')
 
-        with open(file_name, 'r') as f:
-            tests = list(set(filter(lambda x: len(x) > 1, map(lambda x: x.strip().replace('#', '.'), f.readlines()))))
-            print('Running tests: ' + str(tests))
-            tests_for_process = [list() for _ in range(threads)]
-            for i in range(len(tests)):
-                tests_for_process[i % threads].append(tests[i])
+        all_targets = read_targets(targetFile)
+        targets_for_process = chunk(all_targets, threads)
 
-        clean()
-        pps = list()
-        for tests in tests_for_process:
-            p = subprocess.Popen([args[0]] + tests)
-            pps.append(p)
+        clean_gradle_and_corpus(all_targets)
 
-        for p in pps:
+        child_env = os.environ.copy()
+        child_env.pop("TARGET_FILE")
+        subprocesses = [subprocess.Popen([args[0]] + targets, env=child_env) for targets in targets_for_process]
+        for p in subprocesses:
             p.wait()
     else:
         print_help()
         exit(1)
 
 
-def run_test(project_name, test_name):
-    subprocess.run("pwd")
-    logging.debug("Running test" + test_name)
+def read_targets(target_file=targetFile):
+    with open(target_file, 'r') as f:
+        tests = list(set(filter(lambda x: len(x) > 1, map(lambda x: x.strip(), f.readlines()))))
+    return tests
 
-    command = get_test_command(test_name)
-    logging.debug("command: " + str(command))
-    my_env = os.environ.copy()
-    my_env["JAZZER_FUZZ"] = "1"
-    # timestamp = datetime.datetime.now().strftime("%Y-%m-%d--%H-%M-%S")
-    f = open(test_name, "w")
-    errF = open(test_name + ".err", "w")
-    subprocess.run(command, env=my_env, stderr=errF, stdout=f, cwd=homeDir)
-    f.close()
-    errF.close()
+
+def chunk(lst, n):
+    chunked = [list() for _ in range(n)]
+    for i in range(len(lst)):
+        chunked[i % n].append(lst[i])
+    return chunked
 
 
 # returns (class_name, method_name)
@@ -87,20 +75,26 @@ def split_to_class_and_method(test_name):
     return test_name[:i], test_name[i + 1:]
 
 
-def clean():
-    print("Cleaning...")
-
+def clean_project():
     subprocess.run(["./gradlew", "clean"], cwd=homeDir, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
-    corpus_dir = os.path.join(homeDir, ".cifuzz-corpus/")
-    if os.path.exists(corpus_dir):
-        print("Removing dir: " + corpus_dir)
-        shutil.rmtree(corpus_dir)
 
-    findings = os.path.join(homeDir, "./src/resources/fuzz/")
-    if os.path.exists(findings):
-        print("Removing dir: " + findings)
-        shutil.rmtree(findings)
+def clean_gradle_and_corpus(targets):
+    corpus_dir = os.path.join(homeDir, ".cifuzz-corpus/")
+    for target in targets:
+        class_name, method_name = split_to_class_and_method(target)
+        dir = path.join(corpus_dir, class_name, method_name)
+        if path.exists(dir):
+            print("Removing dir: " + dir)
+            shutil.rmtree(dir)
+
+    findings_dir = os.path.join(homeDir, "./src/resources/fuzz/")
+    for target in targets:
+        class_name, method_name = split_to_class_and_method(target)
+        dir = path.join(findings_dir, class_name, method_name)
+        if path.exists(dir):
+            print("Removing dir: " + dir)
+            shutil.rmtree(dir)
 
 
 if __name__ == "__main__":
