@@ -34,32 +34,36 @@ def main():
     args = sys.argv
     print(args)
     if len(args) >= 2 and args[1] != '-f' and args[1] != '--file' and targetFile is None:
-        tests = args[1:]
-        for test_name in tests:
-            run_commons.run_test(test_name, home_dir=homeDir, logs_dir=logsDir, jacoco_exec_dir=jacocoExecDir)
-        return
+        targets = args[1:]
+        for target in targets:
+            run_commons.run_target(target, home_dir=homeDir, logs_dir=logsDir, jacoco_exec_dir=jacocoExecDir)
+        exit(0)
     elif len(args) == 1 and targetFile is not None:
-        print('Running tests from file \"' + targetFile + '\"')
-
-        all_targets = read_targets(targetFile)
-        targets_for_process = chunk(all_targets, threads)
-
-        clean_gradle_and_corpus(all_targets)
-
-        child_env = os.environ.copy()
-        child_env.pop("TARGET_FILE")
-        subprocesses = [subprocess.Popen([args[0]] + targets, env=child_env) for targets in targets_for_process]
-        for p in subprocesses:
-            p.wait()
+        print('Running targets from file \"' + targetFile + '\"')
+        run_targets_in_subprocesses()
     else:
         print_help()
         exit(1)
 
 
+def run_targets_in_subprocesses():
+    all_targets = read_targets(targetFile)
+    targets_for_process = chunk(all_targets, threads)
+    clean_gradle_and_corpus(all_targets)
+    child_env = os.environ.copy()
+    child_env.pop("TARGET_FILE")
+    subprocesses = [subprocess.Popen([sys.argv[0]] + targets, env=child_env) if len(targets) > 0 else None
+                    for targets in targets_for_process]
+
+    for p in subprocesses:
+        if p is not None:
+            p.wait()
+
+
 def read_targets(target_file=targetFile):
     with open(target_file, 'r') as f:
-        tests = list(set(filter(lambda x: len(x) > 1, map(lambda x: x.strip(), f.readlines()))))
-    return tests
+        targets = list(set(filter(lambda x: len(x) > 1, map(lambda x: x.strip(), f.readlines()))))
+    return targets
 
 
 def chunk(lst, n):
@@ -70,9 +74,9 @@ def chunk(lst, n):
 
 
 # returns (class_name, method_name)
-def split_to_class_and_method(test_name):
-    i = test_name.rfind('.')
-    return test_name[:i], test_name[i + 1:]
+def split_to_class_and_method(target_name):
+    i = target_name.rfind('.')
+    return target_name[:i], target_name[i + 1:]
 
 
 def clean_project():
@@ -80,6 +84,8 @@ def clean_project():
 
 
 def clean_gradle_and_corpus(targets):
+    clean_project()
+
     corpus_dir = os.path.join(homeDir, ".cifuzz-corpus/")
     for target in targets:
         class_name, method_name = split_to_class_and_method(target)
