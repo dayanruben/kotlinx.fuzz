@@ -88,7 +88,7 @@ object JsonTests {
         appendLine("}")
     }
 
-    @FuzzTest(maxDuration = "5m")
+    @FuzzTest(maxDuration = "1h")
     fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
         val jsoner = Json { allowSpecialFloatingPointValues = true }
         val value = data.generateValue(MAX_STR_LENGTH)
