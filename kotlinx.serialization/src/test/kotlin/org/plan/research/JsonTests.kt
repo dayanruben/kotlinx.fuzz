@@ -2,26 +2,39 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
 
 object JsonTests {
     private const val MAX_JSON_DEPTH = 10
     private const val MAX_STR_LENGTH = 100
 
     @FuzzTest(maxDuration = "1h")
-    fun `json parsing`(data: FuzzedDataProvider) {
+    fun stringParsing(data: FuzzedDataProvider) {
+        val jsonString = data.consumeRemainingAsAsciiString()
+        try {
+            val serializer = Json.Default
+            serializer.parseToJsonElement(jsonString)
+        } catch (e: SerializationException) {
+            if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
+                System.err.println("\"$jsonString\"")
+                throw e
+            }
+        }
+    }
+
+    @FuzzTest(maxDuration = "1h")
+    fun jsonParsing(data: FuzzedDataProvider) {
         val jsonString = generateJson(data)
         try {
             val serializer = Json.Default
             serializer.parseToJsonElement(jsonString)
         } catch (e: SerializationException) {
             if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
-                assertTrue(false, "Unexpected exception type: $e")
-            } else {
-                System.err.println(jsonString)
-                e.printStackTrace(System.err)
+                System.err.println("\"$jsonString\"")
+                throw e
             }
         }
     }
@@ -73,6 +86,14 @@ object JsonTests {
             appendLine("\"$key\": \"$value\"${if (it < elements - 1) "," else ""}")
         }
         appendLine("}")
+    }
 
+    @FuzzTest(maxDuration = "5m")
+    fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
+        val jsoner = Json { allowSpecialFloatingPointValues = true }
+        val value = data.generateValue(MAX_STR_LENGTH)
+        val json = jsoner.encodeToString(Value.serializer(), value)
+        val decoded = jsoner.decodeFromString(Value.serializer(), json)
+        assertEquals(value, decoded)
     }
 }

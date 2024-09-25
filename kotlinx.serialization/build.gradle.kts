@@ -12,7 +12,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-engine:5.9.2")
     testImplementation("com.code-intelligence:jazzer-junit:0.22.1")
     testImplementation("com.code-intelligence:jazzer-api:0.22.1")
+
+
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.7.3")
 }
 
 kotlin {
