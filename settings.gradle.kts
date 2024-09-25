@@ -1,1 +1,1 @@
-rootProject.name = "kotinx.fuzz"
+rootProject.name = "kotlinx.fuzz"
