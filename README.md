@@ -1,2 +1,2 @@
 # kotlinx.fuzz
-Fuzzer from Kotlin libraries
+Fuzzer for Kotlin libraries
