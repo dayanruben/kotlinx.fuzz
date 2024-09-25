@@ -37,6 +37,29 @@ object CborTests {
 
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = "1h")
+    fun cborEncodeString(dataProvider: FuzzedDataProvider) {
+        val cbor = Cbor.Default
+        val str = dataProvider.consumeRemainingAsString()
+        try {
+            cbor.encodeToByteArray<String>(str)
+        } catch (e: NegativeArraySizeException) {
+            // probably a bug?
+            // not interesting??
+        } catch (e: IllegalStateException) {
+            // not interesting??
+        } catch (e: StackOverflowError) {
+            // probably a bug?
+            // not interesting??
+        } catch (e: SerializationException) {
+            if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
+                System.err.println("\"$str\"")
+                throw e
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @FuzzTest(maxDuration = "1h")
     fun cborEncodeAndDecode(data: FuzzedDataProvider) {
         val cborer = Cbor {}
         val value = data.generateValue(MAX_STR_LENGTH)
