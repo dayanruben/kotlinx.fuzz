@@ -11,8 +11,8 @@ import shutil
 def get_test_command(projectName, testName):
     command = [
         "./gradlew", "--no-daemon",
-        (":%s:cleanJvmTest" % projectName),
-        (":%s:jvmTest" % projectName),
+        (":%s:cleanTest" % projectName),
+        (":%s:test" % projectName),
         "--tests", testName
     ]
     return command
