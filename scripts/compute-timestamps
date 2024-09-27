@@ -26,7 +26,7 @@ def process_csv_files(directory, duration):
                 continue
 
             max_execNr = df['execNr'].max()
-            df['time'] = df['execNr'] * (max_execNr / duration_seconds)
+            df['time'] = df['execNr'] * (duration_seconds / max_execNr)
 
             df.to_csv(filepath, index=False)
             print(f"Processed {filename}")
