@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-from math import trunc
 
 import pandas as pd
 import argparse
@@ -28,7 +27,7 @@ def process_csv_files(directory, duration):
                 continue
 
             max_execNr = df['execNr'].max()
-            df['time'] = trunc(df['execNr'] * (duration_seconds / max_execNr))
+            df['time'] = (df['execNr'] * (duration_seconds / max_execNr)).astype(int)
 
             df.to_csv(filepath, index=False)
             print(f"Processed {filename}")
