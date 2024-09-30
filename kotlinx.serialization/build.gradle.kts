@@ -28,4 +28,5 @@ tasks.named<Test>("test") {
     testLogging.showStandardStreams = true // adds more info to logs
 
     maxHeapSize = "${1024 * 4}m"
+    jvmArgs("-Xss1g")
 }

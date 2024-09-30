@@ -1,6 +1,7 @@
 org.plan.research.JsonTests.stringParsing
 org.plan.research.JsonTests.jsonParsing
 org.plan.research.JsonTests.jsonEncodeAndDecode
+org.plan.research.JsonTests.jsonEncodeAndDecodeNested
 org.plan.research.CborTests.cborParseByteArray
 org.plan.research.CborTests.cborEncodeString
 org.plan.research.CborTests.cborEncodeAndDecode
