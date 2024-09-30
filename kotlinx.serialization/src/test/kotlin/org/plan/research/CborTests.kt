@@ -13,7 +13,7 @@ object CborTests {
     private const val MAX_STR_LENGTH = 100
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "1h")
+    @FuzzTest(maxDuration = "2h")
     fun cborParseByteArray(dataProvider: FuzzedDataProvider) {
         val cbor = Cbor.Default
         val byteArray = dataProvider.consumeRemainingAsBytes()
@@ -36,7 +36,7 @@ object CborTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "1h")
+    @FuzzTest(maxDuration = "2h")
     fun cborEncodeString(dataProvider: FuzzedDataProvider) {
         val cbor = Cbor.Default
         val str = dataProvider.consumeRemainingAsString()
@@ -59,7 +59,7 @@ object CborTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "1h")
+    @FuzzTest(maxDuration = "2h")
     fun cborEncodeAndDecode(data: FuzzedDataProvider) {
         val cborer = Cbor {}
         val value = data.generateValue(MAX_STR_LENGTH)
