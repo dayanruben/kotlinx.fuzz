@@ -27,6 +27,10 @@ def process_csv_files(directory, duration):
                 continue
 
             max_execNr = df['execNr'].max()
+            if (max_execNr == 0):
+                print(f"Warn: max execNr is 0 in {filename}. Skipping it")
+                continue
+
             df['time'] = (df['execNr'] * (duration_seconds / max_execNr)).astype(int)
 
             df.to_csv(filepath, index=False)
