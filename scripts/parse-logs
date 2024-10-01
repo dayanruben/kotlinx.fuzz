@@ -7,10 +7,10 @@ import jazzer_plot
 
 
 def main():
-    args = sys.argv[1:]
-    logs_dir = args[0]
-    stats_dir = args[1]
-    crash_logs_dir = args[2]
+    args = sys.argv
+    logs_dir = args[1]
+    stats_dir = args[2]
+    crash_logs_dir = args[3]
 
     log_files = filter(lambda x: x.endswith('.err'), os.listdir(logs_dir))
     for log_file in log_files:

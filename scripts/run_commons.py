@@ -5,11 +5,9 @@ from os import path
 
 
 def get_run_command(target_name):
-    command = [
-        "./gradlew",  "--no-daemon",
-        ":test", "--tests", target_name
-    ]
+    command = ["./gradlew", ":test", "--tests", target_name]
     return command
+
 
 def run_target(target_name, home_dir, logs_dir, jacoco_exec_dir):
     subprocess.run("pwd")
