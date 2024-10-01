@@ -4,16 +4,17 @@ import subprocess
 from os import path
 
 
-def get_run_command(target_name):
-    command = ["./gradlew", ":test", "--tests", target_name]
-    return command
+def get_run_command(target_name, module):
+    if module is None:
+        return ["./gradlew", ":test", "--tests", target_name]
+    return ["./gradlew", f":{module}:test", "--tests", target_name]
 
 
-def run_target(target_name, home_dir, logs_dir, jacoco_exec_dir):
+def run_target(target_name, home_dir, logs_dir, jacoco_exec_dir, module = None):
     subprocess.run("pwd")
     logging.debug("Running target" + target_name)
 
-    command = get_run_command(target_name)
+    command = get_run_command(target_name, module)
     logging.debug("command: " + str(command))
     my_env = os.environ.copy()
     my_env["JAZZER_FUZZ"] = "1"

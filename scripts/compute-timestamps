@@ -7,7 +7,7 @@ import argparse
 import re
 
 def parse_duration(duration):
-    match = re.match(r'((?P<hours>\d+)h)?((?P<minutes>\d+)m)?((?P<seconds>\d+)s)?', duration)
+    match = re.match(r'^((?P<hours>\d+)h)?((?P<minutes>\d+)m)?((?P<seconds>\d+)s)?$', duration)
     if not match:
         raise ValueError(f"Invalid duration format: {duration}")
 
@@ -20,6 +20,9 @@ def process_csv_files(directory, duration):
     for filename in os.listdir(directory):
         if filename.endswith('.csv'):
             filepath = os.path.join(directory, filename)
+            if os.stat(filepath).st_size <= 1:
+                continue
+
             df = pd.read_csv(filepath)
 
             if 'execNr' not in df.columns:
@@ -27,11 +30,12 @@ def process_csv_files(directory, duration):
                 continue
 
             max_execNr = df['execNr'].max()
+            print(f"max execNr in {filename}: {max_execNr}")
             if (max_execNr == 0):
                 print(f"Warn: max execNr is 0 in {filename}. Skipping it")
                 continue
 
-            df['time'] = (df['execNr'] * (duration_seconds / max_execNr)).astype(int)
+            df['time'] = (df['execNr'] * duration_seconds / max_execNr).astype(int)
 
             df.to_csv(filepath, index=False)
             print(f"Processed {filename}")
