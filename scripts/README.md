@@ -21,6 +21,18 @@ What is does:
 
 Allows to run multiple targets (incl. in parallel) and collecting jazzer logs.
 
+# `parse-logs`
+
+Parses jazzer logs to csvs with fuzzing progress and csvs with findings.
+
+# `compute-timestams`
+
+Adds timestams to csvs created by `parse-logs`
+
+# `overall-stats`
+
+Parses csvs from `parse-logs` to single csv with overall info about each target
+
 # `jazzer-plot.py` 
 
 Parses jazzer log and draws some charts
