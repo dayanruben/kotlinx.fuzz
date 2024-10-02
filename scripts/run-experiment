@@ -83,13 +83,13 @@ def jacoco_execinfo(experiment_dir, jacoco):
 
 
 def jacoco_report(experiment_dir, jacoco, classfiles):
-    run_subprocess([
-        jacoco,
-        'report',
-        '--csv', path.join(experiment_dir, 'jacoco-report.csv'),
-        '--classfiles', classfiles,
-        path.join(experiment_dir, 'jacoco-merged.exec')
-    ])
+    command = [jacoco, 'report', '--csv', path.join(experiment_dir, 'jacoco-report.csv')]
+    for cs in classfiles:
+        command.append('--classfiles')
+        command.append(cs)
+    command.append(path.join(experiment_dir, 'jacoco-merged.exec'))
+
+    run_subprocess(command)
 
 
 def main(args):
@@ -124,10 +124,14 @@ if __name__ == '__main__':
     parser.add_argument("targets_file", type=str, help="Path to file with list of fuzz targets")
     parser.add_argument('duration', type=str, help="MaxDuration value from @FuzzTest")
     parser.add_argument('threads', type=int, help='Number of targets to run in parallel')
-    parser.add_argument('classfiles', type=str,
-                        help='Argument for jacoco report --classfiles. If your library is single jar, just pass path to it (you can find it in IDEA)')
     parser.add_argument('module', default=None, type=str,
                         help='Module of your targets. All targets must be from this module!')
+    parser.add_argument('--classfiles', type=str,
+                        help='Argument for jacoco report --classfiles. '
+                        'If your library is single jar, just pass path to it (you can find it in IDEA). '
+                        'If you have multiple jars, you can add this option multipls times: '
+                        '--classfile jar1 --classfile jar2',
+                        action='append')
 
     args = parser.parse_args()
     print(f"Arguments: {args}")
