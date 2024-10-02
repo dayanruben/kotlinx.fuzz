@@ -2,7 +2,6 @@
 import sys
 
 import pandas as pd
-from jazzer_plot import parse_duration
 import matplotlib.pyplot as plt
 
 
@@ -12,7 +11,7 @@ def main():
         print("Example: python3 libfuzzer_plot.py targetA.csv")
         sys.exit(1)
 
-    csv_file = parse_duration(sys.argv[1])
+    csv_file = sys.argv[1]
 
     df = pd.read_csv(csv_file)
 
