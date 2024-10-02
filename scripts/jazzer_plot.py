@@ -1,73 +1,10 @@
 #!/usr/bin/env python3
 
 import dataclasses
+import re
 from dataclasses import dataclass
-import sys
-import os
-import os.path as path
-import matplotlib.pyplot as plt
-import datetime
+
 import pandas as pd
-
-
-def get_start_time(dirname):
-    config_file = path.join(dirname, '..', '..', 'config.yaml')
-    return path.getmtime(config_file)
-
-
-def parse_libfuzzer_output(filename, timeout_sec):
-    coverage = []
-    crashes = []
-    features = []
-    max_execs = 0
-
-    with open(filename, "r") as file:  # read libfuzzer output
-        for line in file:  # and process it line by line
-            tokens = line.split()  # split line into tokens
-
-            # A line looks like this:
-            #   #33        NEW    cov: 83 ft: 93 corp: 9/48Kb exec/s: 0 rss: 40Mb
-            #   L: 1395/30486 MS: 1 InsertRepeatedBytes-
-            #
-            if len(tokens) < 2: continue
-
-            if tokens[0].startswith('#') and len(tokens) != 4 and len(tokens) != 6:
-                print(line)
-                e = int(tokens[0][1:])
-                if e > max_execs:
-                    max_execs = e
-
-            if tokens[0].startswith('#') and len(tokens) >= 14 and (tokens[1] == 'NEW' or tokens[1] == 'REDUCE' or tokens[1] == 'pulse'):
-                execs = int(tokens[0][1:])
-                cov_blks = int(tokens[3])
-
-                coverage.append((execs, cov_blks))
-
-                features.append((execs, int(tokens[5])))
-
-            if tokens[0].startswith("DEDUP_TOKEN"):
-                crashes.append(coverage[-1][0])
-
-    _, max_cov = coverage[-1]
-    _, max_ft = features[-1]
-
-    coeff = timeout_sec / max_execs
-    coverage = list(map(lambda x: (int(x[0] * coeff), x[1]), coverage))
-    crashes = list(map(lambda x: (int(x * coeff)), crashes))
-    features = list(map(lambda x: (int(x[0] * coeff), x[1]), features))
-
-    coverage = [(0, 0)] + coverage + [(timeout_sec, max_cov)]
-    coverage = list(zip(*coverage))
-
-    features = [(0, 0)] + features + [(timeout_sec, max_ft)]
-    features = list(zip(*features))
-
-    crashes = [(crashes[i], i + 1) for i in range(len(crashes))]
-    crashes = [(0, 0)] + crashes
-    crashes = crashes + [(timeout_sec, crashes[-1][1])]
-    crashes = list(zip(*crashes))
-
-    return coverage, crashes, features
 
 
 @dataclass
@@ -87,9 +24,10 @@ class CrashEntry:
 # 944	NEW    cov: 57 ft: 58 corp: 10/20b lim: 6 exec/s: 0 rss: 718Mb L: 2/3 MS: 2 ChangeBinInt-Custom-
 # 957	REDUCE cov: 63 ft: 64 corp: 11/26b lim: 6 exec/s: 0 rss: 718Mb L: 6/6 MS: 6 CMP-Custom-CrossOver-Custom-ShuffleBytes-Custom- DE: "\377\377\377\000"-
 
-def libfuzzer_output_to_csv(filename) -> (str, str):
+def libfuzzer_output_to_csv(filename, duration) -> (str, str):
     lines = [LibfuzzerLogEntry(execNr=0, cov=0, ft=0, crashes=0)]
     crashes = list[CrashEntry]()
+    duration_seconds = parse_duration(duration)
 
     with open(filename, "r") as file:  # read libfuzzer output
         for line in file:  # and process it line by line
@@ -109,59 +47,25 @@ def libfuzzer_output_to_csv(filename) -> (str, str):
 
             # if tokens[0].startswith("DEDUP_TOKEN"):
             #     crashes.append(coverage[-1][0])
-    return (
-        pd.DataFrame.from_records(map(lambda x: dataclasses.asdict(x), lines)).to_csv(index=False),
-        pd.DataFrame.from_records(map(lambda x: dataclasses.asdict(x), crashes)).to_csv(index=False)
-    )
+    stats = pd.DataFrame.from_records(map(lambda x: dataclasses.asdict(x), lines))
+    crashes = pd.DataFrame.from_records(map(lambda x: dataclasses.asdict(x), crashes))
+    max_exec_nr = stats['execNr'].max()
+
+    if max_exec_nr <= 0:
+        print(f"Error: max execNr is 0 for {filename}")
+        return stats.to_csv(index=False), crashes.to_csv(index=False)
+
+    stats['timestamp'] = (stats['execNr'] * duration_seconds / max_exec_nr).astype(int)
+    if crashes.size > 0:
+        crashes['timestamp'] = (crashes['execNr'] * duration_seconds / max_exec_nr).astype(int)
+
+    return stats.to_csv(index=False), crashes.to_csv(index=False)
 
 
-def parse_duration(s):
-    last = s[-1]
-    s = s[:-1]
-    if last == 's':
-        return int(s)
-    elif last == 'm':
-        return int(s) * 60
-    elif last == 'h':
-        return int(s) * 60 * 60
+def parse_duration(duration):
+    match = re.match(r'^((?P<hours>\d+)h)?((?P<minutes>\d+)m)?((?P<seconds>\d+)s)?$', duration)
+    if not match:
+        raise ValueError(f"Invalid duration format: {duration}")
 
-
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: python libfuzzer_plot.py <libfuzzer log> <max timeout>")
-        print("Example: python3 libfuzzer_plot.py log.txt 2h")
-        sys.exit(1)
-
-    jazzer_log = sys.argv[1]
-    assert path.exists(jazzer_log)
-
-    coverage, crashes, features = parse_libfuzzer_output(jazzer_log)
-
-    crashes_timestamps, crashes_cnt = crashes
-    cov_timestamps, cov = coverage
-
-    ft_timestamps, ft = features
-
-    # plt.plot(crashes_timestamps, crashes_cnt, label="Jazzer Crashes")
-    # plt.xlabel("Time (seconds)")
-    # plt.ylabel("Crashes")
-    # plt.legend()
-    # plt.show()
-    #
-    # plt.plot(cov_timestamps, cov, label="Coverage")
-    # plt.xlabel("Time (seconds)")
-    # plt.ylabel("Coverage")
-    # plt.legend()
-    # plt.show()
-
-    plt.plot(ft_timestamps, ft, label="Features")
-    plt.xlabel("Time (seconds)")
-    plt.ylabel("Features")
-    plt.legend()
-    plt.show()
-
-    pass
-
-
-if __name__ == '__main__':
-    main()
+    parts = match.groupdict(default='0')
+    return int(parts['hours']) * 3600 + int(parts['minutes']) * 60 + int(parts['seconds'])

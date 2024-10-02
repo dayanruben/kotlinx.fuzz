@@ -25,7 +25,7 @@ def create_empty_dirs(dirs: list[str]):
 
 def get_script_location():
     script_dir = path.dirname(path.realpath(sys.argv[0]))
-    required_paths = ['run-targets', 'compute-timestamps', 'overall-stats', 'jacoco']
+    required_paths = ['run-targets', 'overall-stats', 'jacoco']
     for req_path in required_paths:
         assert path.exists(path.join(script_dir, req_path))
     return script_dir
@@ -56,23 +56,11 @@ def exec_overall_stats(experiment_dir, overall_stats):
     run_subprocess(overall_stats_args)
 
 
-def exec_parse_logs(experiment_dir, parse_logs):
+def exec_parse_logs(experiment_dir, parse_logs, duration):
     run_subprocess([
         parse_logs,
         path.join(experiment_dir, 'logs'),
         path.join(experiment_dir, 'stats'),
-        path.join(experiment_dir, 'findings')
-    ])
-
-
-def exec_compute_timestamps(experiment_dir, compute_timestamps, duration):
-    run_subprocess([
-        compute_timestamps,
-        path.join(experiment_dir, 'stats'),
-        duration
-    ])
-    run_subprocess([
-        compute_timestamps,
         path.join(experiment_dir, 'findings'),
         duration
     ])
@@ -107,7 +95,6 @@ def jacoco_report(experiment_dir, jacoco, classfiles):
 def main(args):
     script_location = get_script_location()
     run_targets = path.join(script_location, 'run-targets')
-    compute_timestamps = path.join(script_location, 'compute-timestamps')
     overall_stats = path.join(script_location, 'overall-stats')
     parse_logs = path.join(script_location, 'parse-logs')
     jacoco = path.join(script_location, 'jacoco')
@@ -123,8 +110,7 @@ def main(args):
     exec_run_targets(args.experiment_dir, args.project_dir, args.targets_file, args.threads, args.module, run_targets)
     shutil.copytree(path.join(args.project_dir, str(args.module or '.'), 'src', 'test', 'resources'),
                     path.join(args.experiment_dir, 'resources'))
-    exec_parse_logs(args.experiment_dir, parse_logs)
-    exec_compute_timestamps(args.experiment_dir, compute_timestamps, args.duration)
+    exec_parse_logs(args.experiment_dir, parse_logs, args.duration)
     exec_overall_stats(args.experiment_dir, overall_stats)
     jacoco_merge(args.experiment_dir, jacoco)
     jacoco_execinfo(args.experiment_dir, jacoco)
