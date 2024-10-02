@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 
 def main():
-    if len(sys.argv) != 3:
+    if len(sys.argv) != 2:
         print("Usage: python libfuzzer_plot.py <stats.csv>")
         print("Example: python3 libfuzzer_plot.py targetA.csv")
         sys.exit(1)
