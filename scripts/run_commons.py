@@ -12,7 +12,7 @@ def get_run_command(target_name, module):
 
 def run_target(target_name, home_dir, logs_dir, jacoco_exec_dir, module = None):
     subprocess.run("pwd")
-    logging.debug("Running target" + target_name)
+    logging.debug("Running target " + target_name)
 
     command = get_run_command(target_name, module)
     logging.debug("command: " + str(command))
