@@ -6,6 +6,7 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonNames
 
 private val CLASSES = listOf(
     NullValue::class,
@@ -20,6 +21,7 @@ private val CLASSES = listOf(
     CompositeNullableValue::class,
     DefaultValueNever::class,
     DefaultValueAlways::class,
+    EnumValue::class,
 )
 
 fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[consumeInt(0, CLASSES.lastIndex)]) {
@@ -33,7 +35,8 @@ fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[c
     ListValue::class -> ListValue(
         MutableList(consumeInt(0, maxStrLength)) { generateValue(maxStrLength) }
     )
-    ObjectValue::class  -> ObjectValue(
+
+    ObjectValue::class -> ObjectValue(
         buildMap {
             repeat(consumeInt(0, maxStrLength)) {
                 val key = consumeString(maxStrLength)
@@ -44,6 +47,7 @@ fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[c
             }
         }
     )
+
     CompositeNullableValue::class -> {
         val fields = MutableList(3) {
             if (consumeBoolean()) generateValue(maxStrLength)
@@ -51,13 +55,21 @@ fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[c
         }
         CompositeNullableValue(fields[0], fields[1], fields[2])
     }
+
     DefaultValueNever::class -> DefaultValueNever(generateValue(maxStrLength))
     DefaultValueAlways::class -> DefaultValueAlways(generateValue(maxStrLength))
+    EnumValue::class -> EnumValue(TestEnum.entries[consumeInt(0, TestEnum.entries.lastIndex)])
     else -> error("Unexpected")
 }
 
+@OptIn(ExperimentalSerializationApi::class)
 @Serializable
 sealed class Value {
+    @JsonNames(
+        "status",
+        "STATUS",
+        "IS_OPEN"
+    )
     var status = "open"
     val randomStr: String get() = status
 }
@@ -70,6 +82,7 @@ data class BooleanValue(val value: Boolean) : Value()
 
 @Serializable
 data class IntValue(val value: Int) : Value()
+
 @Serializable
 data class LongValue(val value: Long) : Value()
 
@@ -126,4 +139,23 @@ data class DefaultValueAlways @OptIn(ExperimentalSerializationApi::class) constr
         status = "closed"
     }
 }
+
+enum class TestEnum(val size: Int, val value: String) {
+    FIRST(size = 1, value = "first"),
+    SECOND(size = 2, value = "second"),
+    THIRD(size = 3, value = "third"),
+    FOURTH(size = 4, value = "fourth"),
+    FIFTH(size = 5, value = "fifth"),
+    SIXTH(size = 6, value = "sixth"),
+    SEVENTH(size = 7, value = "seventh"),
+    EIGHTH(size = 8, value = "eighth"),
+    NINTH(size = 9, value = "ninth"),
+    TENTH(size = 10, value = "tenth"),
+    ELEVENTH(size = 11, value = "eleventh"),
+}
+
+@Serializable
+data class EnumValue(
+    val value: TestEnum
+) : Value()
 

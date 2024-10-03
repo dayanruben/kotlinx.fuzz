@@ -2,10 +2,23 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import kotlin.test.assertTrue
+
+/**
+ * 1. Add comments
+ * 2. `decodeToSequenceByReader` with different DecodeSequenceModes -- done
+ * 3. Enums -- done
+ * 4. JsonNames -- done
+ * 5. Coerce values -- done
+ * 6. Polymorphic
+ * 7. `encodeToStream` / `encodeToSequence` -- done
+ */
 
 object JsonTests {
     private const val MAX_JSON_DEPTH = 10
@@ -14,9 +27,15 @@ object JsonTests {
     @FuzzTest(maxDuration = "2h")
     fun stringParsing(data: FuzzedDataProvider) {
         val jsonString = data.consumeRemainingAsAsciiString()
+        val str: String
         try {
-            val serializer = Json.Default
-            serializer.parseToJsonElement(jsonString)
+            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+            val element: Any = when {
+                data.consumeBoolean() -> serializer.parseToJsonElement(jsonString)
+                else -> serializer.decodeFromString<Value>(jsonString)
+            }
+            str = serializer.encodeToString(element)
+            assertTrue { jsonString == str }
         } catch (e: SerializationException) {
             if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
                 System.err.println("\"$jsonString\"")
@@ -28,15 +47,148 @@ object JsonTests {
     @FuzzTest(maxDuration = "2h")
     fun jsonParsing(data: FuzzedDataProvider) {
         val jsonString = generateJson(data)
+        val str: String
         try {
-            val serializer = Json.Default
-            serializer.parseToJsonElement(jsonString)
+            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+            val element = serializer.parseToJsonElement(jsonString)
+            str = serializer.encodeToString(element)
         } catch (e: SerializationException) {
             if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
                 System.err.println("\"$jsonString\"")
                 throw e
             }
         }
+    }
+
+    @FuzzTest(maxDuration = "2h")
+    fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
+        val value = data.generateValue(MAX_STR_LENGTH)
+        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        try {
+            val json = serializer.encodeToString(value)
+            val decoded = serializer.decodeFromString<Value>(json)
+            assertTrue { isCorrect(value, decoded) }
+        } catch (e: Throwable) {
+            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
+                && !serializer.configuration.allowSpecialFloatingPointValues
+            ) {
+                // nothing
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @FuzzTest(maxDuration = "2h")
+    fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
+        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        val value = data.generateValue(MAX_STR_LENGTH)
+        val strValueJson = serializer.encodeToString(value)
+        val newValue = CompositeNullableValue(
+            StringValue(strValueJson), data.generateValue(MAX_STR_LENGTH), data.generateValue(MAX_STR_LENGTH)
+        )
+        try {
+            val newValueJson = serializer.encodeToString<Value>(newValue)
+            val newValueDecoded = serializer.decodeFromString<Value>(newValueJson)
+            assertTrue { isCorrect(newValue, newValueDecoded) }
+
+            val strValueDecoded = serializer.decodeFromString<Value>(
+                ((newValueDecoded as CompositeNullableValue).first as StringValue).value
+            )
+            assertTrue { isCorrect(value, strValueDecoded) }
+        } catch (e: Throwable) {
+            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
+                && !serializer.configuration.allowSpecialFloatingPointValues
+            ) {
+                // nothing
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @FuzzTest(maxDuration = "2h")
+    fun streamParsing(data: FuzzedDataProvider) {
+        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        val jsonString = data.consumeRemainingAsAsciiString()
+        val inputStream = ByteArrayInputStream(jsonString.toByteArray())
+        val outputString = ByteArrayOutputStream()
+        try {
+            val element = serializer.decodeFromStream(JsonElement.serializer(), inputStream)
+            serializer.encodeToStream(element, outputString)
+//            assertTrue { jsonString == outputString.toString(Charsets.UTF_8.name()) }
+        } catch (e: Throwable) {
+            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
+                && !serializer.configuration.allowSpecialFloatingPointValues
+            ) {
+                // nothing
+            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException") {
+                // nothing
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @OptIn(ExperimentalSerializationApi::class)
+    @FuzzTest(maxDuration = "2h")
+    fun sequenceParsing(data: FuzzedDataProvider) {
+        val serializer = Json {
+            allowSpecialFloatingPointValues = data.consumeBoolean()
+            prettyPrint = data.consumeBoolean()
+            coerceInputValues = data.consumeBoolean()
+        }
+        val numberOfElements = data.consumeInt(1, 100)
+        val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
+        val (str, encodeMode) = when (data.consumeBoolean()) {
+            // true -> whitespace
+            true -> buildString {
+                for (element in elements) {
+                    append(serializer.encodeToString(element))
+                    append(data.consumeWhitespace())
+                }
+            } to DecodeSequenceMode.WHITESPACE_SEPARATED
+            // false -> array
+            false -> buildString {
+                append("[")
+                for (element in elements) {
+                    append(serializer.encodeToString(element))
+                    append(",")
+                }
+                append("]")
+            } to DecodeSequenceMode.ARRAY_WRAPPED
+        }
+        val stream = ByteArrayInputStream(str.toByteArray())
+        val decodeMode = DecodeSequenceMode.entries[data.consumeInt(0, DecodeSequenceMode.entries.lastIndex)]
+        try {
+            var index = 0
+            val sequence = serializer.decodeToSequence<Value>(stream, decodeMode)
+            for (element in sequence) {
+                assertTrue { decodeMode == DecodeSequenceMode.AUTO_DETECT || decodeMode == encodeMode }
+                assertTrue { element == elements[index++] }
+            }
+        } catch (e: Throwable) {
+            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
+                && !serializer.configuration.allowSpecialFloatingPointValues
+            ) {
+                // nothing
+            } else {
+                throw e
+            }
+        }
+    }
+
+    private fun FuzzedDataProvider.consumeWhitespace(): Char = when (consumeInt(0, 3)) {
+        0 -> ' '
+        1 -> '\n'
+        2 -> '\t'
+        3 -> '\r'
+        else -> error("Unexpected")
     }
 
     private fun generateJson(data: FuzzedDataProvider): String = when {
@@ -88,41 +240,6 @@ object JsonTests {
         appendLine("}")
     }
 
-    @FuzzTest(maxDuration = "2h")
-    fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
-        val value = data.generateValue(MAX_STR_LENGTH)
-        try {
-            val jsoner = Json { allowSpecialFloatingPointValues = true }
-            val json = jsoner.encodeToString(value)
-            val decoded = jsoner.decodeFromString<Value>(json)
-            assertTrue { isCorrect(value, decoded) }
-        } catch (e: Throwable) {
-            throw e
-        }
-    }
-
-    @FuzzTest(maxDuration = "2h")
-    fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
-        val jsoner = Json { allowSpecialFloatingPointValues = true }
-        val value = data.generateValue(MAX_STR_LENGTH)
-        val strValueJson = jsoner.encodeToString(value)
-        val newValue = CompositeNullableValue(
-            StringValue(strValueJson), data.generateValue(MAX_STR_LENGTH), data.generateValue(MAX_STR_LENGTH)
-        )
-        try {
-            val newValueJson = jsoner.encodeToString<Value>(newValue)
-            val newValueDecoded = jsoner.decodeFromString<Value>(newValueJson)
-            assertTrue { isCorrect(newValue, newValueDecoded) }
-
-            val strValueDecoded = jsoner.decodeFromString<Value>(
-                ((newValueDecoded as CompositeNullableValue).first as StringValue).value
-            )
-            assertTrue { isCorrect(value, strValueDecoded) }
-        } catch (e: Throwable) {
-            throw e
-        }
-    }
-
 
     private fun isCorrect(first: Value, second: Value): Boolean = when (first) {
         NullValue -> second is NullValue && first.status == second.status && first.status == "open"
@@ -159,5 +276,7 @@ object JsonTests {
             first.value,
             second.value
         ) && first.status == second.status && first.status == "closed"
+
+        is EnumValue -> second is EnumValue && first.value == second.value && first.status == second.status && first.status == "open"
     }
 }
