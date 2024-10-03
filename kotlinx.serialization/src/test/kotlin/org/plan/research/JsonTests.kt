@@ -24,7 +24,7 @@ object JsonTests {
     private const val MAX_JSON_DEPTH = 10
     private const val MAX_STR_LENGTH = 100
 
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun stringParsing(data: FuzzedDataProvider) {
         val jsonString = data.consumeRemainingAsAsciiString()
         val str: String
@@ -44,7 +44,7 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun jsonParsing(data: FuzzedDataProvider) {
         val jsonString = generateJson(data)
         val str: String
@@ -60,7 +60,7 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
         val value = data.generateValue(MAX_STR_LENGTH)
         val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
@@ -80,7 +80,7 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
         val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
         val value = data.generateValue(MAX_STR_LENGTH)
@@ -110,7 +110,7 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun streamParsing(data: FuzzedDataProvider) {
         val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
         val jsonString = data.consumeRemainingAsAsciiString()
@@ -135,7 +135,7 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "2h")
+    @FuzzTest(maxDuration = "4h")
     fun sequenceParsing(data: FuzzedDataProvider) {
         val serializer = Json {
             allowSpecialFloatingPointValues = data.consumeBoolean()
