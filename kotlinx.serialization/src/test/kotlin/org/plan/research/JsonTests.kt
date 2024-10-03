@@ -24,6 +24,18 @@ object JsonTests {
     private const val MAX_JSON_DEPTH = 10
     private const val MAX_STR_LENGTH = 100
 
+    fun isJsonDecodingException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+
+    fun isJsonEncodingException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+
+    fun isSpecialFloatingPointValueException(serializer: Json, e: Throwable): Boolean =
+        (isJsonDecodingException(e) || isJsonEncodingException(e))
+                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
+                && !serializer.configuration.allowSpecialFloatingPointValues
+
+
     @FuzzTest(maxDuration = "4h")
     fun stringParsing(data: FuzzedDataProvider) {
         val jsonString = data.consumeRemainingAsAsciiString()
@@ -37,8 +49,7 @@ object JsonTests {
             str = serializer.encodeToString(element)
             assertTrue { jsonString == str }
         } catch (e: SerializationException) {
-            if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
-                System.err.println("\"$jsonString\"")
+            if (!isJsonDecodingException(e)) {
                 throw e
             }
         }
@@ -53,8 +64,7 @@ object JsonTests {
             val element = serializer.parseToJsonElement(jsonString)
             str = serializer.encodeToString(element)
         } catch (e: SerializationException) {
-            if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
-                System.err.println("\"$jsonString\"")
+            if (!isJsonDecodingException(e)) {
                 throw e
             }
         }
@@ -69,11 +79,8 @@ object JsonTests {
             val decoded = serializer.decodeFromString<Value>(json)
             assertTrue { isCorrect(value, decoded) }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
-            ) {
-                // nothing
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
             } else {
                 throw e
             }
@@ -84,7 +91,15 @@ object JsonTests {
     fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
         val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
         val value = data.generateValue(MAX_STR_LENGTH)
-        val strValueJson = serializer.encodeToString(value)
+        val strValueJson = try {
+            serializer.encodeToString(value)
+        } catch (e: Throwable) {
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
+        }
         val newValue = CompositeNullableValue(
             StringValue(strValueJson), data.generateValue(MAX_STR_LENGTH), data.generateValue(MAX_STR_LENGTH)
         )
@@ -98,11 +113,8 @@ object JsonTests {
             )
             assertTrue { isCorrect(value, strValueDecoded) }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
-            ) {
-                // nothing
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
             } else {
                 throw e
             }
@@ -121,13 +133,11 @@ object JsonTests {
             serializer.encodeToStream(element, outputString)
 //            assertTrue { jsonString == outputString.toString(Charsets.UTF_8.name()) }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
+            if (isSpecialFloatingPointValueException(serializer, e)
             ) {
-                // nothing
-            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException") {
-                // nothing
+                return
+            } else if (isJsonDecodingException(e)) {
+                return
             } else {
                 throw e
             }
@@ -176,27 +186,39 @@ object JsonTests {
                 assertTrue { element == elements[index++] }
             }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Expected JsonObject, but had JsonArray as the serialized body")
+                && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
             ) {
-                // nothing
-            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
-                    && e.message.orEmpty().startsWith("Expected JsonObject, but had JsonArray as the serialized body")
-                    && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
-            ) {
-                // nothing
-            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+                return
+            } else if (isJsonDecodingException(e)
                 && e.message.orEmpty().startsWith("Expected start of the array '[', but had 'EOF' instead at path:")
                 && encodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED && decodeMode == DecodeSequenceMode.ARRAY_WRAPPED
             ) {
-                // nothing
-            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+                return
+            } else if (isJsonDecodingException(e)
                 && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
                 && e.message.orEmpty().contains("Trailing comma before the end of JSON array at path:")
                 && !serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
             ) {
-                // nothing
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty().contains("Cannot read Json element because of unexpected end of the array ']'")
+                && !serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                // possibly wrong error message?
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty()
+                    .contains("Cannot read Json element because of unexpected end of the array ']' at path")
+                && serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                // bug, see ReproductionTests.`json decode sequence cant parse array of enums`
+                return
             } else {
                 throw e
             }
