@@ -11,10 +11,9 @@ What is does:
 1. runs `run-targets`
 2. copies `$PROJECT_DIR/src/test/resources`
 3. runs `parse-logs`
-4. runs `compute-timestamps`
-5. runs `overall-stats`
-6. runs `jacoco merge`
-7. runs `jacoco report`
+4. runs `overall-stats`
+5. runs `jacoco merge`
+6. runs `jacoco report`
 
 
 ## `run-targets` 
@@ -25,15 +24,11 @@ Allows to run multiple targets (incl. in parallel) and collecting jazzer logs.
 
 Parses jazzer logs to csvs with fuzzing progress and csvs with findings.
 
-## `compute-timestams`
-
-Adds timestams to csvs created by `parse-logs`
-
 ## `overall-stats`
 
 Parses csvs from `parse-logs` to single csv with overall info about each target
 
-## `jazzer-plot.py` 
+## `plot` 
 
-Parses jazzer log and draws some charts
+Parses csv from `parse-logs` and draws some charts
 
