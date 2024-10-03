@@ -141,9 +141,11 @@ object JsonTests {
             allowSpecialFloatingPointValues = data.consumeBoolean()
             prettyPrint = data.consumeBoolean()
             coerceInputValues = data.consumeBoolean()
+            allowTrailingComma = data.consumeBoolean()
         }
         val numberOfElements = data.consumeInt(1, 100)
         val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
+        val addTrailingComma = data.consumeBoolean()
         val (str, encodeMode) = when (data.consumeBoolean()) {
             // true -> whitespace
             true -> buildString {
@@ -155,9 +157,11 @@ object JsonTests {
             // false -> array
             false -> buildString {
                 append("[")
-                for (element in elements) {
+                for ((index, element) in elements.withIndex()) {
                     append(serializer.encodeToString(element))
-                    append(",")
+                    if (index < elements.lastIndex || addTrailingComma) {
+                        append(",")
+                    }
                 }
                 append("]")
             } to DecodeSequenceMode.ARRAY_WRAPPED
@@ -175,6 +179,22 @@ object JsonTests {
             if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
                 && e.message.orEmpty().startsWith("Unexpected special floating-point value")
                 && !serializer.configuration.allowSpecialFloatingPointValues
+            ) {
+                // nothing
+            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+                    && e.message.orEmpty().startsWith("Expected JsonObject, but had JsonArray as the serialized body")
+                    && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
+            ) {
+                // nothing
+            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+                && e.message.orEmpty().startsWith("Expected start of the array '[', but had 'EOF' instead at path:")
+                && encodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED && decodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                // nothing
+            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty().contains("Trailing comma before the end of JSON array at path:")
+                && !serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
             ) {
                 // nothing
             } else {
