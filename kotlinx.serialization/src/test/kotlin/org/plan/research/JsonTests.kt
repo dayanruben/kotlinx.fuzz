@@ -21,9 +21,6 @@ import kotlin.test.assertTrue
  */
 
 object JsonTests {
-    private const val MAX_JSON_DEPTH = 10
-    private const val MAX_STR_LENGTH = 100
-
     private val whiteSpaces = listOf(' ', '\n', '\t', '\r')
 
     private fun isJsonDecodingException(e: Throwable): Boolean =

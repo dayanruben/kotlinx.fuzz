@@ -7,3 +7,4 @@ org.plan.research.JsonTests.sequenceParsing
 org.plan.research.CborTests.cborParseByteArray
 org.plan.research.CborTests.cborEncodeString
 org.plan.research.CborTests.cborEncodeAndDecode
+org.plan.research.PropertiesTest.propertiesEncodeAndDecode

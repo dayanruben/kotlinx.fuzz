@@ -9,8 +9,6 @@ import kotlinx.serialization.encodeToByteArray
 import kotlin.test.assertEquals
 
 object CborTests {
-    private const val MAX_STR_LENGTH = 100
-
     private fun isCborDecodingException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.cbor.internal.CborDecodingException"
 
