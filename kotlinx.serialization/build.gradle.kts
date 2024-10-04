@@ -27,6 +27,8 @@ tasks.named<Test>("test") {
     useJUnitPlatform()
     testLogging.showStandardStreams = true // adds more info to logs
 
+    environment(mapOf("JAZZER_FUZZ" to "1"))
+
     maxHeapSize = "${1024 * 4}m"
     jvmArgs("-Xss1g")
 }

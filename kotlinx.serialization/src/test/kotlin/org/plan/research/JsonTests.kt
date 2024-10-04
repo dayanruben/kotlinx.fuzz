@@ -24,24 +24,43 @@ object JsonTests {
     private const val MAX_JSON_DEPTH = 10
     private const val MAX_STR_LENGTH = 100
 
-    fun isJsonDecodingException(e: Throwable): Boolean =
+    private fun isJsonDecodingException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
 
-    fun isJsonEncodingException(e: Throwable): Boolean =
+    private fun isJsonEncodingException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
 
-    fun isSpecialFloatingPointValueException(serializer: Json, e: Throwable): Boolean =
+    private fun isSpecialFloatingPointValueException(serializer: Json, e: Throwable): Boolean =
         (isJsonDecodingException(e) || isJsonEncodingException(e))
                 && e.message.orEmpty().startsWith("Unexpected special floating-point value")
                 && !serializer.configuration.allowSpecialFloatingPointValues
 
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun FuzzedDataProvider.jsonSerializer(): Json = Json {
+        encodeDefaults = consumeBoolean()
+        ignoreUnknownKeys = consumeBoolean()
+        isLenient = consumeBoolean()
+        allowStructuredMapKeys = consumeBoolean()
+        prettyPrint = consumeBoolean()
+        explicitNulls = consumeBoolean()
+        prettyPrintIndent = consumeString(MAX_STR_LENGTH)
+        coerceInputValues = consumeBoolean()
+        useArrayPolymorphism = consumeBoolean()
+        classDiscriminator = consumeString(MAX_STR_LENGTH)
+        allowSpecialFloatingPointValues = consumeBoolean()
+        useAlternativeNames = consumeBoolean()
+        namingStrategy = if (consumeBoolean()) JsonNamingStrategy.KebabCase else JsonNamingStrategy.SnakeCase
+        decodeEnumsCaseInsensitive = consumeBoolean()
+        allowTrailingComma = consumeBoolean()
+        allowComments = consumeBoolean()
+    }
 
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun stringParsing(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer()
         val jsonString = data.consumeRemainingAsAsciiString()
         val str: String
         try {
-            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
             val element: Any = when {
                 data.consumeBoolean() -> serializer.parseToJsonElement(jsonString)
                 else -> serializer.decodeFromString<Value>(jsonString)
@@ -55,12 +74,12 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonParsing(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer()
         val jsonString = generateJson(data)
         val str: String
         try {
-            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
             val element = serializer.parseToJsonElement(jsonString)
             str = serializer.encodeToString(element)
         } catch (e: SerializationException) {
@@ -70,10 +89,10 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer()
         val value = data.generateValue(MAX_STR_LENGTH)
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
         try {
             val json = serializer.encodeToString(value)
             val decoded = serializer.decodeFromString<Value>(json)
@@ -87,9 +106,9 @@ object JsonTests {
         }
     }
 
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        val serializer = data.jsonSerializer()
         val value = data.generateValue(MAX_STR_LENGTH)
         val strValueJson = try {
             serializer.encodeToString(value)
@@ -122,9 +141,9 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun streamParsing(data: FuzzedDataProvider) {
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        val serializer = data.jsonSerializer()
         val jsonString = data.consumeRemainingAsAsciiString()
         val inputStream = ByteArrayInputStream(jsonString.toByteArray())
         val outputString = ByteArrayOutputStream()
@@ -145,14 +164,9 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun sequenceParsing(data: FuzzedDataProvider) {
-        val serializer = Json {
-            allowSpecialFloatingPointValues = data.consumeBoolean()
-            prettyPrint = data.consumeBoolean()
-            coerceInputValues = data.consumeBoolean()
-            allowTrailingComma = data.consumeBoolean()
-        }
+        val serializer = data.jsonSerializer()
         val numberOfElements = data.consumeInt(1, 100)
         val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
         val addTrailingComma = data.consumeBoolean()
@@ -286,9 +300,21 @@ object JsonTests {
     private fun isCorrect(first: Value, second: Value): Boolean = when (first) {
         NullValue -> second is NullValue && first.status == second.status && first.status == "open"
         is BooleanValue -> first == second
+        is ByteValue -> first == second
+        is CharValue -> first == second
+        is ShortValue -> first == second
         is IntValue -> first == second
+        is FloatValue -> first == second
         is LongValue -> first == second
         is DoubleValue -> first == second
+        is BooleanArrayValue -> first == second
+        is ByteArrayValue -> first == second
+        is CharArrayValue -> first == second
+        is ShortArrayValue -> first == second
+        is IntArrayValue -> first == second
+        is FloatArrayValue -> first == second
+        is LongArrayValue -> first == second
+        is DoubleArrayValue -> first == second
         is ArrayValue -> second is ArrayValue && first.value.size == second.value.size && first.value.zip(second.value)
             .all { isCorrect(it.first, it.second) } && first.status == second.status && first.status == "open"
 

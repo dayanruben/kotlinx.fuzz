@@ -11,10 +11,22 @@ import kotlinx.serialization.json.JsonNames
 private val CLASSES = listOf(
     NullValue::class,
     BooleanValue::class,
+    ByteValue::class,
+    CharValue::class,
+    ShortValue::class,
     IntValue::class,
     LongValue::class,
+    FloatValue::class,
     DoubleValue::class,
     StringValue::class,
+    BooleanArrayValue::class,
+    ByteArrayValue::class,
+    CharArrayValue::class,
+    ShortArrayValue::class,
+    IntArrayValue::class,
+    LongArrayValue::class,
+    FloatArrayValue::class,
+    DoubleArrayValue::class,
     ArrayValue::class,
     ListValue::class,
     ObjectValue::class,
@@ -26,11 +38,23 @@ private val CLASSES = listOf(
 
 fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[consumeInt(0, CLASSES.lastIndex)]) {
     NullValue::class -> NullValue
+    BooleanValue::class -> BooleanValue(consumeBoolean())
+    ByteValue::class -> ByteValue(consumeByte())
+    CharValue::class -> CharValue(consumeByte().toInt().toChar())
+    ShortValue::class -> ShortValue(consumeShort())
     IntValue::class -> IntValue(consumeInt())
     LongValue::class -> LongValue(consumeLong())
-    BooleanValue::class -> BooleanValue(consumeBoolean())
+    FloatValue::class -> FloatValue(consumeFloat())
     DoubleValue::class -> DoubleValue(consumeDouble())
     StringValue::class -> StringValue(consumeRemainingAsAsciiString())
+    BooleanArrayValue::class -> BooleanArrayValue(BooleanArray(consumeInt(0, maxStrLength)) { consumeBoolean() })
+    ByteArrayValue::class -> ByteArrayValue(ByteArray(consumeInt(0, maxStrLength)) { consumeByte() })
+    CharArrayValue::class -> CharArrayValue(CharArray(consumeInt(0, maxStrLength)) { consumeByte().toInt().toChar() })
+    ShortArrayValue::class -> ShortArrayValue(ShortArray(consumeInt(0, maxStrLength)) { consumeShort() })
+    IntArrayValue::class -> IntArrayValue(IntArray(consumeInt(0, maxStrLength)) { consumeInt() })
+    LongArrayValue::class -> LongArrayValue(LongArray(consumeInt(0, maxStrLength)) { consumeLong() })
+    FloatArrayValue::class -> FloatArrayValue(FloatArray(consumeInt(0, maxStrLength)) { consumeFloat() })
+    DoubleArrayValue::class -> DoubleArrayValue(DoubleArray(consumeInt(0, maxStrLength)) { consumeDouble() })
     ArrayValue::class -> ArrayValue(Array(consumeInt(0, maxStrLength)) { generateValue(maxStrLength) })
     ListValue::class -> ListValue(
         MutableList(consumeInt(0, maxStrLength)) { generateValue(maxStrLength) }
@@ -71,6 +95,7 @@ sealed class Value {
         "IS_OPEN"
     )
     var status = "open"
+    @Suppress("unused")
     val randomStr: String get() = status
 }
 
@@ -81,16 +106,156 @@ data object NullValue : Value()
 data class BooleanValue(val value: Boolean) : Value()
 
 @Serializable
+data class ByteValue(val value: Byte) : Value()
+
+@Serializable
+data class CharValue(val value: Char) : Value()
+
+@Serializable
+data class ShortValue(val value: Short) : Value()
+
+@Serializable
 data class IntValue(val value: Int) : Value()
 
 @Serializable
 data class LongValue(val value: Long) : Value()
 
 @Serializable
+data class FloatValue(val value: Float) : Value()
+
+@Serializable
 data class DoubleValue(val value: Double) : Value()
 
 @Serializable
 data class StringValue(val value: String) : Value()
+
+@Serializable
+data class BooleanArrayValue(val value: BooleanArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as BooleanArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class ByteArrayValue(val value: ByteArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ByteArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class CharArrayValue(val value: CharArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as CharArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class ShortArrayValue(val value: ShortArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as ShortArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class IntArrayValue(val value: IntArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as IntArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class LongArrayValue(val value: LongArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as LongArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class FloatArrayValue(val value: FloatArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FloatArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
+
+@Serializable
+data class DoubleArrayValue(val value: DoubleArray) : Value() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as DoubleArrayValue
+
+        return value.contentEquals(other.value)
+    }
+
+    override fun hashCode(): Int {
+        return value.contentHashCode()
+    }
+}
 
 @Serializable
 data class ArrayValue(val value: Array<Value>) : Value() {
