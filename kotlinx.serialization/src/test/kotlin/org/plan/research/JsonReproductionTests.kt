@@ -4,8 +4,8 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.ClassDiscriminatorMode
+import kotlinx.serialization.json.DecodeSequenceMode
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonNamingStrategy
 import kotlinx.serialization.json.decodeToSequence
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -32,7 +32,7 @@ object JsonReproductionTests {
             allowTrailingComma = true
         }
         val values = mutableListOf<Value>()
-        for (element in serializer.decodeToSequence<Value>(inputStream)) {
+        for (element in serializer.decodeToSequence<Value>(inputStream, DecodeSequenceMode.ARRAY_WRAPPED)) {
             values.add(element)
         }
         println(values.joinToString("\n"))
@@ -49,7 +49,7 @@ object JsonReproductionTests {
         }
         try {
             val values = mutableListOf<Value>()
-            for (element in serializer.decodeToSequence<Value>(inputStream)) {
+            for (element in serializer.decodeToSequence<Value>(inputStream, DecodeSequenceMode.ARRAY_WRAPPED)) {
                 values.add(element)
             }
             println(values.joinToString("\n"))
