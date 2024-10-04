@@ -90,7 +90,7 @@ fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[c
 @Serializable
 sealed class Value {
     @JsonNames(
-        "status",
+        "THIS_IS_STATUS",
         "STATUS",
         "IS_OPEN"
     )
