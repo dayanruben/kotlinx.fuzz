@@ -75,22 +75,7 @@ object JsonReproductionTests {
     @Test
     fun `json class descriptor name conflict`() {
         val serializer = Json {
-            encodeDefaults = false
-            ignoreUnknownKeys = true
-            isLenient = true
-            allowStructuredMapKeys = false
-            prettyPrint = true
-            explicitNulls = true
-            prettyPrintIndent = "\n"
-            coerceInputValues = true
-            useArrayPolymorphism = false
             classDiscriminator = "THIS_IS_STATUS"
-            allowSpecialFloatingPointValues = false
-            useAlternativeNames = false
-            namingStrategy = JsonNamingStrategy.SnakeCase
-            decodeEnumsCaseInsensitive = true
-            allowTrailingComma = true
-            allowComments = false
             classDiscriminatorMode = ClassDiscriminatorMode.POLYMORPHIC
         }
         val value: Value = CompositeNullableValue(
