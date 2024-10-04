@@ -3,15 +3,14 @@ package org.plan.research
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.DecodeSequenceMode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeToSequence
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-@OptIn(ExperimentalSerializationApi::class)
 object JsonReproductionTests {
+    @OptIn(ExperimentalSerializationApi::class)
     @Test
     fun `json decode sequence cant parse array of enums with trailing comma`() {
         val string = """[{
@@ -38,6 +37,7 @@ object JsonReproductionTests {
         println(values.joinToString("\n"))
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     @Test
     fun `json decode sequence fails with wrong message because of trailing comma`() {
         val string = """[{
@@ -76,7 +76,6 @@ object JsonReproductionTests {
     fun `json class descriptor name conflict`() {
         val serializer = Json {
             classDiscriminator = "THIS_IS_STATUS"
-            classDiscriminatorMode = ClassDiscriminatorMode.POLYMORPHIC
         }
         val value: Value = CompositeNullableValue(
             StringValue("foo"),
