@@ -7,6 +7,7 @@ import kotlinx.serialization.json.DecodeSequenceMode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeToSequence
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 object JsonReproductionTests {
@@ -16,25 +17,19 @@ object JsonReproductionTests {
         val string = """[{
     "type": "org.plan.research.EnumValue",
     "value": "SIXTH"
-},{
-    "type": "org.plan.research.EnumValue",
-    "value": "SEVENTH"
-},{
-    "type": "org.plan.research.EnumValue",
-    "value": "FIFTH"
-},{
-    "type": "org.plan.research.EnumValue",
-    "value": "SECOND"
 },]"""
         val inputStream = string.byteInputStream()
         val serializer = Json {
             allowTrailingComma = true
         }
+        // works OK
+        val directlyDecodedList = serializer.decodeFromString<List<Value>>(string)
+        // `decodeToSequence` fails with `kotlinx.serialization.json.internal.JsonDecodingException`
         val values = mutableListOf<Value>()
         for (element in serializer.decodeToSequence<Value>(inputStream, DecodeSequenceMode.ARRAY_WRAPPED)) {
             values.add(element)
         }
-        println(values.joinToString("\n"))
+        assertEquals(directlyDecodedList, values)
     }
 
     @OptIn(ExperimentalSerializationApi::class)
@@ -54,22 +49,14 @@ object JsonReproductionTests {
             }
             println(values.joinToString("\n"))
         } catch (e: SerializationException) {
+            // Fails with "Unexpected JSON token at offset 47: Cannot read Json element because of unexpected end of the array ']'"
+            // error message
             assertTrue {
                 e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
                     && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
                     && e.message.orEmpty().contains("Trailing comma before the end of JSON array at path:")
             }
         }
-    }
-
-    @Test
-    fun `json name conflict`() {
-        val serializer = Json {
-            classDiscriminator = "third"
-        }
-        val value: Value = CompositeNullableValue(IntValue(0), IntValue(0), IntValue(0))
-        val str = serializer.encodeToString(value)
-        println(str)
     }
 
     @Test
@@ -85,6 +72,9 @@ object JsonReproductionTests {
         val str = serializer.encodeToString(value)
         val decodedValue = serializer.decodeFromString<Value>(str)
         assertTrue { value == decodedValue }
+        // value.status == "open"
+        // decodedValue.status == "org.plan.research.CompositeNullableValue"
+        // test fail
         assertTrue { value.status == decodedValue.status }
     }
 }

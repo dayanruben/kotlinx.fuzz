@@ -54,7 +54,8 @@ object CborReproductionTests {
         val serializer = Cbor {
             ignoreUnknownKeys = true
         }
-        val value = serializer.decodeFromByteArray<Value>(byteArray)
-        println(value)
+        assertThrows<SerializationException> {
+            serializer.decodeFromByteArray<Value>(byteArray)
+        }
     }
 }
