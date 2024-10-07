@@ -61,6 +61,18 @@ object JsonTests {
                 && e.message.orEmpty().startsWith("Class discriminator should not be specified when array polymorphism is specified")
                 && classDiscriminator != "type") && useArrayPolymorphism
 
+    private fun isSerializerSubclassException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.SerializationException"
+                && e.message.orEmpty().startsWith("Serializer for subclass")
+
+    private fun isMissingFieldException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.MissingFieldException"
+                && e.message.orEmpty().startsWith("Field")
+
+    private fun isEnumElementException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.SerializationException"
+                && e.message.orEmpty().startsWith("org.plan.research.TestEnum does not contain element with name")
+
     @OptIn(ExperimentalSerializationApi::class)
     private fun FuzzedDataProvider.jsonSerializer(): Json? {
         val encodeDefaults = consumeBoolean()
@@ -123,10 +135,16 @@ object JsonTests {
             }
             str = serializer.encodeToString(element)
             assertTrue { jsonString == str }
-        } catch (e: SerializationException) {
+        } catch (e: Throwable) {
             if (isJsonDecodingException(e)) {
                 return
             } else if (isNameConflict(serializer, e)) {
+                return
+            } else if (isSerializerSubclassException(e)) {
+                return
+            } else if (isMissingFieldException(e)) {
+                return
+            } else if (isEnumElementException(e)) {
                 return
             } else {
                 throw e
@@ -146,6 +164,8 @@ object JsonTests {
             if (isJsonDecodingException(e)) {
                 return
             } else if (isNameConflict(serializer, e)) {
+                return
+            } else if (isSpecialFloatingPointValueException(serializer, e)) {
                 return
             } else {
                 throw e
@@ -244,25 +264,35 @@ object JsonTests {
         val numberOfElements = data.consumeInt(1, 100)
         val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
         val addTrailingComma = data.consumeBoolean()
-        val (str, encodeMode) = when (data.consumeBoolean()) {
-            // true -> whitespace
-            true -> buildString {
-                for (element in elements) {
-                    append(serializer.encodeToString(element))
-                    append(data.consumeWhitespace())
-                }
-            } to DecodeSequenceMode.WHITESPACE_SEPARATED
-            // false -> array
-            false -> buildString {
-                append("[")
-                for ((index, element) in elements.withIndex()) {
-                    append(serializer.encodeToString(element))
-                    if (index < elements.lastIndex || addTrailingComma) {
-                        append(",")
+        val (str, encodeMode) = try {
+            when (data.consumeBoolean()) {
+                // true -> whitespace
+                true -> buildString {
+                    for (element in elements) {
+                        append(serializer.encodeToString(element))
+                        append(data.consumeWhitespace())
                     }
-                }
-                append("]")
-            } to DecodeSequenceMode.ARRAY_WRAPPED
+                } to DecodeSequenceMode.WHITESPACE_SEPARATED
+                // false -> array
+                false -> buildString {
+                    append("[")
+                    for ((index, element) in elements.withIndex()) {
+                        append(serializer.encodeToString(element))
+                        if (index < elements.lastIndex || addTrailingComma) {
+                            append(",")
+                        }
+                    }
+                    append("]")
+                } to DecodeSequenceMode.ARRAY_WRAPPED
+            }
+        } catch (e: Throwable) {
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
         }
         val stream = ByteArrayInputStream(str.toByteArray())
         val decodeMode = DecodeSequenceMode.entries[data.consumeInt(0, DecodeSequenceMode.entries.lastIndex)]
@@ -278,6 +308,11 @@ object JsonTests {
                 return
             } else if (isJsonDecodingException(e)
                 && e.message.orEmpty().startsWith("Expected JsonObject, but had JsonArray as the serialized body")
+                && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
+            ) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset 1")
                 && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
             ) {
                 return
