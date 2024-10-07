@@ -1,0 +1,3 @@
+org.plan.research.ProtobufTests.protoBufEncodeToByteArray
+org.plan.research.ProtobufTests.protoBufDecodeFromByteArray
+org.plan.research.ProtobufTests.protoBufEncodeDecode
