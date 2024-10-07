@@ -148,6 +148,8 @@ CBOR bugs are mainly due to unhandled internal exceptions.
 
 ## 1\. Unhandled `IllegalStateException`
 
+Byte `126` is interpreted as "read a string of 30 characters"
+
 ```kotlin
 @Test
 fun `unhandled illegal state exception`() {
@@ -161,6 +163,8 @@ fun `unhandled illegal state exception`() {
 ```
 
 ## 2\. Unhandled `NegativeArraySizeException`
+
+Byte `40` is interpreted as an instruction to read `-9` bytes.
 
 ```kotlin
 @Test
@@ -182,9 +186,6 @@ Root of issue:
 * `ByteArrayInput` returns `-1` on read if it has reached the end of the buffer
 * `CborParser::readBytes` interprets this `-1` value as "read an indefinite number of bytes" and calls `CborParser::readIndefiniteLengthBytes` ; `CborParser::readIndefiniteLengthBytes` , meanwhile, calls `CborParser::readBytes` recursively
 
-
-
-
 ```kotlin
 @Test
 fun `unhandled stack overflow error`() {
@@ -200,6 +201,14 @@ fun `unhandled stack overflow error`() {
 ```
 
 ## 4\. Unhandled `ArrayIndexOutOfBounds`
+
+Option `ignoreUnknownKeys=true` tells the parser to skip unknown elements.
+Byte `122` at position 67 is interpreted as the start of the element and encodes its length of `-272646673`.
+In an attempt to skip this element, the parser moved to `-272646673` bytes "ahead" in `ByteArrayInput` and sets the
+current position to `-272646606`.
+
+If `ignoreUnknownKeys=false`, this will fail with
+`"kotlinx.serialization.cbor.internal.CborDecodingException: CborLabel unknown: 31 for obj(status: kotlin.String, value: kotlin.collections.LinkedHashMap)"`
 
 ```kotlin
 @Test
@@ -232,6 +241,11 @@ fun `unhandled array index oob exception`() {
 [Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization/kotlinx.serialization/src/test/kotlin/org/plan/research/PropertiesReproductionTests.kt)
 
 ## 1\. Empty primitive arrays are not serialized
+
+Empty primitive arrays are not present in any way in the encoded string.
+Documentation does not specify behaviour in that case.
+
+THe same exception can be achieved with `null` value fields, but that behaviour is documented.
 
 ```kotlin
 @OptIn(ExperimentalSerializationApi::class)
