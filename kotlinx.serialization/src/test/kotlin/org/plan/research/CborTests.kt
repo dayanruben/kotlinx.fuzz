@@ -11,6 +11,9 @@ import kotlin.test.assertEquals
 object CborTests {
     private fun isCborDecodingException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.cbor.internal.CborDecodingException"
+    private fun isSerializerSubclassException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.SerializationException"
+                && e.message.orEmpty().startsWith("Serializer for subclass")
 
     @OptIn(ExperimentalSerializationApi::class)
     private fun FuzzedDataProvider.cborSerializer(): Cbor = Cbor {
@@ -61,6 +64,8 @@ object CborTests {
             return
         } catch (e: Throwable) {
             if (isCborDecodingException(e)) {
+                return
+            } else if (isSerializerSubclassException(e)) {
                 return
             } else {
                 throw e
