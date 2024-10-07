@@ -15,7 +15,7 @@ object PropertiesTest {
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = TEST_DURATION)
     fun propertiesEncodeAndDecode(dataProvider: FuzzedDataProvider) {
-        val value = dataProvider.generateValue(MAX_STR_LENGTH)
+        val value = dataProvider.generateValue()
         val decodedValue: Value
         try {
             val strMap = Properties.encodeToStringMap<Value>(value)

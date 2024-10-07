@@ -94,7 +94,7 @@ object CborTests {
     fun cborEncodeAndDecode(dataProvider: FuzzedDataProvider) {
         try {
             val cbor = dataProvider.cborSerializer()
-            val value = dataProvider.generateValue(MAX_STR_LENGTH)
+            val value = dataProvider.generateValue()
             val json = cbor.encodeToByteArray<Value>(value)
             val decoded = cbor.decodeFromByteArray<Value>(json)
             assertEquals(value, decoded)

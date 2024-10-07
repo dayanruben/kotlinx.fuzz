@@ -176,7 +176,7 @@ object JsonTests {
     @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
         val serializer = data.jsonSerializer() ?: return
-        val value = data.generateValue(MAX_STR_LENGTH)
+        val value = data.generateValue()
         try {
             val json = serializer.encodeToString(value)
             val decoded = serializer.decodeFromString<Value>(json)
@@ -195,7 +195,7 @@ object JsonTests {
     @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
         val serializer = data.jsonSerializer() ?: return
-        val value = data.generateValue(MAX_STR_LENGTH)
+        val value = data.generateValue()
         val strValueJson = try {
             serializer.encodeToString(value)
         } catch (e: Throwable) {
@@ -208,7 +208,7 @@ object JsonTests {
             }
         }
         val newValue = CompositeNullableValue(
-            StringValue(strValueJson), data.generateValue(MAX_STR_LENGTH), data.generateValue(MAX_STR_LENGTH)
+            StringValue(strValueJson), data.generateValue(), data.generateValue()
         )
         val newValueDecoded: Value
         val strValueDecoded: Value
@@ -262,7 +262,7 @@ object JsonTests {
     fun sequenceParsing(data: FuzzedDataProvider) {
         val serializer = data.jsonSerializer() ?: return
         val numberOfElements = data.consumeInt(1, 100)
-        val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
+        val elements = MutableList(numberOfElements) { data.generateValue() }
         val addTrailingComma = data.consumeBoolean()
         val (str, encodeMode) = try {
             when (data.consumeBoolean()) {

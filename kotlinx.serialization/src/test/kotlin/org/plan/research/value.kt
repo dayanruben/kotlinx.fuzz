@@ -36,55 +36,67 @@ private val CLASSES = listOf(
     EnumValue::class,
 )
 
-fun FuzzedDataProvider.generateValue(maxStrLength: Int): Value = when (CLASSES[consumeInt(0, CLASSES.lastIndex)]) {
-    NullValue::class -> NullValue
-    BooleanValue::class -> BooleanValue(consumeBoolean())
-    ByteValue::class -> ByteValue(consumeByte())
-    CharValue::class -> CharValue(consumeByte().toInt().toChar())
-    ShortValue::class -> ShortValue(consumeShort())
-    IntValue::class -> IntValue(consumeInt())
-    LongValue::class -> LongValue(consumeLong())
-    FloatValue::class -> FloatValue(consumeFloat())
-    DoubleValue::class -> DoubleValue(consumeDouble())
-    StringValue::class -> StringValue(consumeRemainingAsAsciiString())
-    BooleanArrayValue::class -> BooleanArrayValue(BooleanArray(consumeInt(0, maxStrLength)) { consumeBoolean() })
-    ByteArrayValue::class -> ByteArrayValue(ByteArray(consumeInt(0, maxStrLength)) { consumeByte() })
-    CharArrayValue::class -> CharArrayValue(CharArray(consumeInt(0, maxStrLength)) { consumeByte().toInt().toChar() })
-    ShortArrayValue::class -> ShortArrayValue(ShortArray(consumeInt(0, maxStrLength)) { consumeShort() })
-    IntArrayValue::class -> IntArrayValue(IntArray(consumeInt(0, maxStrLength)) { consumeInt() })
-    LongArrayValue::class -> LongArrayValue(LongArray(consumeInt(0, maxStrLength)) { consumeLong() })
-    FloatArrayValue::class -> FloatArrayValue(FloatArray(consumeInt(0, maxStrLength)) { consumeFloat() })
-    DoubleArrayValue::class -> DoubleArrayValue(DoubleArray(consumeInt(0, maxStrLength)) { consumeDouble() })
-    ArrayValue::class -> ArrayValue(Array(consumeInt(0, maxStrLength)) { generateValue(maxStrLength) })
-    ListValue::class -> ListValue(
-        MutableList(consumeInt(0, maxStrLength)) { generateValue(maxStrLength) }
-    )
-
-    ObjectValue::class -> ObjectValue(
-        buildMap {
-            repeat(consumeInt(0, maxStrLength)) {
-                val key = consumeString(maxStrLength)
-                put(
-                    key,
-                    generateValue(maxStrLength)
+fun FuzzedDataProvider.generateValue(depth: Int = MAX_JSON_DEPTH): Value =
+    if (depth == 0) NullValue
+    else when (CLASSES[consumeInt(0, CLASSES.lastIndex)]) {
+        NullValue::class -> NullValue
+        BooleanValue::class -> BooleanValue(consumeBoolean())
+        ByteValue::class -> ByteValue(consumeByte())
+        CharValue::class -> CharValue(consumeByte().toInt().toChar())
+        ShortValue::class -> ShortValue(consumeShort())
+        IntValue::class -> IntValue(consumeInt())
+        LongValue::class -> LongValue(consumeLong())
+        FloatValue::class -> FloatValue(consumeFloat())
+        DoubleValue::class -> DoubleValue(consumeDouble())
+        StringValue::class -> StringValue(consumeRemainingAsAsciiString())
+        BooleanArrayValue::class -> BooleanArrayValue(
+            BooleanArray(
+                consumeInt(
+                    0,
+                    MAX_STR_LENGTH
                 )
+            ) { consumeBoolean() })
+
+        ByteArrayValue::class -> ByteArrayValue(ByteArray(consumeInt(0, MAX_STR_LENGTH)) { consumeByte() })
+        CharArrayValue::class -> CharArrayValue(CharArray(consumeInt(0, MAX_STR_LENGTH)) {
+            consumeByte().toInt().toChar()
+        })
+
+        ShortArrayValue::class -> ShortArrayValue(ShortArray(consumeInt(0, MAX_STR_LENGTH)) { consumeShort() })
+        IntArrayValue::class -> IntArrayValue(IntArray(consumeInt(0, MAX_STR_LENGTH)) { consumeInt() })
+        LongArrayValue::class -> LongArrayValue(LongArray(consumeInt(0, MAX_STR_LENGTH)) { consumeLong() })
+        FloatArrayValue::class -> FloatArrayValue(FloatArray(consumeInt(0, MAX_STR_LENGTH)) { consumeFloat() })
+        DoubleArrayValue::class -> DoubleArrayValue(DoubleArray(consumeInt(0, MAX_STR_LENGTH)) { consumeDouble() })
+        ArrayValue::class -> ArrayValue(Array(consumeInt(0, MAX_STR_LENGTH)) { generateValue(depth - 1) })
+        ListValue::class -> ListValue(
+            MutableList(consumeInt(0, MAX_STR_LENGTH)) { generateValue(depth - 1) }
+        )
+
+        ObjectValue::class -> ObjectValue(
+            buildMap {
+                repeat(consumeInt(0, MAX_STR_LENGTH)) {
+                    val key = consumeString(MAX_STR_LENGTH)
+                    put(
+                        key,
+                        generateValue(depth - 1)
+                    )
+                }
             }
-        }
-    )
+        )
 
-    CompositeNullableValue::class -> {
-        val fields = MutableList(3) {
-            if (consumeBoolean()) generateValue(maxStrLength)
-            else null
+        CompositeNullableValue::class -> {
+            val fields = MutableList(3) {
+                if (consumeBoolean()) generateValue(depth - 1)
+                else null
+            }
+            CompositeNullableValue(fields[0], fields[1], fields[2])
         }
-        CompositeNullableValue(fields[0], fields[1], fields[2])
+
+        DefaultValueNever::class -> DefaultValueNever(generateValue(depth - 1))
+        DefaultValueAlways::class -> DefaultValueAlways(generateValue(depth - 1))
+        EnumValue::class -> EnumValue(TestEnum.entries[consumeInt(0, TestEnum.entries.lastIndex)])
+        else -> error("Unexpected")
     }
-
-    DefaultValueNever::class -> DefaultValueNever(generateValue(maxStrLength))
-    DefaultValueAlways::class -> DefaultValueAlways(generateValue(maxStrLength))
-    EnumValue::class -> EnumValue(TestEnum.entries[consumeInt(0, TestEnum.entries.lastIndex)])
-    else -> error("Unexpected")
-}
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
@@ -95,6 +107,7 @@ sealed class Value {
         "IS_OPEN"
     )
     var status = "open"
+
     @Suppress("unused")
     val randomStr: String get() = status
 }
