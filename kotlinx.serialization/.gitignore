@@ -8,4 +8,4 @@ build
 
 .cifuzz-corpus
 
-src/test/resources/
+src/test/resources/org/
