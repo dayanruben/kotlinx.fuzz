@@ -13,6 +13,8 @@ object PropertiesReproductionTests {
     fun `missing field for empty primitive array`() {
         val value: Value = BooleanArrayValue(booleanArrayOf())
         val strMap = Properties.encodeToStringMap(value)
+        // Fails with
+        // "kotlinx.serialization.MissingFieldException: Field 'value' is required for type with serial name 'org.plan.research.BooleanArrayValue', but it was missing"
         val decodedValue = Properties.decodeFromStringMap<Value>(strMap)
         assertTrue { value == decodedValue }
     }
