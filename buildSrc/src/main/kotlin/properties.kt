@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 import org.gradle.api.Project
 
 fun Project.booleanProperty(name: String): Boolean? {
