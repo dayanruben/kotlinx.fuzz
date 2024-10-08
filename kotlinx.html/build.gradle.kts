@@ -12,7 +12,8 @@ dependencies {
 
     testImplementation("com.code-intelligence:jazzer-api:0.0.0-dev")
     testImplementation("com.code-intelligence:jazzer-junit:0.0.0-dev")
-
+    testImplementation("org.mockito:mockito-core:5.14.1")
+    implementation("net.bytebuddy:byte-buddy:1.15.3")
     testImplementation(kotlin("reflect"))
     implementation("org.reflections:reflections:0.10.2")
 
