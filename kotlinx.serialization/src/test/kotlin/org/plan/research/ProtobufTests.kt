@@ -21,7 +21,8 @@ fun handleIllegalArgumentException(e: IllegalArgumentException, bytes: ByteArray
     if (e.message != null &&
         (e.message == "Cannot read polymorphic value before its type token" ||
                 e.message!!.startsWith("Polymorphic value has not been read for class")) ||
-        e.message!!.matches(Regex("startIndex: .+ > endIndex: .+"))) return
+        e.message!!.matches(Regex("startIndex: .+ > endIndex: .+")) ||
+        (e.message == "Polymorphic value has not been read for class null")) return
     System.err.println(bytes.toAsciiHexString())
     throw e
 }
@@ -34,10 +35,13 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
 
     if (e.message!!.startsWith("Unexpected EOF") ||
         e.message == "Input stream is malformed: Varint too long (exceeded 64 bits)" ||
+        e.message == "Input stream is malformed: Varint too long (exceeded 32 bits)" ||
         e.message!!.endsWith("is not allowed as the protobuf field number in org.plan.research.Value, the input bytes may have been corrupted") ||
         checkCauses(e) { s -> s == "Unsupported start group or end group wire type: INVALID(-1)" } ||
         checkCauses(e) { s -> s != null && s.matches(Regex("Expected wire type .+, but found .+")) } ||
-        checkCauses(e) {s -> s != null && s.startsWith("Unexpected negative length:")}
+        checkCauses(e) { s -> s != null && s.startsWith("Unexpected negative length:") } ||
+        e.message!!.endsWith("is not allowed as the protobuf field number in org.plan.research.ProtobufMessage, the input bytes may have been corrupted") ||
+        checkCauses(e) {s -> s != null && s.endsWith("is not among valid org.plan.research.ProtobufMessage enum proto numbers") }
     ) return
 
     if (e.message!!.matches(Regex("""Serializer for subclass .+ is not found in the polymorphic scope of 'Value'.+""", RegexOption.DOT_MATCHES_ALL)) &&
@@ -91,7 +95,8 @@ object ProtobufTests {
         } catch (e: IllegalArgumentException) {
             handleIllegalArgumentException(e, bytes)
         } catch (e: IndexOutOfBoundsException) {
-            // not interesting??
+            System.err.println("[${bytes.toAsciiHexString()}]")
+            throw e
         }
     }
 
