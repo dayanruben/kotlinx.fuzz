@@ -7,8 +7,6 @@ version = VERSION
 
 repositories {
     mavenCentral()
-    maven(url = "https://maven.apal-research.com")
-    maven(url = "${project.parent!!.projectDir.absolutePath}/lib")
 }
 
 dependencies {
@@ -30,3 +28,9 @@ tasks.named<Test>("test") {
     maxHeapSize = "${1024 * 4}m"
     jvmArgs("-Xss1g")
 }
+
+task("copyDependencies", Copy::class) {
+    from(configurations.runtimeClasspath).into("${project.layout.buildDirectory.get()}/dependencies")
+}
+
+tasks.getByName("test").dependsOn("copyDependencies")
