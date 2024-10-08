@@ -4,6 +4,8 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import kotlinx.serialization.protobuf.*
 import kotlinx.serialization.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import java.lang.IndexOutOfBoundsException
 
 fun <T> FuzzedDataProvider.generateProtobufMessage(
     clazz: Class<T>,
@@ -36,13 +38,13 @@ fun <T> FuzzedDataProvider.generateProtobufMessage(
 
 
 @Serializable
-data class ListInt (val value: List<Int>)
+data class ListInt(val value: List<Int>)
 
 @Serializable
-data class MapStringInt (val value: Map<String, Int>)
+data class MapStringInt(val value: Map<String, Int>)
 
 @Serializable
-data class ProtobufMessageInt (val value: ProtobufMessage<Int>)
+data class ProtobufMessageInt(val value: ProtobufMessage<Int>)
 
 private val CLASSES = listOf(
     Int::class.java,
@@ -122,11 +124,13 @@ fun <T> FuzzedDataProvider.generateProtobufMap(
             buildMap {
                 repeat(consumeInt(0, maxStrLength)) {
                     put(
-                        consumeString(maxStrLength), ListInt(generateProtobufList(
-                            Int::class.java,
-                            maxStrLength,
-                            maxDepth - 1
-                        )) as T
+                        consumeString(maxStrLength), ListInt(
+                            generateProtobufList(
+                                Int::class.java,
+                                maxStrLength,
+                                maxDepth - 1
+                            )
+                        ) as T
                     )
                 }
             }
@@ -136,11 +140,13 @@ fun <T> FuzzedDataProvider.generateProtobufMap(
             buildMap {
                 repeat(consumeInt(0, maxStrLength)) {
                     put(
-                        consumeString(maxStrLength), MapStringInt(generateProtobufMap(
-                            Int::class.java,
-                            maxStrLength,
-                            maxDepth - 1
-                        )) as T
+                        consumeString(maxStrLength), MapStringInt(
+                            generateProtobufMap(
+                                Int::class.java,
+                                maxStrLength,
+                                maxDepth - 1
+                            )
+                        ) as T
                     )
                 }
             }
@@ -150,11 +156,13 @@ fun <T> FuzzedDataProvider.generateProtobufMap(
             buildMap {
                 repeat(consumeInt(0, maxStrLength)) {
                     put(
-                        consumeString(maxStrLength), ProtobufMessageInt(generateProtobufMessage(
-                            Int::class.java,
-                            maxStrLength,
-                            maxDepth - 1
-                        )) as T
+                        consumeString(maxStrLength), ProtobufMessageInt(
+                            generateProtobufMessage(
+                                Int::class.java,
+                                maxStrLength,
+                                maxDepth - 1
+                            )
+                        ) as T
                     )
                 }
             }
@@ -185,31 +193,37 @@ fun <T> FuzzedDataProvider.generateProtobufList(
 
         ListInt::class.java -> if (maxDepth > 0) {
             MutableList(consumeInt(0, maxStrLength)) {
-                ListInt(generateProtobufList(
-                    Int::class.java,
-                    maxStrLength,
-                    maxDepth - 1,
-                )) as T
+                ListInt(
+                    generateProtobufList(
+                        Int::class.java,
+                        maxStrLength,
+                        maxDepth - 1,
+                    )
+                ) as T
             }
         } else emptyList()
 
         MapStringInt::class.java -> if (maxDepth > 0) {
             MutableList(consumeInt(0, maxStrLength)) {
-                MapStringInt(generateProtobufMap(
-                    Int::class.java,
-                    maxStrLength,
-                    maxDepth - 1
-                )) as T
+                MapStringInt(
+                    generateProtobufMap(
+                        Int::class.java,
+                        maxStrLength,
+                        maxDepth - 1
+                    )
+                ) as T
             }
         } else emptyList()
 
         ProtobufMessageInt::class.java -> if (maxDepth > 0) {
             MutableList(consumeInt(0, maxStrLength)) {
-                ProtobufMessageInt(generateProtobufMessage(
-                    Int::class.java,
-                    maxStrLength,
-                    maxDepth - 1
-                )) as T
+                ProtobufMessageInt(
+                    generateProtobufMessage(
+                        Int::class.java,
+                        maxStrLength,
+                        maxDepth - 1
+                    )
+                ) as T
             }
         } else emptyList()
 
@@ -290,169 +304,433 @@ value class SecondOption(@ProtoNumber(COMPILE_TIME_RANDOM_17) val value: Int) : 
 object ProtobufTestsV2 {
     private const val MAX_STR_LENGTH = 10
     private const val MAX_DEPTH = 3
+    private const val MAX_DURATION = "20m"
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testInt(data: FuzzedDataProvider) {
+    @FuzzTest(maxDuration = MAX_DURATION)
+    fun protoBufEncodeToByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
+        when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
+            Int::class.java -> {
+                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            Long::class.java -> {
+                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            Float::class.java -> {
+                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            Double::class.java -> {
+                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            String::class.java -> {
+                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            Boolean::class.java -> {
+                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            TestEnum::class.java -> {
+                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            OneOfType::class.java -> {
+                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            ListInt::class.java -> {
+                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            MapStringInt::class.java -> {
+                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            ProtobufMessageInt::class.java -> {
+                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                try {
+                    serializer.encodeToByteArray(message)
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testLong(data: FuzzedDataProvider) {
+    @FuzzTest(maxDuration = MAX_DURATION)
+    fun protoBufDecodeFromByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
+        when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
+            Int::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<Int>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            Long::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<Long>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            Float::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<Float>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            Double::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<Double>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            String::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<String>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            Boolean::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<Boolean>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            TestEnum::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<TestEnum>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            OneOfType::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<OneOfType>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            ListInt::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<ListInt>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            MapStringInt::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<MapStringInt>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
+
+            ProtobufMessageInt::class.java -> {
+                val bytes = data.consumeRemainingAsBytes()
+                if (bytes.isEmpty()) return
+                try {
+                    val message = serializer.decodeFromByteArray<ProtobufMessage<ProtobufMessageInt>>(bytes)
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
+                } catch (e: SerializationException) {
+                    handleSerializationException(e, bytes)
+                } catch (e: IllegalArgumentException) {
+                    handleIllegalArgumentException(e, bytes)
+                } catch (e: IndexOutOfBoundsException) {
+                    // not interesting??
+                }
+            }
         }
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testFloat(data: FuzzedDataProvider) {
+    @FuzzTest(maxDuration = MAX_DURATION)
+    fun protoBufEncodeDecode(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+        when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
+            Int::class.java -> {
+                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testDouble(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            Long::class.java -> {
+                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testString(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            Float::class.java -> {
+                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testEnum(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            Double::class.java -> {
+                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testBoolean(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            String::class.java -> {
+                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testOneOf(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            Boolean::class.java -> {
+                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testList(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            TestEnum::class.java -> {
+                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testMap(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
-        }
-    }
+            OneOfType::class.java -> {
+                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "10s")
-    fun testProtobuf(data: FuzzedDataProvider) {
-        val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-        try {
-            serializer.encodeToByteArray(message)
-        } catch (e: /*Serialization*/Exception) {
-            // if (e.javaClass.name != "kotlinx.serialization.cbor.internal.CborDecodingException") {
-            System.err.println("[${message}]")
-            throw e
-            // }
+            ListInt::class.java -> {
+                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            MapStringInt::class.java -> {
+                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
+
+            ProtobufMessageInt::class.java -> {
+                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val bytes: ByteArray
+                try {
+                    bytes = serializer.encodeToByteArray(message)
+                    assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
+                } catch (e: Exception) {
+                    System.err.println("[${message}]")
+                    throw e
+                }
+            }
         }
     }
 }
