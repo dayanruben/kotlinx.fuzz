@@ -27,3 +27,12 @@ Our `org.plan.research.kotlinx-fuzz-submodule` plugin already declares everythin
 * `copyDependencies` task: before executing tests, Gradle will copy all your dependencies into `my-module/build/dependencies` folder
 
 When running the [`run-experiment`](./scripts/run-experiment) script you can provide jars from `my-module/build/dependencies` as `--classfile` options for JaCoCo coverage computation.
+
+3. Create a `junit-platform.properties` file in `my-module/src/test/resources/` and specify additional Jazzer options. Example:
+```
+jazzer.instrumentation_includes=your.targe.library.**
+jazzer.custom_hook_includes=your.targe.library.**
+jazzer.jazzer_fuzz=1
+jazzer.fuzz=1
+jazzer.keep_going=9999
+```
