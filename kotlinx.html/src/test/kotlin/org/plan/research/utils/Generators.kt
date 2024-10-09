@@ -1,7 +1,6 @@
 package org.plan.research.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
-import kotlinx.html.AttributeEnum
 import kotlinx.html.Tag
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -20,13 +19,12 @@ fun KClass<*>.randomFunctions(data: FuzzedDataProvider): List<KFunction<*>> {
     }
 }
 
-private fun genArg(data: FuzzedDataProvider, paramType: KType): Any? = when {
+private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any? = when {
     paramType.isMarkedNullable && data.consumeBoolean() -> null
-    paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(paramType.jvmErasure.java.enumConstants)
-    else -> when (val a = paramType.jvmErasure) {
-        Enum::class -> error("enum")
+    paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
+    paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambda(data, tref)
+    else -> when (paramType.jvmErasure) {
         String::class -> data.consumeString(10)
-        AttributeEnum::class -> data.pickValue(a.java.enumConstants)
         else -> error("Unexpected argument type: $paramType")
     }
 }
@@ -69,16 +67,9 @@ fun <T : Tag> KFunction<*>.callWithData(
     data: FuzzedDataProvider,
     tref: TRef
 ) {
-    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
-    val otherParameterTypes = parameters.slice(1 until parameters.size - 1)
-    val args = otherParameterTypes.map {
-        genArg(data, it.type)
-    }
-    val lastParamType = parameters.last().type
-    val argLast: Any? = if (lastParamType.isSubtypeOf(typeOf<Function<Unit>>())) {
-        genLambda(data, tref)
-    } else {
-        genArg(data, parameters.last().type)
-    }
-    call(receiver, *args.toTypedArray(), argLast)
+//    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
+    val args = if (parameters.size > 1) Array(parameters.size - 1) { i ->
+       genArg(data, parameters[i + 1].type , tref)
+    } else emptyArray()
+    call(receiver, *args)
 }

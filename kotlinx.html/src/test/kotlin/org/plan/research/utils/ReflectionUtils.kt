@@ -23,6 +23,7 @@ object ReflectionUtils {
     val tagToMethods: MutableMap<KClass<*>, List<KFunction<*>>>
     val consumerMethods: List<KFunction<*>>
     val tagSetters: Map<KClass<out Tag>, List<KMutableProperty.Setter<*>>>
+    val enumToValues: Map<KClass<out Enum<*>>, Array<out Enum<*>>>
 
     init {
         Tag::class.declaredFunctions.forEach { println(it) }
@@ -51,5 +52,13 @@ object ReflectionUtils {
         tagSetters = tags.associateWith {
             it.declaredMemberProperties.filterIsInstance<KMutableProperty<*>>().map { it.setter }
         }
+
+        enumToValues = getEnumToValues(ref)
+    }
+
+    fun getEnumToValues(ref: Reflections): Map<KClass<out Enum<*>>, Array<out Enum<*>>> {
+        val enumClasses = ref.getSubTypesOf(Enum::class.java).map { it.kotlin!! }
+        val map = enumClasses.associateWith { enumClass -> enumClass.java.enumConstants }
+        return map
     }
 }
