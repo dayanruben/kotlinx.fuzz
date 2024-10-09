@@ -7,3 +7,9 @@ org.plan.research.JsonTests.sequenceParsing
 org.plan.research.CborTests.cborParseByteArray
 org.plan.research.CborTests.cborEncodeString
 org.plan.research.CborTests.cborEncodeAndDecode
+org.plan.research.ProtobufTests.protoBufEncodeToByteArray
+org.plan.research.ProtobufTests.protoBufDecodeFromByteArray
+org.plan.research.ProtobufTests.protoBufEncodeDecode
+org.plan.research.ProtobufTestsV2.protoBufEncodeToByteArray
+org.plan.research.ProtobufTestsV2.protoBufDecodeFromByteArray
+org.plan.research.ProtobufTestsV2.protoBufEncodeDecode
