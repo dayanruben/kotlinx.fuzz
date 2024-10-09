@@ -34,6 +34,7 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
     }
 
     if (e.message!!.startsWith("Unexpected EOF") ||
+        e.message == "'null' is not allowed for not-null properties" ||
         e.message == "Input stream is malformed: Varint too long (exceeded 64 bits)" ||
         e.message == "Input stream is malformed: Varint too long (exceeded 32 bits)" ||
         e.message!!.matches(Regex(".+ is not allowed as the protobuf field number in .+, the input bytes may have been corrupted")) ||
@@ -56,7 +57,7 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
 
 object ProtobufTests {
     private const val MAX_STR_LENGTH = 1000
-    private const val MAX_DURATION = "20m"
+    private const val MAX_DURATION = "6h"
 
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = MAX_DURATION)

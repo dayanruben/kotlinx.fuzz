@@ -16,7 +16,6 @@ fun <T> FuzzedDataProvider.generateProtobufMessage(
         intFieldDefault = if (consumeBoolean()) consumeInt() else null,
         intFieldFixed = if (consumeBoolean()) consumeInt() else null,
         intFieldSigned = if (consumeBoolean()) consumeInt() else null,
-        longField = if (consumeBoolean()) consumeLong() else null,
         floatField = if (consumeBoolean()) consumeFloat() else null,
         doubleField = if (consumeBoolean()) consumeDouble() else null,
         stringField = if (consumeBoolean()) consumeAsciiString(maxStrLength) else null,
@@ -33,6 +32,9 @@ fun <T> FuzzedDataProvider.generateProtobufMessage(
         mapField = generateProtobufMap(clazz, maxStrLength, maxDepth - 1),
         packedMapField = generateProtobufMap(clazz, maxStrLength, maxDepth - 1),
     )
+
+    if (consumeBoolean()) res.longField = consumeLong()
+
     return res
 }
 
@@ -261,7 +263,7 @@ data class ProtobufMessage<T> @OptIn(ExperimentalSerializationApi::class) constr
     @ProtoType(ProtoIntegerType.SIGNED)
     val intFieldSigned: Int?,
     @ProtoNumber(COMPILE_TIME_RANDOM_4)
-    val longField: Long?,
+    var longField: Long? = 5,
     @ProtoNumber(COMPILE_TIME_RANDOM_5)
     val floatField: Float?,
     @ProtoNumber(COMPILE_TIME_RANDOM_6)
@@ -301,9 +303,9 @@ value class FirstOption(@ProtoNumber(COMPILE_TIME_RANDOM_16) val valueInt: Int) 
 value class SecondOption(@ProtoNumber(COMPILE_TIME_RANDOM_17) val valueDouble: Double) : OneOfType
 
 object ProtobufTestsV2 {
-    private const val MAX_STR_LENGTH = 10
-    private const val MAX_DEPTH = 3
-    private const val MAX_DURATION = "10s"
+    private const val MAX_STR_LENGTH = 1000
+    private const val MAX_DEPTH = 5
+    private const val MAX_DURATION = "6h"
 
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = MAX_DURATION)
@@ -664,7 +666,7 @@ object ProtobufTestsV2 {
     @FuzzTest(maxDuration = MAX_DURATION)
     fun protoBufEncodeDecode(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
-        when (CLASSES[7]) {//data.consumeInt(0, CLASSES.lastIndex)]) {
+        when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
             Int::class.java -> {
                 val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
                 var bytes: ByteArray? = null
@@ -765,7 +767,6 @@ object ProtobufTestsV2 {
 
             OneOfType::class.java -> {
                 val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
-                if (message.oneOfField == null || message.listField.size == 0) return
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
