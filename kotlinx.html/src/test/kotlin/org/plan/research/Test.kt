@@ -11,18 +11,26 @@ import kotlinx.html.dom.serialize
 import kotlinx.html.stream.appendHTML
 import kotlinx.html.stream.createHTML
 import org.junit.jupiter.api.Test
+import org.plan.research.Constants.MAX_DURATION
 import org.plan.research.utils.TRef
-import org.plan.research.utils.genLambda
+import org.plan.research.utils.genLambdaWithReceiver
 import org.w3c.dom.Document
 
 val EMPTY_HTML = createHTML().html {}
 
 class Bruh {
-    @FuzzTest
-    fun newMethods(data: FuzzedDataProvider) {
+    @FuzzTest(maxDuration = MAX_DURATION)
+    fun toStream(data: FuzzedDataProvider) {
         TRef.root = TRef("html")
-        val html_lambda = genLambda(data, TRef.root) as HTML.() -> Unit
-        createHTML().html(null, html_lambda)
+        val html_lambda = genLambdaWithReceiver(data, TRef.root) as HTML.() -> Unit
+        createHTML(data.consumeBoolean()).html(null, html_lambda)
+    }
+
+    @FuzzTest(maxDuration = MAX_DURATION)
+    fun toDom(data: FuzzedDataProvider) {
+        TRef.root = TRef("html")
+        val html_lambda = genLambdaWithReceiver(data, TRef.root) as HTML.() -> Unit
+        createHTMLDocument().html(null, html_lambda)
     }
 }
 

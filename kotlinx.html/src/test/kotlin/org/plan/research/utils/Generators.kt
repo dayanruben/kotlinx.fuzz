@@ -9,9 +9,10 @@ import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
-fun KClass<*>.randomFunctions(data: FuzzedDataProvider): List<KFunction<*>> {
+fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
     val num = data.consumeInt(0, 3)
     val methods = ReflectionUtils.tagToMethods[this]
+//    val methods = ReflectionUtils.tagToMethodsExp[this]
     return when {
         methods == null -> error("No methods for $this")
         methods.isEmpty() -> emptyList()
@@ -22,17 +23,19 @@ fun KClass<*>.randomFunctions(data: FuzzedDataProvider): List<KFunction<*>> {
 private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any? = when {
     paramType.isMarkedNullable && data.consumeBoolean() -> null
     paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
-    paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambda(data, tref)
+    paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(data, tref)
     else -> when (paramType.jvmErasure) {
         String::class -> data.consumeString(10)
+        Number::class -> if (data.consumeBoolean()) data.consumeLong() else data.consumeDouble()
+        Boolean::class -> data.consumeBoolean()
         else -> error("Unexpected argument type: $paramType")
     }
 }
 
 
-fun genLambda(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = {
+fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = {
     val receiver = this
-    val calls = receiver::class.randomFunctions(data)
+    val calls = receiver::class.randomCalls(data)
     calls.forEach {
         tref += it.name
         it.callWithData(receiver, data, tref.last())
@@ -68,8 +71,10 @@ fun <T : Tag> KFunction<*>.callWithData(
     tref: TRef
 ) {
 //    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
-    val args = if (parameters.size > 1) Array(parameters.size - 1) { i ->
-       genArg(data, parameters[i + 1].type , tref)
-    } else emptyArray()
+    val args = if (parameters.size > 1) {
+        Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref) }
+    } else {
+        emptyArray()
+    }
     call(receiver, *args)
 }
