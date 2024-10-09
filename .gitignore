@@ -1,1 +1,5 @@
 .idea
+run-*
+**/.gradle/**
+**/.kotlin/**
+**/__pycache__/**
