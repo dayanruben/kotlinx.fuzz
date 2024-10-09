@@ -1,6 +1,7 @@
 package org.plan.research.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import kotlinx.html.AttributeEnum
 import kotlinx.html.Tag
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -19,14 +20,16 @@ fun KClass<*>.randomFunctions(data: FuzzedDataProvider): List<KFunction<*>> {
     }
 }
 
-private fun genArg(data: FuzzedDataProvider, paramType: KType): Any? =
-    if (paramType.isMarkedNullable) {
-        null
-    } else when (paramType.jvmErasure) {
+private fun genArg(data: FuzzedDataProvider, paramType: KType): Any? = when {
+    paramType.isMarkedNullable && data.consumeBoolean() -> null
+    paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(paramType.jvmErasure.java.enumConstants)
+    else -> when (val a = paramType.jvmErasure) {
         Enum::class -> error("enum")
         String::class -> data.consumeString(10)
+        AttributeEnum::class -> data.pickValue(a.java.enumConstants)
         else -> error("Unexpected argument type: $paramType")
     }
+}
 
 
 fun genLambda(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = {
