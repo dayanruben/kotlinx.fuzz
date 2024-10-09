@@ -21,88 +21,211 @@ import kotlin.test.assertTrue
  */
 
 object JsonTests {
-    private const val MAX_JSON_DEPTH = 10
-    private const val MAX_STR_LENGTH = 100
+    private val whiteSpaces = listOf(' ', '\n', '\t', '\r')
 
-    @FuzzTest(maxDuration = "4h")
-    fun stringParsing(data: FuzzedDataProvider) {
-        val jsonString = data.consumeRemainingAsAsciiString()
-        val str: String
-        try {
-            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
-            val element: Any = when {
-                data.consumeBoolean() -> serializer.parseToJsonElement(jsonString)
-                else -> serializer.decodeFromString<Value>(jsonString)
-            }
-            str = serializer.encodeToString(element)
-            assertTrue { jsonString == str }
-        } catch (e: SerializationException) {
-            if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
-                System.err.println("\"$jsonString\"")
-                throw e
-            }
-        }
-    }
+    private fun isJsonDecodingException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException"
 
-    @FuzzTest(maxDuration = "4h")
-    fun jsonParsing(data: FuzzedDataProvider) {
-        val jsonString = generateJson(data)
-        val str: String
-        try {
-            val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
-            val element = serializer.parseToJsonElement(jsonString)
-            str = serializer.encodeToString(element)
-        } catch (e: SerializationException) {
-            if (e.javaClass.name != "kotlinx.serialization.json.internal.JsonDecodingException") {
-                System.err.println("\"$jsonString\"")
-                throw e
-            }
-        }
-    }
+    private fun isJsonEncodingException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
 
-    @FuzzTest(maxDuration = "4h")
-    fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
-        val value = data.generateValue(MAX_STR_LENGTH)
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
-        try {
-            val json = serializer.encodeToString(value)
-            val decoded = serializer.decodeFromString<Value>(json)
-            assertTrue { isCorrect(value, decoded) }
-        } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
+    private fun isIllegalArgumentException(e: Throwable): Boolean =
+        e.javaClass.name == "java.lang.IllegalArgumentException"
+
+    private fun isIllegalStateException(e: Throwable): Boolean =
+        e.javaClass.name == "java.lang.IllegalStateException"
+
+    private fun isSpecialFloatingPointValueException(serializer: Json, e: Throwable): Boolean =
+        (isJsonDecodingException(e) || isJsonEncodingException(e))
                 && e.message.orEmpty().startsWith("Unexpected special floating-point value")
                 && !serializer.configuration.allowSpecialFloatingPointValues
-            ) {
-                // nothing
+
+    private fun isNameConflict(serializer: Json, e: Throwable): Boolean =
+        isIllegalStateException(e)
+                && e.message.orEmpty().contains("because it has property name that conflicts with JSON class discriminator")
+                && serializer.configuration.classDiscriminator != "type"
+
+    private fun isPrettyPrintIndentError(e: Throwable, prettyPrintIndent: String): Boolean =
+        isIllegalArgumentException(e)
+                && e.message.orEmpty()
+            .startsWith("Only whitespace, tab, newline and carriage return are allowed as pretty print symbols")
+                && prettyPrintIndent.any { it !in whiteSpaces }
+
+    private fun isIndentConfigError(e: Throwable, prettyPrint: Boolean, prettyPrintIndent: String): Boolean =
+        (isIllegalArgumentException(e)
+                && e.message.orEmpty().startsWith("Indent should not be specified when default printing mode is used")
+                && prettyPrintIndent != "    ") && !prettyPrint
+
+    private fun isClassDiscriminatorConfigError(e: Throwable, useArrayPolymorphism: Boolean, classDiscriminator: String): Boolean =
+        (isIllegalArgumentException(e)
+                && e.message.orEmpty().startsWith("Class discriminator should not be specified when array polymorphism is specified")
+                && classDiscriminator != "type") && useArrayPolymorphism
+
+    private fun isSerializerSubclassException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.SerializationException"
+                && e.message.orEmpty().startsWith("Serializer for subclass")
+
+    private fun isMissingFieldException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.MissingFieldException"
+                && e.message.orEmpty().startsWith("Field")
+
+    private fun isEnumElementException(e: Throwable): Boolean =
+        e.javaClass.name == "kotlinx.serialization.SerializationException"
+                && e.message.orEmpty().startsWith("org.plan.research.TestEnum does not contain element with name")
+
+    @OptIn(ExperimentalSerializationApi::class)
+    private fun FuzzedDataProvider.jsonSerializer(): Json? {
+        val encodeDefaults = consumeBoolean()
+        val ignoreUnknownKeys = consumeBoolean()
+        val isLenient = consumeBoolean()
+        val allowStructuredMapKeys = consumeBoolean()
+        val prettyPrint = consumeBoolean()
+        val explicitNulls = consumeBoolean()
+        val prettyPrintIndent = consumeString(MAX_STR_LENGTH)
+        val coerceInputValues = consumeBoolean()
+        val useArrayPolymorphism = consumeBoolean()
+        val classDiscriminator = consumeString(MAX_STR_LENGTH)
+        val allowSpecialFloatingPointValues = consumeBoolean()
+        val useAlternativeNames = consumeBoolean()
+        val namingStrategy = if (consumeBoolean()) JsonNamingStrategy.KebabCase else JsonNamingStrategy.SnakeCase
+        val decodeEnumsCaseInsensitive = consumeBoolean()
+        val allowTrailingComma = consumeBoolean()
+        val allowComments = consumeBoolean()
+        return try {
+            Json {
+                this.encodeDefaults = encodeDefaults
+                this.ignoreUnknownKeys = ignoreUnknownKeys
+                this.isLenient = isLenient
+                this.allowStructuredMapKeys = allowStructuredMapKeys
+                this.prettyPrint = prettyPrint
+                this.explicitNulls = explicitNulls
+                this.prettyPrintIndent = prettyPrintIndent
+                this.coerceInputValues = coerceInputValues
+                this.useArrayPolymorphism = useArrayPolymorphism
+                this.classDiscriminator = classDiscriminator
+                this.allowSpecialFloatingPointValues = allowSpecialFloatingPointValues
+                this.useAlternativeNames = useAlternativeNames
+                this.namingStrategy = namingStrategy
+                this.decodeEnumsCaseInsensitive = decodeEnumsCaseInsensitive
+                this.allowTrailingComma = allowTrailingComma
+                this.allowComments = allowComments
+            }
+        } catch (e: Throwable) {
+            if (isPrettyPrintIndentError(e, prettyPrintIndent)) {
+                return null
+            } else if (isIndentConfigError(e, prettyPrint, prettyPrintIndent)) {
+                return null
+            } else if (isClassDiscriminatorConfigError(e, useArrayPolymorphism, classDiscriminator)) {
+                return null
             } else {
                 throw e
             }
         }
     }
 
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
+    fun stringParsing(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer() ?: return
+        val jsonString = data.consumeRemainingAsAsciiString()
+        val str: String
+        try {
+            val element: Any = when {
+                data.consumeBoolean() -> serializer.parseToJsonElement(jsonString)
+                else -> serializer.decodeFromString<Value>(jsonString)
+            }
+            str = serializer.encodeToString(element)
+            assertTrue { jsonString == str }
+        } catch (e: Throwable) {
+            if (isJsonDecodingException(e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else if (isSerializerSubclassException(e)) {
+                return
+            } else if (isMissingFieldException(e)) {
+                return
+            } else if (isEnumElementException(e)) {
+                return
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @FuzzTest(maxDuration = TEST_DURATION)
+    fun jsonParsing(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer() ?: return
+        val jsonString = generateJson(data)
+        val str: String
+        try {
+            val element = serializer.parseToJsonElement(jsonString)
+            str = serializer.encodeToString(element)
+        } catch (e: SerializationException) {
+            if (isJsonDecodingException(e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @FuzzTest(maxDuration = TEST_DURATION)
+    fun jsonEncodeAndDecode(data: FuzzedDataProvider) {
+        val serializer = data.jsonSerializer() ?: return
+        val value = data.generateValue()
+        try {
+            val json = serializer.encodeToString(value)
+            val decoded = serializer.decodeFromString<Value>(json)
+            assertTrue { isCorrect(value, decoded) }
+        } catch (e: Throwable) {
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
+        }
+    }
+
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun jsonEncodeAndDecodeNested(data: FuzzedDataProvider) {
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
-        val value = data.generateValue(MAX_STR_LENGTH)
-        val strValueJson = serializer.encodeToString(value)
+        val serializer = data.jsonSerializer() ?: return
+        val value = data.generateValue()
+        val strValueJson = try {
+            serializer.encodeToString(value)
+        } catch (e: Throwable) {
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
+        }
         val newValue = CompositeNullableValue(
-            StringValue(strValueJson), data.generateValue(MAX_STR_LENGTH), data.generateValue(MAX_STR_LENGTH)
+            StringValue(strValueJson), data.generateValue(), data.generateValue()
         )
+        val newValueDecoded: Value
+        val strValueDecoded: Value
         try {
             val newValueJson = serializer.encodeToString<Value>(newValue)
-            val newValueDecoded = serializer.decodeFromString<Value>(newValueJson)
+            newValueDecoded = serializer.decodeFromString<Value>(newValueJson)
             assertTrue { isCorrect(newValue, newValueDecoded) }
 
-            val strValueDecoded = serializer.decodeFromString<Value>(
+            strValueDecoded = serializer.decodeFromString<Value>(
                 ((newValueDecoded as CompositeNullableValue).first as StringValue).value
             )
             assertTrue { isCorrect(value, strValueDecoded) }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
-            ) {
-                // nothing
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
             } else {
                 throw e
             }
@@ -110,9 +233,9 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun streamParsing(data: FuzzedDataProvider) {
-        val serializer = Json { allowSpecialFloatingPointValues = data.consumeBoolean() }
+        val serializer = data.jsonSerializer() ?: return
         val jsonString = data.consumeRemainingAsAsciiString()
         val inputStream = ByteArrayInputStream(jsonString.toByteArray())
         val outputString = ByteArrayOutputStream()
@@ -121,13 +244,13 @@ object JsonTests {
             serializer.encodeToStream(element, outputString)
 //            assertTrue { jsonString == outputString.toString(Charsets.UTF_8.name()) }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
+            if (isSpecialFloatingPointValueException(serializer, e)
             ) {
-                // nothing
-            } else if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonDecodingException") {
-                // nothing
+                return
+            } else if (isJsonDecodingException(e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
             } else {
                 throw e
             }
@@ -135,32 +258,41 @@ object JsonTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = "4h")
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun sequenceParsing(data: FuzzedDataProvider) {
-        val serializer = Json {
-            allowSpecialFloatingPointValues = data.consumeBoolean()
-            prettyPrint = data.consumeBoolean()
-            coerceInputValues = data.consumeBoolean()
-        }
+        val serializer = data.jsonSerializer() ?: return
         val numberOfElements = data.consumeInt(1, 100)
-        val elements = MutableList(numberOfElements) { data.generateValue(MAX_STR_LENGTH) }
-        val (str, encodeMode) = when (data.consumeBoolean()) {
-            // true -> whitespace
-            true -> buildString {
-                for (element in elements) {
-                    append(serializer.encodeToString(element))
-                    append(data.consumeWhitespace())
-                }
-            } to DecodeSequenceMode.WHITESPACE_SEPARATED
-            // false -> array
-            false -> buildString {
-                append("[")
-                for (element in elements) {
-                    append(serializer.encodeToString(element))
-                    append(",")
-                }
-                append("]")
-            } to DecodeSequenceMode.ARRAY_WRAPPED
+        val elements = MutableList(numberOfElements) { data.generateValue() }
+        val addTrailingComma = data.consumeBoolean()
+        val (str, encodeMode) = try {
+            when (data.consumeBoolean()) {
+                // true -> whitespace
+                true -> buildString {
+                    for (element in elements) {
+                        append(serializer.encodeToString(element))
+                        append(data.consumeWhitespace())
+                    }
+                } to DecodeSequenceMode.WHITESPACE_SEPARATED
+                // false -> array
+                false -> buildString {
+                    append("[")
+                    for ((index, element) in elements.withIndex()) {
+                        append(serializer.encodeToString(element))
+                        if (index < elements.lastIndex || addTrailingComma) {
+                            append(",")
+                        }
+                    }
+                    append("]")
+                } to DecodeSequenceMode.ARRAY_WRAPPED
+            }
+        } catch (e: Throwable) {
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
+            } else {
+                throw e
+            }
         }
         val stream = ByteArrayInputStream(str.toByteArray())
         val decodeMode = DecodeSequenceMode.entries[data.consumeInt(0, DecodeSequenceMode.entries.lastIndex)]
@@ -172,11 +304,46 @@ object JsonTests {
                 assertTrue { element == elements[index++] }
             }
         } catch (e: Throwable) {
-            if (e.javaClass.name == "kotlinx.serialization.json.internal.JsonEncodingException"
-                && e.message.orEmpty().startsWith("Unexpected special floating-point value")
-                && !serializer.configuration.allowSpecialFloatingPointValues
+            if (isSpecialFloatingPointValueException(serializer, e)) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Expected JsonObject, but had JsonArray as the serialized body")
+                && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
             ) {
-                // nothing
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset 1")
+                && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED && decodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED
+            ) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Expected start of the array '[', but had 'EOF' instead at path:")
+                && encodeMode == DecodeSequenceMode.WHITESPACE_SEPARATED && decodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty().contains("Trailing comma before the end of JSON array at path:")
+                && !serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty().contains("Cannot read Json element because of unexpected end of the array ']'")
+                && !serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                // possibly wrong error message?
+                return
+            } else if (isJsonDecodingException(e)
+                && e.message.orEmpty().startsWith("Unexpected JSON token at offset")
+                && e.message.orEmpty()
+                    .contains("Cannot read Json element because of unexpected end of the array ']' at path")
+                && serializer.configuration.allowTrailingComma && encodeMode == DecodeSequenceMode.ARRAY_WRAPPED
+            ) {
+                // bug, see ReproductionTests.`json decode sequence cant parse array of enums`
+                return
+            } else if (isNameConflict(serializer, e)) {
+                return
             } else {
                 throw e
             }
@@ -244,9 +411,21 @@ object JsonTests {
     private fun isCorrect(first: Value, second: Value): Boolean = when (first) {
         NullValue -> second is NullValue && first.status == second.status && first.status == "open"
         is BooleanValue -> first == second
+        is ByteValue -> first == second
+        is CharValue -> first == second
+        is ShortValue -> first == second
         is IntValue -> first == second
+        is FloatValue -> first == second
         is LongValue -> first == second
         is DoubleValue -> first == second
+        is BooleanArrayValue -> first == second
+        is ByteArrayValue -> first == second
+        is CharArrayValue -> first == second
+        is ShortArrayValue -> first == second
+        is IntArrayValue -> first == second
+        is FloatArrayValue -> first == second
+        is LongArrayValue -> first == second
+        is DoubleArrayValue -> first == second
         is ArrayValue -> second is ArrayValue && first.value.size == second.value.size && first.value.zip(second.value)
             .all { isCorrect(it.first, it.second) } && first.status == second.status && first.status == "open"
 
