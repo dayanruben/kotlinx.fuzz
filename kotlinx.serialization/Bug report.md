@@ -262,7 +262,7 @@ fun `missing field for empty primitive array`() {
 
 # ProtoBuf
 
-[Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
+[Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization.protobuf/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
 
 ## 0\. Setup
 
@@ -358,4 +358,4 @@ val message = serializer.decodeFromByteArray<ProtobufMessage<ProtobufMessageInt>
 assertTrue { bytes.contentEquals(serializer.encodeToByteArray(message)) } // Fails
 ```
 
-More examples that are not handful to be places here due to their size can be found in [Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
+More examples that are not handful to be places here due to their size can be found in [Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization.protobuf/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
