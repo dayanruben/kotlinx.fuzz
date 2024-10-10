@@ -245,7 +245,7 @@ fun `unhandled array index oob exception`() {
 Empty primitive arrays are not present in any way in the encoded string.
 Documentation does not specify behaviour in that case.
 
-THe same exception can be achieved with `null` value fields, but that behaviour is documented.
+The same exception can be achieved with `null` value fields, but that behaviour is documented.
 
 ```kotlin
 @OptIn(ExperimentalSerializationApi::class)
@@ -259,3 +259,103 @@ fun `missing field for empty primitive array`() {
     assertTrue { value == decodedValue }
 }
 ```
+
+# ProtoBuf
+
+[Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
+
+## 0\. Setup
+
+We will use the following structure of a Message:
+
+```kotlin
+@Serializable
+sealed interface OneOfType
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+@JvmInline
+value class FirstOption(val valueInt: Int) : OneOfType
+
+@OptIn(ExperimentalSerializationApi::class)
+@Serializable
+@JvmInline
+value class SecondOption(val valueDouble: Double) : OneOfType
+
+@Serializable
+data class ProtobufMessage<T> @OptIn(ExperimentalSerializationApi::class) constructor(
+    @ProtoType(ProtoIntegerType.DEFAULT)
+    val intFieldDefault: Int?,
+    @ProtoType(ProtoIntegerType.FIXED)
+    val intFieldFixed: Int?,
+    @ProtoType(ProtoIntegerType.SIGNED)
+    val intFieldSigned: Int?,
+    var longField: Long? = 5,
+    val floatField: Float?,
+    val doubleField: Double?,
+    val stringField: String?,
+    val booleanField: Boolean?,
+    val listField: List<T?> = emptyList(),
+    @ProtoPacked val packedListField: List<T?> = emptyList(),
+    val mapField: Map<String, T?> = emptyMap(),
+    @ProtoPacked val packedMapField: Map<String, T?> = emptyMap(),
+    val nestedMessageField: ProtobufMessage<T>?,
+    val enumField: TestEnum?,
+    @ProtoOneOf val oneOfField: OneOfType?,
+)
+```
+It is slightly modified version of `Value`: added necessary annotations, unified types of lists and maps, added default value.
+
+## 1\. Empty messages can be decoded from various sources
+
+If we try to deserialize some strings we will get empty message even if input wasn't empty.
+
+```kotlin
+val bytes = byteArrayOf(9)
+val message = ProtoBuf.decodeFromByteArray<ProtobufMessage<Int>>(bytes)
+assertTrue { bytes.contentEquals(serializer.encodeToByteArray(message)) } // Fails
+```
+
+## 2\. Equal messages are encoded differently depending on type
+
+If we try to serialize message with default values inclusion that is based on strings and message that is based on integers, we will get different results. And it works for all non-primitive and primitive types.
+
+```kotlin
+val messageInt = ProtobufMessage<Int>(
+    intFieldDefault = null,
+    intFieldFixed = null,
+    intFieldSigned = null,
+    // longField is 5 by default
+    floatField = null,
+    doubleField = null,
+    stringField = null,
+    booleanField = null,
+    enumField = null,
+    nestedMessageField = null,
+    oneOfField = null,
+    listField = emptyList(),
+    packedListField = emptyList(),
+    mapField = emptyMap(),
+    packedMapField = emptyMap(),
+)
+
+val messageString = messageInt as ProtobufMessage<String>
+
+val serializer = ProtoBuf { encodeDefaults = true }
+val bytesForPrimitiveMessage = serializer.encodeToHexString<ProtobufMessage<Int>>(messageInt)
+val bytesForNonPrimitiveMessages = serializer.encodeToHexString<ProtobufMessage<String>>(messageString)
+assertTrue {bytesForPrimitiveMessage == bytesForNonPrimitiveMessages} // Fails
+```
+
+## 3\. Decoding-encoding transformation is not an identity
+
+For some not empty messages we can find byte sequence that will be decoded as a message that encodes into a different byte array.
+
+```kotlin
+val bytes = byteArrayOf(-30, 125, 0, 125)
+val serializer = ProtoBuf { encodeDefaults = true }
+val message = serializer.decodeFromByteArray<ProtobufMessage<ProtobufMessageInt>>(bytes)
+assertTrue { bytes.contentEquals(serializer.encodeToByteArray(message)) } // Fails
+```
+
+More examples that are not handful to be places here due to their size can be found in [Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
