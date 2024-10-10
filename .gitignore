@@ -1,9 +1,8 @@
 .idea
-.gradle
-
-.cifuzz-corpus
-*.cifuzz-corpus
-
+run-*
+**/.gradle/**
+**/.kotlin/**
+**/__pycache__/**
 
 # Interesting inputs will be backed up using scripts
-*/src/test/resources/org/plan/research/**/*Inputs
+**/src/test/resources/org/plan/research/**/*Inputs
