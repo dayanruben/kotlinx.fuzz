@@ -56,11 +56,8 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
 }
 
 object ProtobufTests {
-    private const val MAX_STR_LENGTH = 1000
-    private const val MAX_DURATION = "6h"
-
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeToByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         val message = data.generateValue(MAX_STR_LENGTH)
@@ -73,7 +70,7 @@ object ProtobufTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufDecodeFromByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         val bytes = data.consumeRemainingAsBytes()
@@ -92,7 +89,7 @@ object ProtobufTests {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeDecode(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         val message = data.generateValue(MAX_STR_LENGTH)

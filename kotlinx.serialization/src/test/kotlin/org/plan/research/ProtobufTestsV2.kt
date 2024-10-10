@@ -303,17 +303,13 @@ value class FirstOption(@ProtoNumber(COMPILE_TIME_RANDOM_16) val valueInt: Int) 
 value class SecondOption(@ProtoNumber(COMPILE_TIME_RANDOM_17) val valueDouble: Double) : OneOfType
 
 object ProtobufTestsV2 {
-    private const val MAX_STR_LENGTH = 1000
-    private const val MAX_DEPTH = 5
-    private const val MAX_DURATION = "6h"
-
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeToByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
             Int::class.java -> {
-                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -323,7 +319,7 @@ object ProtobufTestsV2 {
             }
 
             Long::class.java -> {
-                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -333,7 +329,7 @@ object ProtobufTestsV2 {
             }
 
             Float::class.java -> {
-                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -343,7 +339,7 @@ object ProtobufTestsV2 {
             }
 
             Double::class.java -> {
-                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -353,7 +349,7 @@ object ProtobufTestsV2 {
             }
 
             String::class.java -> {
-                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -363,7 +359,7 @@ object ProtobufTestsV2 {
             }
 
             Boolean::class.java -> {
-                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -373,7 +369,7 @@ object ProtobufTestsV2 {
             }
 
             TestEnum::class.java -> {
-                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -383,7 +379,7 @@ object ProtobufTestsV2 {
             }
 
             OneOfType::class.java -> {
-                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -393,7 +389,7 @@ object ProtobufTestsV2 {
             }
 
             ListInt::class.java -> {
-                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -403,7 +399,7 @@ object ProtobufTestsV2 {
             }
 
             MapStringInt::class.java -> {
-                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -413,7 +409,7 @@ object ProtobufTestsV2 {
             }
 
             ProtobufMessageInt::class.java -> {
-                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
@@ -425,7 +421,7 @@ object ProtobufTestsV2 {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufDecodeFromByteArray(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
@@ -663,12 +659,12 @@ object ProtobufTestsV2 {
     }
 
     @OptIn(ExperimentalSerializationApi::class)
-    @FuzzTest(maxDuration = MAX_DURATION)
+    @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeDecode(data: FuzzedDataProvider) {
         val serializer = ProtoBuf { encodeDefaults = data.consumeBoolean() }
         when (CLASSES[data.consumeInt(0, CLASSES.lastIndex)]) {
             Int::class.java -> {
-                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Int::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -682,7 +678,7 @@ object ProtobufTestsV2 {
             }
 
             Long::class.java -> {
-                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Long::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -696,7 +692,7 @@ object ProtobufTestsV2 {
             }
 
             Float::class.java -> {
-                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Float::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -710,7 +706,7 @@ object ProtobufTestsV2 {
             }
 
             Double::class.java -> {
-                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Double::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -724,7 +720,7 @@ object ProtobufTestsV2 {
             }
 
             String::class.java -> {
-                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(String::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -738,7 +734,7 @@ object ProtobufTestsV2 {
             }
 
             Boolean::class.java -> {
-                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(Boolean::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -752,7 +748,7 @@ object ProtobufTestsV2 {
             }
 
             TestEnum::class.java -> {
-                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(TestEnum::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -766,7 +762,7 @@ object ProtobufTestsV2 {
             }
 
             OneOfType::class.java -> {
-                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(OneOfType::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -780,7 +776,7 @@ object ProtobufTestsV2 {
             }
 
             ListInt::class.java -> {
-                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(ListInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -794,7 +790,7 @@ object ProtobufTestsV2 {
             }
 
             MapStringInt::class.java -> {
-                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(MapStringInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
@@ -808,7 +804,7 @@ object ProtobufTestsV2 {
             }
 
             ProtobufMessageInt::class.java -> {
-                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_DEPTH)
+                val message = data.generateProtobufMessage(ProtobufMessageInt::class.java, MAX_STR_LENGTH, MAX_JSON_DEPTH)
                 var bytes: ByteArray? = null
                 try {
                     bytes = serializer.encodeToByteArray(message)
