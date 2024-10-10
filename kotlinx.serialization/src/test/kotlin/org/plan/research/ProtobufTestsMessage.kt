@@ -232,59 +232,25 @@ fun <T> FuzzedDataProvider.generateProtobufList(
         else -> error("Unexpected")
     }
 
-const val COMPILE_TIME_RANDOM_0 = 1234
-const val COMPILE_TIME_RANDOM_1: Int = (COMPILE_TIME_RANDOM_0 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_2: Int = (COMPILE_TIME_RANDOM_1 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_3: Int = (COMPILE_TIME_RANDOM_2 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_4: Int = (COMPILE_TIME_RANDOM_3 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_5: Int = (COMPILE_TIME_RANDOM_4 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_6: Int = (COMPILE_TIME_RANDOM_5 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_7: Int = (COMPILE_TIME_RANDOM_6 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_8: Int = (COMPILE_TIME_RANDOM_7 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_9: Int = (COMPILE_TIME_RANDOM_8 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_10: Int = (COMPILE_TIME_RANDOM_9 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_11: Int = (COMPILE_TIME_RANDOM_10 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_12: Int = (COMPILE_TIME_RANDOM_11 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_13: Int = (COMPILE_TIME_RANDOM_12 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_14: Int = (COMPILE_TIME_RANDOM_13 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_15: Int = (COMPILE_TIME_RANDOM_14 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_16: Int = (COMPILE_TIME_RANDOM_15 * 31 + 12345) % 10007
-const val COMPILE_TIME_RANDOM_17: Int = (COMPILE_TIME_RANDOM_16 * 31 + 12345) % 10007
 
 @Serializable
 data class ProtobufMessage<T> @OptIn(ExperimentalSerializationApi::class) constructor(
-    @ProtoNumber(COMPILE_TIME_RANDOM_1)
     @ProtoType(ProtoIntegerType.DEFAULT)
     val intFieldDefault: Int?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_2)
     @ProtoType(ProtoIntegerType.FIXED)
     val intFieldFixed: Int?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_3)
     @ProtoType(ProtoIntegerType.SIGNED)
     val intFieldSigned: Int?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_4)
     var longField: Long? = 5,
-    @ProtoNumber(COMPILE_TIME_RANDOM_5)
     val floatField: Float?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_6)
     val doubleField: Double?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_7)
     val stringField: String?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_8)
     val booleanField: Boolean?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_9)
     val listField: List<T?> = emptyList(),
-    @ProtoNumber(COMPILE_TIME_RANDOM_10)
-    @ProtoPacked
-    val packedListField: List<T?> = emptyList(),
-    @ProtoNumber(COMPILE_TIME_RANDOM_11)
+    @ProtoPacked val packedListField: List<T?> = emptyList(),
     val mapField: Map<String, T?> = emptyMap(),
-    @ProtoNumber(COMPILE_TIME_RANDOM_12)
-    @ProtoPacked
-    val packedMapField: Map<String, T?> = emptyMap(),
-    @ProtoNumber(COMPILE_TIME_RANDOM_13)
+    @ProtoPacked val packedMapField: Map<String, T?> = emptyMap(),
     val nestedMessageField: ProtobufMessage<T>?,
-    @ProtoNumber(COMPILE_TIME_RANDOM_14)
     val enumField: TestEnum?,
     @ProtoOneOf val oneOfField: OneOfType?,
 )
@@ -295,14 +261,14 @@ sealed interface OneOfType
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JvmInline
-value class FirstOption(@ProtoNumber(COMPILE_TIME_RANDOM_16) val valueInt: Int) : OneOfType
+value class FirstOption(@ProtoNumber(1000) val valueInt: Int) : OneOfType
 
 @OptIn(ExperimentalSerializationApi::class)
 @Serializable
 @JvmInline
-value class SecondOption(@ProtoNumber(COMPILE_TIME_RANDOM_17) val valueDouble: Double) : OneOfType
+value class SecondOption(@ProtoNumber(1001) val valueDouble: Double) : OneOfType
 
-object ProtobufTestsV2 {
+object ProtobufTestsMessage {
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeToByteArray(data: FuzzedDataProvider) {

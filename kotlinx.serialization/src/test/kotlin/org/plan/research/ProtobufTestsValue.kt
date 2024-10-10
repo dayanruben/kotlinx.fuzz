@@ -55,7 +55,7 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
     throw e
 }
 
-object ProtobufTests {
+object ProtobufTestsValue {
     @OptIn(ExperimentalSerializationApi::class)
     @FuzzTest(maxDuration = TEST_DURATION)
     fun protoBufEncodeToByteArray(data: FuzzedDataProvider) {

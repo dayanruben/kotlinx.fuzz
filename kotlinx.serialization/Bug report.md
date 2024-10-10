@@ -313,7 +313,7 @@ If we try to deserialize some strings we will get empty message even if input wa
 ```kotlin
 val bytes = byteArrayOf(9)
 val message = ProtoBuf.decodeFromByteArray<ProtobufMessage<Int>>(bytes)
-assertTrue { bytes.contentEquals(serializer.encodeToByteArray(message)) } // Fails
+assertTrue { bytes.contentEquals(ProtoBuf.encodeToByteArray(message)) } // Fails
 ```
 
 ## 2\. Equal messages are encoded differently depending on type
@@ -356,6 +356,32 @@ val bytes = byteArrayOf(-30, 125, 0, 125)
 val serializer = ProtoBuf { encodeDefaults = true }
 val message = serializer.decodeFromByteArray<ProtobufMessage<ProtobufMessageInt>>(bytes)
 assertTrue { bytes.contentEquals(serializer.encodeToByteArray(message)) } // Fails
+```
+
+##  4\. Null cannot be assigned to a field with default value
+
+If a field has default value you can't assign null to it. Even if null is default value, even if encodeDefaults is false
+
+```kotlin
+val message = ProtobufMessage<Int>(
+    intFieldDefault = null,
+    intFieldFixed = null,
+    intFieldSigned = null,
+    longField = null, // longField is 5 by default
+    floatField = null,
+    doubleField = null,
+    stringField = null,
+    booleanField = null,
+    enumField = null,
+    nestedMessageField = null,
+    oneOfField = null,
+    listField = emptyList(),
+    packedListField = emptyList(),
+    mapField = emptyMap(),
+    packedMapField = emptyMap(),
+)
+
+assertDoesNotThrow { ProtoBuf.encodeToByteArray<ProtobufMessage<Int>>(message) } // Fails
 ```
 
 More examples that are not handful to be places here due to their size can be found in [Reproducers](https://jetbrains.team/p/plan/repositories/kotlinx.fuzz/files/kotlinx.serialization.protobuf/kotlinx.serialization/src/test/kotlin/org/plan/research/ProtoBufReproductionTests.kt)
