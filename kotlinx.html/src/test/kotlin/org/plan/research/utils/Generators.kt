@@ -10,13 +10,17 @@ import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
-    val num = data.consumeInt(0, 3)
-    val methods = ReflectionUtils.tagToMethods[this]
-//    val methods = ReflectionUtils.tagToMethodsExp[this]
+    val callsNumber = data.consumeInt(0, 3)
+    val settersNum = data.consumeInt(0, callsNumber)
+    val funNum = callsNumber - settersNum
+
+    val methods = ReflectionUtils.tagToMethods[this]!!
+    val setters = ReflectionUtils.tagToSetters[this]!!
+
     return when {
-        methods == null -> error("No methods for $this")
-        methods.isEmpty() -> emptyList()
-        else -> List(num) { data.pickValue(methods) }
+        methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
+        setters.isEmpty() -> List(funNum) { data.pickValue(methods) }
+        else -> List(settersNum) { data.pickValue(setters) } + List(funNum) { data.pickValue(methods) }
     }
 }
 
@@ -65,12 +69,12 @@ data class TRef(val tag: String, val children: MutableList<TRef> = mutableListOf
     }
 }
 
-fun <T : Tag> KFunction<*>.callWithData(
-    receiver: T,
+fun KFunction<*>.callWithData(
+    receiver: Tag,
     data: FuzzedDataProvider,
     tref: TRef
 ) {
-//    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
+    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
     val args = if (parameters.size > 1) {
         Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref) }
     } else {
