@@ -43,7 +43,7 @@ object ProtoBufReproductionTests {
         val bytesForNonPrimitiveMessages = serializer.encodeToByteArray<ProtobufMessage<String>>(messageString)
 
         assertTrue { serializer.decodeFromByteArray<ProtobufMessage<Int>>(bytesForPrimitiveMessages) ==
-                     serializer.decodeFromByteArray<ProtobufMessage<String>>(bytesForNonPrimitiveMessages) as ProtobufMessage<Int>}
+                     serializer.decodeFromByteArray<ProtobufMessage<Int>>(bytesForNonPrimitiveMessages)}
         // We expect identical messages to be encoded equally.
         // We know that they are identical since assertion on line 45 is passed
         assertTrue { bytesForPrimitiveMessages contentEquals bytesForNonPrimitiveMessages }
