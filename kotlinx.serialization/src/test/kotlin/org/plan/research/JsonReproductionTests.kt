@@ -47,7 +47,7 @@ object JsonReproductionTests {
             for (element in serializer.decodeToSequence<Value>(inputStream, DecodeSequenceMode.ARRAY_WRAPPED)) {
                 values.add(element)
             }
-            println(values.joinToString("\n"))
+            //println(values.joinToString("\n"))
         } catch (e: SerializationException) {
             // Fails with "Unexpected JSON token at offset 47: Cannot read Json element because of unexpected end of the array ']'"
             // error message
