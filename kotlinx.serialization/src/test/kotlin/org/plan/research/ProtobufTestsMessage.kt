@@ -279,7 +279,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -289,7 +289,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -299,7 +299,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -309,7 +309,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -319,7 +319,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -329,7 +329,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -339,7 +339,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -349,7 +349,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -359,7 +359,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -369,7 +369,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -379,7 +379,7 @@ object ProtobufTestsMessage {
                 try {
                     serializer.encodeToByteArray(message)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -406,8 +406,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+//                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -427,8 +427,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -448,8 +448,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -469,8 +469,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -490,8 +490,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -511,8 +511,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -532,8 +532,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -553,8 +553,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -574,8 +574,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -595,8 +595,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -616,8 +616,8 @@ object ProtobufTestsMessage {
                     //System.err.println("[${bytes.toAsciiHexString()}]")
                     //throw e
                 } catch (e: AssertionError) {
-                    System.err.println(message)
-                    System.err.println(bytes.toAsciiHexString())
+                    //System.err.println(message)
+                    //System.err.println(bytes.toAsciiHexString())
                     throw e
                 }
             }
@@ -638,7 +638,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -652,7 +652,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -666,7 +666,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -680,7 +680,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -694,7 +694,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -708,7 +708,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -722,7 +722,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -736,7 +736,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -750,7 +750,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -764,7 +764,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }
@@ -778,7 +778,7 @@ object ProtobufTestsMessage {
                 } catch (e: SerializationException) {
                     handleSerializationException(e, bytes!!)
                 } catch (e: Exception) {
-                    System.err.println("[${message}]")
+                    //System.err.println("[${message}]")
                     throw e
                 }
             }

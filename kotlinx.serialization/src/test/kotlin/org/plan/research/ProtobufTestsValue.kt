@@ -23,13 +23,13 @@ fun handleIllegalArgumentException(e: IllegalArgumentException, bytes: ByteArray
                 e.message!!.startsWith("Polymorphic value has not been read for class")) ||
         e.message!!.matches(Regex("startIndex: .+ > endIndex: .+")) ||
         (e.message == "Polymorphic value has not been read for class null")) return
-    System.err.println(bytes.toAsciiHexString())
+    //System.err.println(bytes.toAsciiHexString())
     throw e
 }
 
 fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
     if (e.message == null) {
-        System.err.println(bytes.toAsciiHexString())
+        //System.err.println(bytes.toAsciiHexString())
         throw e
     }
 
@@ -51,7 +51,7 @@ fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
 
     if (e.message!!.matches(Regex("""Serializer for subclass .+ is not found in the polymorphic scope of .+""", RegexOption.DOT_MATCHES_ALL))) return
 
-    System.err.println(bytes.toAsciiHexString())
+    //System.err.println(bytes.toAsciiHexString())
     throw e
 }
 
@@ -64,7 +64,7 @@ object ProtobufTestsValue {
         try {
             serializer.encodeToByteArray(message)
         } catch (e: Exception) {
-            System.err.println("[${message}]")
+            //System.err.println("[${message}]")
             throw e
         }
     }
@@ -98,7 +98,7 @@ object ProtobufTestsValue {
             bytes = serializer.encodeToByteArray(message)
             assertEquals(message, serializer.decodeFromByteArray<Value>(bytes))
         } catch (e: Exception) {
-            System.err.println("[${message}]")
+            //System.err.println("[${message}]")
             throw e
         }
     }
