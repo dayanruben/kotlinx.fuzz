@@ -100,6 +100,10 @@ def exec_check_targets_exist(module, targets_file, project_dir):
         exit(1)
 
 
+def exec_copy_deps(project_dir, module):
+    run_subprocess(["./gradlew", f":{module}:copyDependencies"], workdir=project_dir)
+
+
 def main(args):
     script_location = get_script_location()
     run_targets = path.join(script_location, 'run-targets')
@@ -121,6 +125,7 @@ def main(args):
                     path.join(args.experiment_dir, 'resources'))
     exec_parse_logs(args.experiment_dir, parse_logs, args.duration)
     exec_overall_stats(args.experiment_dir, overall_stats)
+    exec_copy_deps(args.project_dir, args.module)
     jacoco_merge(args.experiment_dir, jacoco)
     jacoco_execinfo(args.experiment_dir, jacoco)
     jacoco_report(args.experiment_dir, jacoco, args.classfiles)
