@@ -40,6 +40,7 @@ tasks.create<PrintTargetNames>("printTargetNames") {
 }
 
 tasks.create<CheckTargetsExist>("checkTargetsExist") {
+    dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
 }
 
