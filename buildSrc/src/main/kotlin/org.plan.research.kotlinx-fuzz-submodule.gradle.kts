@@ -13,9 +13,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("com.code-intelligence:jazzer-junit:$jazzerVersion")
     testImplementation("com.code-intelligence:jazzer-api:$jazzerVersion")
-
-    implementation(kotlin("reflect"))
-    implementation("org.reflections:reflections:0.10.2")
 }
 
 kotlin {
@@ -39,6 +36,12 @@ task("copyDependencies", Copy::class) {
 tasks.create<PrintTargetNames>("printTargetNames") {
     dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
+    outputFile.set(layout.buildDirectory.file("targets.txt"))
 }
+
+tasks.create<CheckTargetsExist>("checkTargetsExist") {
+    classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
+}
+
 
 tasks.getByName("test").dependsOn("copyDependencies")
