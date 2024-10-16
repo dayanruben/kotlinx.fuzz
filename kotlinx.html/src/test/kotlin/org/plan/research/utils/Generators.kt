@@ -2,6 +2,9 @@ package org.plan.research.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.html.Tag
+import kotlinx.html.TagConsumer
+import kotlinx.html.consumers.*
+import org.plan.research.utils.ReflectionUtils.predicateResults
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KType
@@ -18,10 +21,36 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
     val setters = ReflectionUtils.tagToSetters[this]!!
 
     return when {
+        methods.isEmpty() && setters.isEmpty() -> emptyList()
         methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
         setters.isEmpty() -> List(funNum) { data.pickValue(methods) }
         else -> List(settersNum) { data.pickValue(setters) } + List(funNum) { data.pickValue(methods) }
     }
+}
+
+
+fun <T : Any> updateTagConsumer(
+    initialConsumer: TagConsumer<T>, data: FuzzedDataProvider
+): TagConsumer<T> = when (data.consumeInt(0, 5)) {
+    0 -> initialConsumer.delayed()
+    1 -> initialConsumer.measureTime().onFinalizeMap { res, partial -> res.result }
+    2 -> initialConsumer.onFinalizeMap { res, partial -> res }
+    3 -> initialConsumer.onFinalize { res, partial -> Unit }
+    4 -> initialConsumer.filter { data.pickValue(predicateResults) }
+    5 -> initialConsumer.trace { }
+    else -> throw IllegalStateException()
+}
+
+fun <T : Any> genTagConsumer(
+    initialConsumer: TagConsumer<T>,
+    data: FuzzedDataProvider
+): TagConsumer<T> {
+    val num = data.consumeInt(0, 0)
+    var tagConsumer = initialConsumer
+    repeat(num) {
+        tagConsumer = updateTagConsumer(tagConsumer, data)
+    }
+    return tagConsumer
 }
 
 private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any? = when {
@@ -44,6 +73,16 @@ fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit 
         tref += it.name
         it.callWithData(receiver, data, tref.last())
     }
+}
+
+fun <T> genTagConsumerCall(data: FuzzedDataProvider, tref: TRef): TagConsumer<T>.() -> T {
+    val method = data.pickValue(ReflectionUtils.consumerMethodsReturnsTag)
+    val args = if (method.parameters.size > 1) {
+        Array(method.parameters.size - 1) { i -> genArg(data, method.parameters[i + 1].type, tref) }
+    } else {
+        emptyArray()
+    }
+    return { method.call(this, *args) as T }
 }
 
 data class TRef(val tag: String, val children: MutableList<TRef> = mutableListOf()) {
