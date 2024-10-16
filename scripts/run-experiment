@@ -31,8 +31,8 @@ def get_script_location():
     return script_dir
 
 
-def run_subprocess(command_list: list, env_vars=None, stdout_file=None):
-    subprocess.run(command_list, env=env_vars, stdout=stdout_file)
+def run_subprocess(command_list: list, env_vars=None, stdout_file=None, workdir=None):
+    return subprocess.run(command_list, env=env_vars, stdout=stdout_file, cwd=workdir)
 
 
 def exec_run_targets(experiment_dir, project_dir, targets_file, threads, module, run_targets):
@@ -92,6 +92,16 @@ def jacoco_report(experiment_dir, jacoco, classfiles):
     run_subprocess(command)
 
 
+def exec_check_targets_exist(module, targets_file, project_dir):
+    res = run_subprocess(
+        ["./gradlew", f":{module}:checkTargetsExist", f"--targetsList={path.abspath(targets_file)}"],
+        workdir=project_dir
+    )
+    if res.returncode != 0:
+        print("Some targets not found. Check logs", file=sys.stderr)
+        exit(1)
+
+
 def main(args):
     script_location = get_script_location()
     run_targets = path.join(script_location, 'run-targets')
@@ -107,6 +117,7 @@ def main(args):
         path.join(args.experiment_dir, "stats"),
     ])
 
+    exec_check_targets_exist(args.module, args.targets_file, args.project_dir)
     exec_run_targets(args.experiment_dir, args.project_dir, args.targets_file, args.threads, args.module, run_targets)
     shutil.copytree(path.join(args.project_dir, str(args.module or '.'), 'src', 'test', 'resources'),
                     path.join(args.experiment_dir, 'resources'))
@@ -128,9 +139,9 @@ if __name__ == '__main__':
                         help='Module of your targets. All targets must be from this module!')
     parser.add_argument('--classfiles', type=str,
                         help='Argument for jacoco report --classfiles. '
-                        'If your library is single jar, just pass path to it (you can find it in IDEA). '
-                        'If you have multiple jars, you can add this option multipls times: '
-                        '--classfile jar1 --classfile jar2',
+                             'If your library is single jar, just pass path to it (you can find it in IDEA). '
+                             'If you have multiple jars, you can add this option multipls times: '
+                             '--classfile jar1 --classfile jar2',
                         action='append')
 
     args = parser.parse_args()

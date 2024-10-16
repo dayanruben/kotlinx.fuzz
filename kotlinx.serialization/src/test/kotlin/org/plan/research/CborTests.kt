@@ -50,7 +50,7 @@ object CborTests {
                 10 -> cbor.decodeFromByteArray<List<Map<String, Value>>>(byteArray)
                 else -> null
             }
-            println(res)
+            //println(res)
         } catch (e: NegativeArraySizeException) {
             // probably a bug?
             // not interesting??
