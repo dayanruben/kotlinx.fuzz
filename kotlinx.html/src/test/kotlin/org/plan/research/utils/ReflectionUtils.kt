@@ -1,5 +1,3 @@
-@file:Suppress("UNREACHABLE_CODE")
-
 package org.plan.research.utils
 
 import kotlinx.html.HtmlTagMarker

@@ -36,8 +36,8 @@ fun <T : Any> updateTagConsumer(
     1 -> initialConsumer.measureTime().onFinalizeMap { res, partial -> res.result }
     2 -> initialConsumer.onFinalizeMap { res, partial -> res }
     3 -> initialConsumer.onFinalize { res, partial -> Unit }
-    4 -> initialConsumer.filter { data.pickValue(predicateResults) }
-    5 -> initialConsumer.trace { }
+    4 -> initialConsumer.trace { }
+    5 -> initialConsumer.filter {  data.pickValue(predicateResults) }
     else -> throw IllegalStateException()
 }
 
@@ -45,7 +45,7 @@ fun <T : Any> genTagConsumer(
     initialConsumer: TagConsumer<T>,
     data: FuzzedDataProvider
 ): TagConsumer<T> {
-    val num = data.consumeInt(0, 0)
+    val num = data.consumeInt(0, 3)
     var tagConsumer = initialConsumer
     repeat(num) {
         tagConsumer = updateTagConsumer(tagConsumer, data)

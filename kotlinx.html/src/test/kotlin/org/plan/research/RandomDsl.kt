@@ -19,6 +19,7 @@ import org.plan.research.Constants.MAX_DURATION
 import org.plan.research.utils.TRef
 import org.plan.research.utils.genTagConsumer
 import org.plan.research.utils.genTagConsumerCall
+import java.lang.reflect.InvocationTargetException
 import kotlin.test.Test
 
 val EMPTY_HTML = createHTML().html {}
@@ -26,18 +27,23 @@ val EMPTY_HTML = createHTML().html {}
 inline fun logHtmlOnException(block: () -> Unit): Unit = try {
     block()
 } catch (e: IllegalStateException) {
-//    if (e.message != "No tags were emitted") throw e
+    if (e.message != "No tags were emitted") throw e
     Unit
+} catch (e: InvocationTargetException) {
+    if (e.cause is IllegalStateException) {
+        if (e.cause?.message != "No tags were emitted") throw e.cause!!
+        Unit
+    } else {
+        throw e
+    }
 } catch (e: Throwable) {
     System.err.println(TRef.root.prettyPrint())
     throw e
 }
 
 inline fun <T : Any> common(
-    data: FuzzedDataProvider,
-    initialConsumer: TagConsumer<T>,
-    block: (T) -> Unit
-): Unit {
+    data: FuzzedDataProvider, initialConsumer: TagConsumer<T>, block: (T) -> Unit
+) {
     TRef.root = TRef("notatag")
     val consumerLambda = genTagConsumerCall<T>(data, TRef.root)
     val consumer = genTagConsumer(initialConsumer, data)
