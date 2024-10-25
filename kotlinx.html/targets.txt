@@ -3,3 +3,5 @@ org.plan.research.RandomDSL.toDomSerializeParseJsoup
 org.plan.research.RandomDSL.toDom
 org.plan.research.RandomDSL.toStreamVsToDom
 org.plan.research.RandomDSL.toStream
+
+org.plan.research.AttributeMap.randomOpsOnAttributes

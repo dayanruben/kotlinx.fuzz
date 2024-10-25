@@ -54,9 +54,15 @@ object ReflectionUtils {
                 superTypes.flatMap { tagToExactMethods[it] ?: emptyList() }.toMutableList()
         }
 
-        tagToSetters = tags.associateWithTo(hashMapOf()) {
-            it.declaredMemberProperties.filterIsInstance<KMutableProperty<*>>().map { it.setter }
+        val tagToExactSetters: HashMap<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> = tags.associateWithTo(hashMapOf()) {
+            val props = it.declaredMemberProperties.filterIsInstance<KMutableProperty<*>>()
+                .map { it.setter }
+            val ext = it.declaredMemberExtensionProperties.filterIsInstance<KMutableProperty<*>>()
+                .map { it.setter }
+            props + ext
         }
+        tagToSetters = getTagToSetters(tagToExactSetters)
+
 
         enumToValues = getEnumToValues(ref)
         val tagToMethodsExp = getTagToMethodsExp(ref)
@@ -65,6 +71,16 @@ object ReflectionUtils {
         }
 
         validate()
+    }
+
+    fun getTagToSetters(toExact: Map<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>>): Map<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> {
+        val res = hashMapOf<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>>()
+        for (tag in tags){
+            val superTypes = tags.filter { it.isSuperclassOf(tag) }
+            res[tag] =
+                superTypes.flatMap { toExact[it] ?: emptyList() }.toMutableList()
+        }
+        return res
     }
 
     @Test

@@ -11,8 +11,9 @@ import org.w3c.dom.DOMException
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
+
 object AttributeMap {
-    @FuzzTest
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun randomOpsOnAttributes(data: FuzzedDataProvider): Unit = with(data) {
         TRef.root = TRef("html")
         val consumer = genTagConsumer(createHTMLDocument(), data)
@@ -85,10 +86,10 @@ fun FuzzedDataProvider.consumePutAll(): PutAll = consumeSafeString(40)
 fun FuzzedDataProvider.consumeMapOperation(map: Map<String, String>): MapOperation {
     val operations = if (map.isEmpty()) EMPTY_MAP_OPERATIONS else MAP_OPERATIONS
 
-    return when (pickValue(operations)) {
+    return when (val v = pickValue(operations)) {
         Put::class -> Put(consumeSafeString(10), consumeSafeString(10))
         Remove::class -> Remove(consumeSafeString(10))
         PutAll::class -> consumePutAll()
-        else -> TODO()
+        else -> error("Unexpected operation: $v")
     }
 }
