@@ -3,10 +3,12 @@ package org.plan.research.utils
 import kotlinx.html.HtmlTagMarker
 import kotlinx.html.Tag
 import kotlinx.html.TagConsumer
+import kotlinx.html.body
 import kotlinx.html.consumers.PredicateResult
 import kotlinx.html.dom.createHTMLDocument
-import kotlinx.html.dom.prepend
+import kotlinx.html.form
 import kotlinx.html.html
+import kotlinx.html.passwordInput
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
@@ -29,9 +31,11 @@ object ReflectionUtils {
     val tagExtensions: List<KFunction<*>> = methods.filter {
         it.extensionReceiverParameter?.type?.isSubtypeOf(typeOf<Tag>()) == true
     }
-    val tagToMethods: MutableMap<KClass<*>, MutableList<KFunction<*>>>
-    val consumerMethodsReturnsTag: List<KFunction<*>>
-    val tagToSetters: Map<KClass<out Tag>, List<KMutableProperty.Setter<*>>>
+
+    // can't create map with both methods and setters, because can't call setters after method
+    val tagToMethods: MutableMap<KClass<out Tag>, Array<KFunction<*>>>
+    val consumerMethodsReturnsTag: Array<KFunction<*>>
+    val tagToSetters: Map<KClass<out Tag>, Array<KMutableProperty.Setter<*>>>
     val enumToValues: Map<KClass<out Enum<*>>, Array<out Enum<*>>>
     val tags: List<KClass<out Tag>> = ref.getSubTypesOf(Tag::class.java).map { it.kotlin }
     val tagNames = tags.map { it }
@@ -45,47 +49,55 @@ object ReflectionUtils {
         }
         consumerMethodsReturnsTag = methods.filter {
             it.extensionReceiverParameter?.type?.jvmErasure == TagConsumer::class
-        }
+        }.toTypedArray()
 
         tagToMethods = hashMapOf()
         tags.forEach { tag ->
             val superTypes = tags.filter { it.isSuperclassOf(tag) }
             tagToMethods[tag] =
-                superTypes.flatMap { tagToExactMethods[it] ?: emptyList() }.toMutableList()
+                superTypes.flatMap { tagToExactMethods[it] ?: emptyList() }.toTypedArray()
         }
 
-        val tagToExactSetters: HashMap<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> = tags.associateWithTo(hashMapOf()) {
-            val props = it.declaredMemberProperties.filterIsInstance<KMutableProperty<*>>()
-                .map { it.setter }
-            val ext = it.declaredMemberExtensionProperties.filterIsInstance<KMutableProperty<*>>()
-                .map { it.setter }
-            props + ext
-        }
+        val tagToExactSetters: HashMap<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> =
+            tags.associateWithTo(hashMapOf()) {
+                val props = it.declaredMemberProperties.filterIsInstance<KMutableProperty<*>>()
+                    .map { it.setter }
+                val ext =
+                    it.declaredMemberExtensionProperties.filterIsInstance<KMutableProperty<*>>()
+                        .map { it.setter }
+                props + ext
+            }
         tagToSetters = getTagToSetters(tagToExactSetters)
 
 
         enumToValues = getEnumToValues(ref)
         val tagToMethodsExp = getTagToMethodsExp(ref)
         for (tag in tags) {
-            tagToMethods[tag]!!.addAll(tagToMethodsExp[tag]!!)
+            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!).apply { shuffle() }
         }
 
+//        tagToMembers = tagToMethods + tagToSetters
         validate()
     }
 
-    fun getTagToSetters(toExact: Map<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>>): Map<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> {
-        val res = hashMapOf<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>>()
-        for (tag in tags){
+    fun getTagToSetters(toExact: Map<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>>): Map<KClass<out Tag>, Array<KMutableProperty.Setter<out Any?>>> {
+        val res = hashMapOf<KClass<out Tag>, Array<KMutableProperty.Setter<out Any?>>>()
+        for (tag in tags) {
             val superTypes = tags.filter { it.isSuperclassOf(tag) }
-            res[tag] =
-                superTypes.flatMap { toExact[it] ?: emptyList() }.toMutableList()
+            res[tag] = superTypes.flatMap { toExact[it] ?: emptyList() }.toTypedArray()
         }
         return res
     }
 
     @Test
     fun lol() {
-        createHTMLDocument().html {}.prepend {}
+        createHTMLDocument().html {
+            body {
+                form {
+                    passwordInput()
+                }
+            }
+        }
         println(ref.getMethodsReturn(Any::class.java))
     }
 

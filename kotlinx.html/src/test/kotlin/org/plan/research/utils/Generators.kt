@@ -13,9 +13,8 @@ import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
-    val callsNumber = data.consumeInt(0, 3)
-    val settersNum = data.consumeInt(0, callsNumber)
-    val funNum = callsNumber - settersNum
+    val methodsNum = data.consumeInt(0, 10)
+    val settersNum = data.consumeInt(0, 2)
 
     val methods = ReflectionUtils.tagToMethods[this]!!
     val setters = ReflectionUtils.tagToSetters[this]!!
@@ -23,8 +22,8 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
     return when {
         methods.isEmpty() && setters.isEmpty() -> emptyList()
         methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
-        setters.isEmpty() -> List(funNum) { data.pickValue(methods) }
-        else -> List(settersNum) { data.pickValue(setters) } + List(funNum) { data.pickValue(methods) }
+        setters.isEmpty() -> List(methodsNum) { data.pickValue(methods) }
+        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) { data.pickValue(methods) }
     }
 }
 
@@ -37,7 +36,7 @@ fun <T : Any> updateTagConsumer(
     2 -> initialConsumer.onFinalizeMap { res, partial -> res }
     3 -> initialConsumer.onFinalize { res, partial -> Unit }
     4 -> initialConsumer.trace { }
-    5 -> initialConsumer.filter {  data.pickValue(predicateResults) }
+    5 -> initialConsumer.filter { data.pickValue(predicateResults) }
     else -> throw IllegalStateException()
 }
 
@@ -66,7 +65,7 @@ private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any?
 }
 
 
-fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = fun (tag) {
+fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = fun(tag) {
     val calls = tag::class.randomCalls(data)
     calls.forEach {
         tref += it.name

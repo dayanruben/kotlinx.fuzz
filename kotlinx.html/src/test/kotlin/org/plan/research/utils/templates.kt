@@ -31,8 +31,17 @@ inline fun <T : Any> common(
     data: FuzzedDataProvider, initialConsumer: TagConsumer<T>, block: (T) -> Unit
 ) {
     TRef.root = TRef("notatag")
-    val consumerLambda = genTagConsumerCall<T>(data, TRef.root)
-    val consumer = genTagConsumer(initialConsumer, data)
+    val consumerLambda: TagConsumer<T>.() -> T = if (data.consumeBoolean()) {
+        genTagConsumerCall<T>(data, TRef.root)
+    } else {
+        TRef.root += "html"
+        { html { genLambdaWithReceiver(data, TRef.root.children.first()) } }
+    }
+    val consumer = if (data.consumeBoolean()) {
+        genTagConsumer(initialConsumer, data)
+    } else {
+        initialConsumer
+    }
     logHtmlOnException {
         val res = consumer.consumerLambda()
         block(res)

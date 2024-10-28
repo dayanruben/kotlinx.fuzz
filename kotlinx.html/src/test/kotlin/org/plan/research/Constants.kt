@@ -1,5 +1,5 @@
 package org.plan.research
 
 object Constants {
-    const val MAX_DURATION = "2h"
+    const val MAX_DURATION = TODO()
 }
