@@ -4,6 +4,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.html.Tag
 import kotlinx.html.TagConsumer
 import kotlinx.html.consumers.*
+import org.plan.research.Constants
 import org.plan.research.utils.ReflectionUtils.predicateResults
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -13,7 +14,7 @@ import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.typeOf
 
 fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
-    val methodsNum = data.consumeInt(0, 10)
+    val methodsNum = data.consumeInt(Constants.MIN_METHODS, Constants.MAX_METHODS)
     val settersNum = data.consumeInt(0, 2)
 
     val methods = ReflectionUtils.tagToMethods[this]!!
@@ -23,7 +24,11 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
         methods.isEmpty() && setters.isEmpty() -> emptyList()
         methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
         setters.isEmpty() -> List(methodsNum) { data.pickValue(methods) }
-        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) { data.pickValue(methods) }
+        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) {
+            data.pickValue(
+                methods
+            )
+        }
     }
 }
 
@@ -52,32 +57,43 @@ fun <T : Any> genTagConsumer(
     return tagConsumer
 }
 
-private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any? = when {
-    paramType.isMarkedNullable && data.consumeBoolean() -> null
-    paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
-    paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(data, tref)
-    else -> when (paramType.jvmErasure) {
-        String::class -> data.consumeString(10)
-        Number::class -> if (data.consumeBoolean()) data.consumeLong() else data.consumeDouble()
-        Boolean::class -> data.consumeBoolean()
-        else -> error("Unexpected argument type: $paramType")
+private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef, depth: Int): Any? =
+    when {
+        paramType.isMarkedNullable && data.consumeBoolean() -> null
+        paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
+        paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(data, tref, depth + 1)
+        else -> when (paramType.jvmErasure) {
+            String::class -> data.consumeString(10)
+            Number::class -> if (data.consumeBoolean()) data.consumeLong() else data.consumeDouble()
+            Boolean::class -> data.consumeBoolean()
+            else -> error("Unexpected argument type: $paramType")
+        }
     }
-}
 
 
-fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = fun(tag) {
-    val calls = tag::class.randomCalls(data)
-    calls.forEach {
-        tref += it.name
-        it.callWithData(tag, data, tref.last())
+fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef, depth: Int): Tag.() -> Unit =
+    fun(tag) {
+        if (depth > Constants.MAX_DEPTH) return
+
+        val calls = tag::class.randomCalls(data)
+        calls.forEach {
+            tref += it.name
+            it.callWithData(tag, data, tref.last(), depth)
+        }
     }
-}
 
 
 fun <T> genTagConsumerCall(data: FuzzedDataProvider, tref: TRef): TagConsumer<T>.() -> T {
     val method = data.pickValue(ReflectionUtils.consumerMethodsReturnsTag)
     val args = if (method.parameters.size > 1) {
-        Array(method.parameters.size - 1) { i -> genArg(data, method.parameters[i + 1].type, tref) }
+        Array(method.parameters.size - 1) { i ->
+            genArg(
+                data,
+                method.parameters[i + 1].type,
+                tref,
+                depth = 0
+            )
+        }
     } else {
         emptyArray()
     }
@@ -110,11 +126,12 @@ data class TRef(val tag: String, val children: MutableList<TRef> = mutableListOf
 fun KFunction<*>.callWithData(
     receiver: Tag,
     data: FuzzedDataProvider,
-    tref: TRef
+    tref: TRef,
+    depth: Int
 ) {
     assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
     val args = if (parameters.size > 1) {
-        Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref) }
+        Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref, depth) }
     } else {
         emptyArray()
     }
