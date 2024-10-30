@@ -17,17 +17,15 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
     val methodsNum = data.consumeInt(Constants.MIN_METHODS, Constants.MAX_METHODS)
     val settersNum = data.consumeInt(0, 2)
 
-    val methods = ReflectionUtils.tagToMethods[this]!!
-    val setters = ReflectionUtils.tagToSetters[this]!!
+    val methods = ReflectionUtils.tagToMethods[this]
+    val setters = ReflectionUtils.tagToSetters[this]
 
     return when {
-        methods.isEmpty() && setters.isEmpty() -> emptyList()
-        methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
-        setters.isEmpty() -> List(methodsNum) { data.pickValue(methods) }
+        methods == null && setters == null -> emptyList()
+        methods == null -> List(settersNum) { data.pickValue(setters) }
+        setters == null -> List(methodsNum) { data.pickValue(methods) }
         else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) {
-            data.pickValue(
-                methods
-            )
+            data.pickValue(methods)
         }
     }
 }
@@ -61,7 +59,12 @@ private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef, depth
     when {
         paramType.isMarkedNullable && data.consumeBoolean() -> null
         paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
-        paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(data, tref, depth + 1)
+        paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(
+            data,
+            tref,
+            depth + 1
+        )
+
         else -> when (paramType.jvmErasure) {
             String::class -> data.consumeString(10)
             Number::class -> if (data.consumeBoolean()) data.consumeLong() else data.consumeDouble()
