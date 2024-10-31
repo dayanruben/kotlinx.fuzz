@@ -73,7 +73,7 @@ object ReflectionUtils {
         enumToValues = getEnumToValues(ref)
         val tagToMethodsExp = getTagToMethodsExp(ref)
         for (tag in tags) {
-            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!).apply { shuffle() }
+            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!)
         }
 
 //        tagToMembers = tagToMethods + tagToSetters
