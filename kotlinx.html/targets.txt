@@ -4,6 +4,4 @@ org.plan.research.RandomDSL.toDom
 org.plan.research.RandomDSL.toStreamVsToDom
 org.plan.research.RandomDSL.toStream
 
-org.plan.research.RandomDSL.coverAll
-
 org.plan.research.AttributeMap.randomOpsOnAttributes
