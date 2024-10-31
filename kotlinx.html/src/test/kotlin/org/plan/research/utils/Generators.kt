@@ -23,7 +23,11 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
         methods.isEmpty() && setters.isEmpty() -> emptyList()
         methods.isEmpty() -> List(settersNum) { data.pickValue(setters) }
         setters.isEmpty() -> List(methodsNum) { data.pickValue(methods) }
-        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) { data.pickValue(methods) }
+        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) {
+            data.pickValue(
+                methods
+            )
+        }
     }
 }
 
@@ -112,7 +116,12 @@ fun KFunction<*>.callWithData(
     data: FuzzedDataProvider,
     tref: TRef
 ) {
-    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
+//    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
+    if (parameters.drop(1).all { it.isOptional } && data.consumeInt(0, 100) == 42) {
+        callBy(mapOf(parameters.first() to receiver))
+        return
+    }
+
     val args = if (parameters.size > 1) {
         Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref) }
     } else {

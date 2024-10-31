@@ -35,7 +35,7 @@ inline fun <T : Any> common(
         genTagConsumerCall<T>(data, TRef.root)
     } else {
         TRef.root += "html"
-        { html { genLambdaWithReceiver(data, TRef.root.children.first()) } }
+        { html { genLambdaWithReceiver(data, TRef.root.children.first())() } }
     }
     val consumer = if (data.consumeBoolean()) {
         genTagConsumer(initialConsumer, data)
