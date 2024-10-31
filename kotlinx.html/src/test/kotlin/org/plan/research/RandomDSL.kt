@@ -17,6 +17,15 @@ import kotlin.test.assertEquals
 
 object RandomDSL {
     @FuzzTest(maxDuration = MAX_DURATION)
+    fun coverAll(data: FuzzedDataProvider) {
+        val initialConsumer = createHTML(data.consumeBoolean())
+        TRef.root = TRef("html")
+        val consumerLambda: TagConsumer<String>.() -> String = { html { genLambdaWithReceiver(data, TRef.root, depth = 0)() } }
+        initialConsumer.consumerLambda()
+//        logHtmlOnException { initialConsumer.consumerLambda() }
+    }
+
+    @FuzzTest(maxDuration = MAX_DURATION)
     fun toStream(data: FuzzedDataProvider) {
         common(data, createHTML(data.consumeBoolean())) { }
     }

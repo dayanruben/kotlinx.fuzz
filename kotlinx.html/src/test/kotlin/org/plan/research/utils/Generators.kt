@@ -8,7 +8,6 @@ import org.plan.research.Constants
 import org.plan.research.utils.ReflectionUtils.predicateResults
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.KMutableProperty
 import kotlin.reflect.KType
 import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.jvm.jvmErasure
@@ -25,8 +24,9 @@ fun KClass<*>.randomCalls(data: FuzzedDataProvider): List<KFunction<*>> {
         methods == null && setters == null -> emptyList()
         methods == null -> List(settersNum) { data.pickValue(setters) }
         setters == null -> List(methodsNum) { data.pickValue(methods) }
-        else -> List(settersNum) { data.pickValue(setters) } +
-                List(methodsNum) { data.pickValue(methods) }
+        else -> List(settersNum) { data.pickValue(setters) } + List(methodsNum) {
+            data.pickValue(methods)
+        }
     }
 }
 
@@ -44,7 +44,8 @@ fun <T : Any> updateTagConsumer(
 }
 
 fun <T : Any> genTagConsumer(
-    initialConsumer: TagConsumer<T>, data: FuzzedDataProvider
+    initialConsumer: TagConsumer<T>,
+    data: FuzzedDataProvider
 ): TagConsumer<T> {
     val num = data.consumeInt(0, 3)
     var tagConsumer = initialConsumer
@@ -59,7 +60,9 @@ private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef, depth
         paramType.isMarkedNullable && data.consumeBoolean() -> null
         paramType.isSubtypeOf(typeOf<Enum<*>?>()) -> data.pickValue(ReflectionUtils.enumToValues[paramType.jvmErasure]!!)
         paramType.isSubtypeOf(typeOf<Function<Unit>>()) -> genLambdaWithReceiver(
-            data, tref, depth + 1
+            data,
+            tref,
+            depth + 1
         )
 
         else -> when (paramType.jvmErasure) {
@@ -85,18 +88,19 @@ fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef, depth: Int): Tag
 
 fun <T> genTagConsumerCall(data: FuzzedDataProvider, tref: TRef): TagConsumer<T>.() -> T {
     val method = data.pickValue(ReflectionUtils.consumerMethodsReturnsTag)
-    val args = generateArguments(method, data, tref)
-    return { method.call(this, *args) as T }
-}
-
-fun generateArguments(
-    method: KFunction<*>, data: FuzzedDataProvider, tref: TRef
-): Array<Any?> = if (method.parameters.size > 1) {
-    Array(method.parameters.size - 1) { i ->
-        genArg(data, method.parameters[i + 1].type, tref, depth = 0)
+    val args = if (method.parameters.size > 1) {
+        Array(method.parameters.size - 1) { i ->
+            genArg(
+                data,
+                method.parameters[i + 1].type,
+                tref,
+                depth = 0
+            )
+        }
+    } else {
+        emptyArray()
     }
-} else {
-    emptyArray()
+    return { method.call(this, *args) as T }
 }
 
 data class TRef(val tag: String, val children: MutableList<TRef> = mutableListOf()) {
@@ -123,12 +127,12 @@ data class TRef(val tag: String, val children: MutableList<TRef> = mutableListOf
 }
 
 fun KFunction<*>.callWithData(
-    receiver: Tag, data: FuzzedDataProvider, tref: TRef, depth: Int
+    receiver: Tag,
+    data: FuzzedDataProvider,
+    tref: TRef,
+    depth: Int
 ) {
-//    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
-    if (this !is KMutableProperty.Setter<*> && data.consumeInt(0, 100) == 42) {
-        callBy(mapOf(parameters.first() to receiver))
-    }
+    assert(parameters.first().type.isSubtypeOf(typeOf<Tag>()))
     val args = if (parameters.size > 1) {
         Array(parameters.size - 1) { i -> genArg(data, parameters[i + 1].type, tref, depth) }
     } else {

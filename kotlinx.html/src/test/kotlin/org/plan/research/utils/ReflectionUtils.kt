@@ -58,9 +58,11 @@ object ReflectionUtils {
             tagToMethods[tag] =
                 superTypes.flatMap { tagToExactMethods[it] ?: emptyList() }.toTypedArray()
         }
-
         for (tag in tags) {
-            if (tagToMethods[tag]?.isEmpty() == true) tagToMethods.remove(tag)
+            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!).apply { shuffle() }
+            if (tagToMethods[tag]!!.isEmpty()) {
+                tagToMethods.remove(tag)
+            }
         }
 
         val tagToExactSetters: HashMap<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> =
