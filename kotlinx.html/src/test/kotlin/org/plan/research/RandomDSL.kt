@@ -2,29 +2,16 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import kotlinx.html.TagConsumer
 import kotlinx.html.dom.createHTMLDocument
 import kotlinx.html.dom.serialize
-import kotlinx.html.html
 import kotlinx.html.stream.createHTML
 import org.jsoup.Jsoup
 import org.plan.research.Constants.MAX_DURATION
 import org.plan.research.utils.DoubleTagConsumer
-import org.plan.research.utils.TRef
 import org.plan.research.utils.common
-import org.plan.research.utils.genLambdaWithReceiver
 import kotlin.test.assertEquals
 
 object RandomDSL {
-    @FuzzTest(maxDuration = MAX_DURATION)
-    fun coverAll(data: FuzzedDataProvider) {
-        val initialConsumer = createHTML(data.consumeBoolean())
-        TRef.root = TRef("html")
-        val consumerLambda: TagConsumer<String>.() -> String = { html { genLambdaWithReceiver(data, TRef.root, depth = 0)() } }
-        initialConsumer.consumerLambda()
-//        logHtmlOnException { initialConsumer.consumerLambda() }
-    }
-
     @FuzzTest(maxDuration = MAX_DURATION)
     fun toStream(data: FuzzedDataProvider) {
         common(data, createHTML(data.consumeBoolean())) { }

@@ -52,17 +52,10 @@ object ReflectionUtils {
         }.toTypedArray()
 
         tagToMethods = hashMapOf()
-        val tagToMethodsExp = getTagToMethodsExp(ref)
         tags.forEach { tag ->
             val superTypes = tags.filter { it.isSuperclassOf(tag) }
             tagToMethods[tag] =
                 superTypes.flatMap { tagToExactMethods[it] ?: emptyList() }.toTypedArray()
-        }
-        for (tag in tags) {
-            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!).apply { shuffle() }
-            if (tagToMethods[tag]!!.isEmpty()) {
-                tagToMethods.remove(tag)
-            }
         }
 
         val tagToExactSetters: HashMap<KClass<out Tag>, List<KMutableProperty.Setter<out Any?>>> =
@@ -78,6 +71,10 @@ object ReflectionUtils {
 
 
         enumToValues = getEnumToValues(ref)
+        val tagToMethodsExp = getTagToMethodsExp(ref)
+        for (tag in tags) {
+            tagToMethods[tag] = (tagToMethods[tag]!! + tagToMethodsExp[tag]!!).apply { shuffle() }
+        }
 
 //        tagToMembers = tagToMethods + tagToSetters
         validate()
@@ -87,9 +84,7 @@ object ReflectionUtils {
         val res = hashMapOf<KClass<out Tag>, Array<KMutableProperty.Setter<out Any?>>>()
         for (tag in tags) {
             val superTypes = tags.filter { it.isSuperclassOf(tag) }
-            val setters = superTypes.flatMap { toExact[it] ?: emptyList() }.toTypedArray()
-            if (setters.isEmpty()) continue
-            res[tag] = setters
+            res[tag] = superTypes.flatMap { toExact[it] ?: emptyList() }.toTypedArray()
         }
         return res
     }
