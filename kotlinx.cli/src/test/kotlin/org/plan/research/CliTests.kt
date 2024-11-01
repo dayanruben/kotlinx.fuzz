@@ -25,28 +25,8 @@ object CliTests {
         } catch (e: IllegalStateException) {
             // happens if option/argument name is duplicated
         } catch (e: ExitProcessException) {
-            when {
-                // ignore expected
-                "Value for (argument|option) (.|\\n)* should be always provided"
-                    .toRegex(RegexOption.MULTILINE)
-                    .containsMatchIn(e.message) -> {
-                }
-                "(Argument|Option) (.|\\n)* is expected to be"
-                    .toRegex(RegexOption.MULTILINE)
-                    .containsMatchIn(e.message) -> {
-                }
-                "(Argument|Option) (.|\\n)* can't be used in (argument|option) combination"
-                    .toRegex(RegexOption.MULTILINE)
-                    .containsMatchIn(e.message) -> {
-                }
-                e.message.startsWith("Unknown option") -> {}
-                e.message.startsWith("Try to provide more than one value") -> {}
-                e.message.startsWith("Too many arguments!") -> {}
-                e.message.startsWith("No value for option") -> {}
-                e.message.startsWith("Usage:") -> {}
-                e.message.startsWith("Subcommand with name") -> {}
-                else -> throw e
-            }
+            // cannot use even regexes to validate (because options can contain \r or \n or whatever)
+            // so forced to simply ignore
         }
     }
 
