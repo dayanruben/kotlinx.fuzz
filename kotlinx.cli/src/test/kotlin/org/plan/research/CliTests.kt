@@ -31,7 +31,7 @@ object CliTests {
     }
 
     // returns ArgType and a default value for it
-    private fun pickArgTypeAndValue(data: FuzzedDataProvider): Pair<ArgType<Any>, Any> {
+    fun pickArgTypeAndValue(data: FuzzedDataProvider): Pair<ArgType<Any>, Any> {
         val argTypeFactories = listOf(
             { ArgType.Int to data.consumeInt() },
             { ArgType.Double to data.consumeDouble() },
@@ -48,15 +48,22 @@ object CliTests {
 
     private fun ArgParser.addOption(data: FuzzedDataProvider) {
         val (argType, defaultValue) = pickArgTypeAndValue(data)
-        option(
+        val opt = option(
             type = argType,
             fullName = data.consumeAsciiString(10),
             shortName = data.consumeAsciiString(1),
             description = data.consumeAsciiString(10)
-        ).apply {
-            if (data.consumeBoolean()) required()
-            if (data.consumeBoolean()) multiple()
-            if (data.consumeBoolean()) default(defaultValue)
+        )
+        val isRequired = data.consumeBoolean()
+        val isMultiple = data.consumeBoolean()
+        val hasDefault = data.consumeBoolean()
+        when {
+            isMultiple && hasDefault -> opt.default(defaultValue).multiple() // default + required = ?!
+            isMultiple && isRequired -> opt.multiple().required()
+            isMultiple -> opt.multiple()
+            isRequired -> opt.required()
+            hasDefault -> opt.default(defaultValue)
+            else -> {}
         }
     }
 
@@ -83,18 +90,6 @@ object CliTests {
         skipExtraArguments = data.consumeBoolean()
         strictSubcommandOptionsOrder = data.consumeBoolean()
         prefixStyle = data.pickValue(ArgParser.OptionPrefixStyle.entries)
-    }
-
-    // if parse() fails, it calls exitProcess() :|
-    private fun ArgParser.disableExitProcess() {
-        // can't avoid it with System.setSecurityManager() because it is terminally deprecated
-        // decided to use Reflection to change `internal var outputAndTerminate`
-        val newExitHandler: ExitHandler = { message, exitCode ->
-            throw ExitProcessException(message, exitCode)
-        }
-        val handlerProperty = this::class.memberProperties.find { it.name == "outputAndTerminate" }
-        @Suppress("UNCHECKED_CAST")
-        (handlerProperty as KMutableProperty1<ArgParser, ExitHandler>).set(this, newExitHandler)
     }
 
     @OptIn(ExperimentalCli::class)
@@ -148,3 +143,15 @@ object CliTests {
 
 class ExitProcessException(override val message: String, val exitCode: Int) : RuntimeException(message)
 typealias ExitHandler = (String, Int) -> Nothing
+
+// if parse() fails, it calls exitProcess() :|
+fun ArgParser.disableExitProcess() {
+    // can't avoid it with System.setSecurityManager() because it is terminally deprecated
+    // decided to use Reflection to change `internal var outputAndTerminate`
+    val newExitHandler: ExitHandler = { message, exitCode ->
+        throw ExitProcessException(message, exitCode)
+    }
+    val handlerProperty = this::class.memberProperties.find { it.name == "outputAndTerminate" }
+    @Suppress("UNCHECKED_CAST")
+    (handlerProperty as KMutableProperty1<ArgParser, ExitHandler>).set(this, newExitHandler)
+}
