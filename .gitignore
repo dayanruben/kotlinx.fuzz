@@ -3,3 +3,6 @@ run-*
 **/.gradle/**
 **/.kotlin/**
 **/__pycache__/**
+
+# Interesting inputs will be backed up using scripts
+**/src/test/resources/org/plan/research/**/*Inputs
