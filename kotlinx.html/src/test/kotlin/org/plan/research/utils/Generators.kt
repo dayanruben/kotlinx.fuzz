@@ -69,11 +69,11 @@ private fun genArg(data: FuzzedDataProvider, paramType: KType, tref: TRef): Any?
 }
 
 
-fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = fun(tag) {
-    val calls = tag::class.randomCalls(data)
+fun genLambdaWithReceiver(data: FuzzedDataProvider, tref: TRef): Tag.() -> Unit = {
+    val calls = this::class.randomCalls(data)
     calls.forEach {
         tref += it.name
-        it.callWithData(tag, data, tref.last())
+        it.callWithData(this, data, tref.last())
     }
 }
 
