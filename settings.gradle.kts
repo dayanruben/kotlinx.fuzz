@@ -1,3 +1,4 @@
 rootProject.name = "kotlinx.fuzz"
 include(":kotlinx.serialization")
-include("kotlinx.html")
+include(":kotlinx.cli")
+include(":kotlinx.html")
