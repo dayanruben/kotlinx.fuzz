@@ -12,6 +12,7 @@ import org.plan.research.utils.generateArguments
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter.Kind
 import kotlin.reflect.full.isSubclassOf
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -25,8 +26,30 @@ object RealSourceVsBuffer {
         val source = initBytes.inputStream().asSource().buffered()
         val buf: Source = Buffer().apply { write(initBytes) }
 
+        template(source, buf, data, ReflectionUtils.sourceFunctions)
+    }
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun onlyExtensions(data: FuzzedDataProvider): Unit = with(data) {
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+
+        val source = initBytes.inputStream().asSource().buffered()
+        val buf: Source = Buffer().apply { write(initBytes) }
+
+        val funs = ReflectionUtils.sourceFunctions
+            .filter { it.parameters.first().kind == Kind.EXTENSION_RECEIVER }
+            .toTypedArray()
+
+        template(source, buf, data, funs)
+    }
+
+    private fun FuzzedDataProvider.template(
+        source: Source,
+        buf: Source,
+        data: FuzzedDataProvider,
+        funs: Array<KFunction<*>>
+    ) {
         val couple = Couple(source, buf)
-        val funs: Array<KFunction<*>> = ReflectionUtils.sourceFunctions
         val ops = mutableListOf<KCallable<*>>()
         val n = consumeInt(0, 100)
         repeat(n) {
