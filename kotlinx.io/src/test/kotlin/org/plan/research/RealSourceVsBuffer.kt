@@ -15,8 +15,8 @@ import kotlin.reflect.KFunction
 object RealSourceVsBuffer {
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun randomOps(data: FuzzedDataProvider): Unit = with(data) {
-        val initBytes = data.consumeBytes(1000)
-//        val initBytes = data.consumeBytes(10)
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+
         val source = initBytes.inputStream().asSource().buffered()
         val buf: Source = Buffer().apply { write(initBytes) }
 

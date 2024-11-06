@@ -199,15 +199,15 @@ fun cloneByteBuffer(original: ByteBuffer): ByteBuffer {
     // Create clone with same capacity as original.
     val clone = if (original.isDirect())
     ByteBuffer.allocateDirect(original.capacity()) else
-    ByteBuffer.allocate(original.capacity());
+    ByteBuffer.allocate(original.capacity())
 
     // Create a read-only copy of the original.
     // This allows reading from the original without modifying it.
-    val readOnlyCopy = original.asReadOnlyBuffer();
+    val readOnlyCopy = original.asReadOnlyBuffer()
 
     // Flip and read from the original.
-    readOnlyCopy.flip();
-    clone.put(readOnlyCopy);
+    readOnlyCopy.flip()
+    clone.put(readOnlyCopy)
 
-    return clone;
+    return clone
 }
