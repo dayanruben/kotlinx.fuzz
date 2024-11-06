@@ -10,7 +10,12 @@ import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.copyArguments
 import org.plan.research.utils.generateArguments
 import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.isSubclassOf
+import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 object RealSourceVsBuffer {
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
@@ -34,3 +39,43 @@ object RealSourceVsBuffer {
         }
     }
 }
+
+class Couple<T>(val test: T, val control: T) {
+    companion object {
+        inline fun <R> runCathing(
+            catchingClass: KClass<out Throwable> = Exception::class,
+            block: () -> R
+        ): Result<R> = try {
+            Result.success(block())
+        } catch (e: Throwable) {
+            if (!e::class.isSubclassOf(catchingClass)) throw e
+            Result.failure(e)
+        }
+    }
+
+    fun <U> invokeOperation(
+        function: KCallable<U>,
+        args1: Array<*>,
+        args2: Array<*>,
+        postAssertion: (Result<U>, Result<U>) -> Unit = { testRes, controlRes ->
+            assertTrue(testRes.isSuccess == controlRes.isSuccess, "Exactly one failed")
+            if (testRes.isSuccess && controlRes.isSuccess) {
+                val testVal = testRes.getOrThrow()
+                val controlVal = controlRes.getOrThrow()
+                if (testVal == null && controlVal == null) {
+                    Unit
+                } else {
+                    if (testVal!!::class == ByteArray::class)
+                        assertContentEquals(testVal as ByteArray, controlVal as ByteArray)
+                    else
+                        assertEquals(testRes, controlRes)
+                }
+            }
+        }
+    ) {
+        val testRes = runCathing<U> { function.call(test, *args1) }
+        val controlRes = runCathing<U> { function.call(control, *args2) }
+        postAssertion(testRes, controlRes)
+    }
+}
+
