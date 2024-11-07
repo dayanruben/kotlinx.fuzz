@@ -30,6 +30,7 @@ object ReflectionUtils {
         return (extensionFunctions + memberFunctions)
             .filter { it.isPublic }
             .filterNot { it.isBadSourceFunction() }
+            .sortedBy { it.name }
             .toTypedArray()
     }
 

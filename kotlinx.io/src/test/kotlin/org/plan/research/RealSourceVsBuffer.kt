@@ -3,12 +3,15 @@ package org.plan.research
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import kotlinx.io.Buffer
+import kotlinx.io.IOException
 import kotlinx.io.Source
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.copyArguments
 import org.plan.research.utils.generateArguments
+import java.lang.reflect.InvocationTargetException
+import kotlin.random.Random
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -43,6 +46,42 @@ object RealSourceVsBuffer {
         template(source, buf, data, funs)
     }
 
+    val batches = ReflectionUtils.sourceFunctions
+        .toList()
+        .sortedBy { it.name }
+        .shuffled(Random(42))
+        .chunked(5)
+        .map { it.toTypedArray() }
+        .toTypedArray()
+
+    @FuzzTest(maxExecutions = 1)
+    fun oaoaoa(data: FuzzedDataProvider): Unit = with(data) {
+        val r = java.security.SecureRandom()
+        println(r.nextLong())
+    }
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun batched(data: FuzzedDataProvider): Unit = with(data) {
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+
+        val source = initBytes.inputStream().asSource().buffered()
+        val buf: Source = Buffer().apply { write(initBytes) }
+
+        val couple = Couple(source, buf)
+        val ops = mutableListOf<KCallable<*>>()
+        val n = consumeInt(0, 100)
+
+        repeat(n) {
+            for (op in ReflectionUtils.sourceFunctions) {
+                ops += op
+
+                val args = op.generateArguments(data)
+                val args2 = op.copyArguments(args, data)
+                couple.invokeOperation<Any?>(op, args, args2)
+            }
+        }
+    }
+
     private fun FuzzedDataProvider.template(
         source: Source,
         buf: Source,
@@ -66,12 +105,18 @@ object RealSourceVsBuffer {
 class Couple<T>(val test: T, val control: T) {
     companion object {
         inline fun <R> runCathing(
-            catchingClass: KClass<out Throwable> = Exception::class,
+            vararg catchingClass: KClass<out Throwable> = arrayOf(
+                RuntimeException::class,
+                IOException::class,
+            ),
             block: () -> R
         ): Result<R> = try {
             Result.success(block())
         } catch (e: Throwable) {
-            if (!e::class.isSubclassOf(catchingClass)) throw e
+            e as InvocationTargetException
+            if (catchingClass.none { e.targetException::class.isSubclassOf(it) }) {
+                throw e
+            }
             Result.failure(e)
         }
     }
