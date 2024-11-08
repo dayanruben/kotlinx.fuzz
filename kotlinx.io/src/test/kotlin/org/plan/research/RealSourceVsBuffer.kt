@@ -85,24 +85,6 @@ object RealSourceVsBuffer {
 
     val visited = hashMapOf<KCallable<*>, Int>()
 
-    private fun FuzzedDataProvider.template(
-        source: Source,
-        buf: Source,
-        data: FuzzedDataProvider,
-        funs: Array<KFunction<*>>
-    ) {
-        val couple = Couple(source, buf)
-        val ops = mutableListOf<KCallable<*>>()
-        val n = consumeInt(0, 100)
-        repeat(n) {
-            val op = pickValue(funs)
-            ops += op
-
-            val args = op.generateArguments(data)
-            val args2 = op.copyArguments(args, data)
-            couple.invokeOperation(op, args, args2)
-        }
-    }
 }
 
 class Couple<T>(val test: T, val control: T) {
@@ -128,21 +110,7 @@ class Couple<T>(val test: T, val control: T) {
         function: KCallable<U>,
         args1: Array<*>,
         args2: Array<*>,
-        postAssertion: (Result<U>, Result<U>) -> Unit = { testRes, controlRes ->
-            assertTrue(testRes.isSuccess == controlRes.isSuccess, "Exactly one failed")
-            if (testRes.isSuccess && controlRes.isSuccess) {
-                val testVal = testRes.getOrThrow()
-                val controlVal = controlRes.getOrThrow()
-                if (testVal == null && controlVal == null) {
-                    Unit
-                } else {
-                    if (testVal!!::class == ByteArray::class)
-                        assertContentEquals(testVal as ByteArray, controlVal as ByteArray)
-                    else
-                        assertEquals(testRes, controlRes)
-                }
-            }
-        }
+        postAssertion: (Result<U>, Result<U>) -> Unit = ::assertEqualsComplete
     ) {
         visited.compute(function) { _, v -> (v ?: 0) + 1 }
         val testRes = runCathing<U> { function.call(test, *args1) }
@@ -151,3 +119,37 @@ class Couple<T>(val test: T, val control: T) {
     }
 }
 
+fun <U> assertEqualsComplete(testRes: Result<U>, controlRes: Result<U>) {
+    assertTrue(testRes.isSuccess == controlRes.isSuccess, "Exactly one failed")
+    if (testRes.isSuccess && controlRes.isSuccess) {
+        val testVal = testRes.getOrThrow()
+        val controlVal = controlRes.getOrThrow()
+        if (testVal == null && controlVal == null) {
+            Unit
+        } else {
+            if (testVal!!::class == ByteArray::class)
+                assertContentEquals(testVal as ByteArray, controlVal as ByteArray)
+            else
+                assertEquals(testRes, controlRes)
+        }
+    }
+}
+
+fun FuzzedDataProvider.template(
+    source: Source,
+    buf: Source,
+    data: FuzzedDataProvider,
+    funs: Array<KFunction<*>>
+) {
+    val couple = Couple(source, buf)
+    val ops = mutableListOf<KCallable<*>>()
+    val n = consumeInt(0, 100)
+    repeat(n) {
+        val op = pickValue(funs)
+        ops += op
+
+        val args = op.generateArguments(data)
+        val args2 = op.copyArguments(args, data)
+        couple.invokeOperation(op, args, args2)
+    }
+}
