@@ -135,21 +135,24 @@ fun <U> assertEqualsComplete(testRes: Result<U>, controlRes: Result<U>) {
     }
 }
 
-fun FuzzedDataProvider.template(
-    source: Source,
-    buf: Source,
+
+fun <T> FuzzedDataProvider.template(
+    source: T,
+    buf: T,
     data: FuzzedDataProvider,
-    funs: Array<KFunction<*>>
-) {
+    funs: Array<KFunction<*>>,
+    genArgsFallback: KCallable<*>.() -> Array<*> = { error("Unexpected method: $this") }
+): List<KCallable<*>> {
     val couple = Couple(source, buf)
     val ops = mutableListOf<KCallable<*>>()
-    val n = consumeInt(0, 100)
+    val n = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER)
     repeat(n) {
         val op = pickValue(funs)
         ops += op
 
-        val args = op.generateArguments(data)
+        val args = op.generateArguments(data, skipFirst = true, genArgsFallback)
         val args2 = op.copyArguments(args, data)
         couple.invokeOperation(op, args, args2)
     }
+    return ops
 }

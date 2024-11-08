@@ -3,6 +3,7 @@ package org.plan.research.utils
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.io.Buffer
 import kotlinx.io.RawSink
+import kotlinx.io.RawSource
 import kotlinx.io.Source
 import kotlinx.io.bytestring.ByteString
 import kotlinx.io.indexOf
@@ -22,7 +23,8 @@ fun generateParameter(parameter: KParameter, data: FuzzedDataProvider): Any? {
     return when {
         paramType.isMarkedNullable && data.consumeBoolean() -> null
         else -> when (paramType.jvmErasure) {
-            String::class -> data.consumeString(10)
+            String::class, CharSequence::class -> data.consumeString(10)
+
 //            Number::class -> if (data.consumeBoolean()) data.consumeLong() else data.consumeDouble()
             Boolean::class -> data.consumeBoolean()
             Byte::class -> data.consumeByte()
@@ -30,18 +32,29 @@ fun generateParameter(parameter: KParameter, data: FuzzedDataProvider): Any? {
             Int::class -> data.consumeInt()
             Long::class -> data.consumeLong()
 
+            UByte::class -> data.consumeByte().toUByte()
+            UShort::class -> data.consumeShort().toUShort()
+            UInt::class -> data.consumeInt().toUInt()
+            ULong::class -> data.consumeLong().toULong()
+
+            Float::class -> data.consumeFloat()
+            Double::class -> data.consumeDouble()
+
             RawSink::class -> Buffer()
+            RawSource::class -> Buffer()
             Buffer::class -> Buffer()
 
             ByteArray::class -> data.consumeBytes(10)
             ByteString::class -> ByteString(data.consumeBytes(10))
 
             Charset::class -> data.pickValue(CHARSETS)
-            ByteBuffer::class -> if (data.consumeBoolean()) {
-                ByteBuffer.wrap(data.consumeBytes(10))
-            } else {
+            ByteBuffer::class -> {
                 val bytes = data.consumeBytes(10)
-                return ByteBuffer.allocateDirect(bytes.size).apply { put(bytes) }
+                if (data.consumeBoolean()) {
+                    ByteBuffer.wrap(bytes)
+                } else {
+                    return ByteBuffer.allocateDirect(bytes.size).apply { put(bytes) }
+                }
             }
 
 
@@ -60,14 +73,17 @@ val INDEX_OF_ARR: Source.(Byte, Long, Long) -> Long = Source::indexOf
 
 val READ_BYTE_ARRAY: Source.(Int) -> ByteArray = Source::readByteArray
 
-fun KCallable<*>.generateArguments(data: FuzzedDataProvider, skipFirst: Boolean = true): Array<*> {
-    fun defaultParams(): Array<Any?> = parameters
+fun KCallable<*>.defaultParams(data: FuzzedDataProvider, skipFirst: Boolean = true): Array<*> =
+    parameters
         .drop(if (skipFirst) 1 else 0)
         .map { generateParameter(it, data) }
         .toTypedArray()
 
-    val s: Source = Buffer()
-
+inline fun KCallable<*>.generateArguments(
+    data: FuzzedDataProvider,
+    skipFirst: Boolean = true,
+    fallback: KCallable<*>.() -> Array<*> = { error("Unexpected method: $this") }
+): Array<*> {
     return if (parameters.size == 1 && skipFirst) emptyArray<Any?>()
     else when (this) {
         READ_AT_MOST_ARR -> {
@@ -93,20 +109,20 @@ fun KCallable<*>.generateArguments(data: FuzzedDataProvider, skipFirst: Boolean 
             data.consumeLong(0, 100)
         )
 
-        Source::startsWith -> defaultParams()
+        Source::startsWith -> defaultParams(data, skipFirst)
         READ_BYTE_ARRAY -> arrayOf(data.consumeInt(0, 100))
         Source::readTo -> arrayOf(Buffer(), data.consumeInt(0, 100))
 
         Source::request -> arrayOf(data.consumeLong(0, 100))
         Source::readLineStrict -> arrayOf(data.consumeLong(0, 100))
 
-        Source::transferTo -> defaultParams()
+        Source::transferTo -> defaultParams(data, skipFirst)
 
         else -> when (name) {
-            "readAtMostTo" -> defaultParams()
-            "readString" -> defaultParams()
-            "readTo" -> defaultParams()
-            else -> error("Unexpected method: $this")
+            "readAtMostTo" -> defaultParams(data, skipFirst)
+            "readString" -> defaultParams(data, skipFirst)
+            "readTo" -> defaultParams(data, skipFirst)
+            else -> fallback()
         }
 //        else -> defaultParams()
     }
@@ -135,8 +151,8 @@ fun cloneByteBuffer(original: ByteBuffer): ByteBuffer {
     val readOnlyCopy = original.asReadOnlyBuffer()
 
     // Flip and read from the original.
-    readOnlyCopy.flip()
+//    readOnlyCopy.flip()
     clone.put(readOnlyCopy)
 
-    return clone
+    return clone.flip()
 }
