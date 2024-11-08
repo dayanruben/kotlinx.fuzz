@@ -7,6 +7,7 @@ import kotlinx.io.asInputStream
 import kotlinx.io.buffered
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
+import kotlin.random.Random
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.KVisibility
@@ -31,6 +32,7 @@ object ReflectionUtils {
             .filter { it.isPublic }
             .filterNot { it.isBadSourceFunction() }
             .sortedBy { it.name }
+            .shuffled(Random(42))
             .toTypedArray()
     }
 

@@ -7,6 +7,7 @@ import kotlinx.io.IOException
 import kotlinx.io.Source
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import org.plan.research.RealSourceVsBuffer.visited
 import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.copyArguments
 import org.plan.research.utils.generateArguments
@@ -82,6 +83,8 @@ object RealSourceVsBuffer {
         }
     }
 
+    val visited = hashMapOf<KCallable<*>, Int>()
+
     private fun FuzzedDataProvider.template(
         source: Source,
         buf: Source,
@@ -112,8 +115,8 @@ class Couple<T>(val test: T, val control: T) {
             block: () -> R
         ): Result<R> = try {
             Result.success(block())
-        } catch (e: Throwable) {
-            e as InvocationTargetException
+        } catch (e: InvocationTargetException) {
+//            e as InvocationTargetException
             if (catchingClass.none { e.targetException::class.isSubclassOf(it) }) {
                 throw e
             }
@@ -141,6 +144,7 @@ class Couple<T>(val test: T, val control: T) {
             }
         }
     ) {
+        visited.compute(function) { _, v -> (v ?: 0) + 1 }
         val testRes = runCathing<U> { function.call(test, *args1) }
         val controlRes = runCathing<U> { function.call(control, *args2) }
         postAssertion(testRes, controlRes)

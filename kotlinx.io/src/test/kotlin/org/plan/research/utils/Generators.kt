@@ -5,6 +5,11 @@ import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.Source
 import kotlinx.io.bytestring.ByteString
+import kotlinx.io.indexOf
+import kotlinx.io.readByteArray
+import kotlinx.io.readByteString
+import kotlinx.io.readLineStrict
+import kotlinx.io.startsWith
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import kotlin.reflect.KCallable
@@ -48,9 +53,23 @@ fun generateParameter(parameter: KParameter, data: FuzzedDataProvider): Any? {
 val CHARSETS = Charset.availableCharsets().values.toTypedArray()
 val READ_AT_MOST_ARR: KFunction<Int> = Source::readAtMostTo
 val READ_AT_MOST_BUF: KFunction<Long> = Source::readAtMostTo
+val READ_BYTE_STRING: Source.(Int) -> ByteString = Source::readByteString
+
+val INDEX_OF_BSTRING: Source.(ByteString, Long) -> Long = Source::indexOf
+val INDEX_OF_ARR: Source.(Byte, Long, Long) -> Long = Source::indexOf
+
+val READ_BYTE_ARRAY: Source.(Int) -> ByteArray = Source::readByteArray
 
 fun KCallable<*>.generateArguments(data: FuzzedDataProvider, skipFirst: Boolean = true): Array<*> {
-    return when (this) {
+    fun defaultParams(): Array<Any?> = parameters
+        .drop(if (skipFirst) 1 else 0)
+        .map { generateParameter(it, data) }
+        .toTypedArray()
+
+    val s: Source = Buffer()
+
+    return if (parameters.size == 1 && skipFirst) emptyArray<Any?>()
+    else when (this) {
         READ_AT_MOST_ARR -> {
             val bytes = ByteArray(10)
             val first = data.consumeInt(0, bytes.size - 1)
@@ -60,10 +79,36 @@ fun KCallable<*>.generateArguments(data: FuzzedDataProvider, skipFirst: Boolean 
 
         READ_AT_MOST_BUF -> arrayOf(Buffer(), data.consumeLong(0, 100))
         Source::skip -> arrayOf(data.consumeLong(0, 100))
-        else -> parameters
-            .drop(if (skipFirst) 1 else 0)
-            .map { generateParameter(it, data) }
-            .toTypedArray()
+
+        READ_BYTE_STRING -> arrayOf(data.consumeInt(0, 100))
+
+        INDEX_OF_BSTRING -> arrayOf(
+            generateParameter(parameters[1], data),
+            data.consumeLong(0, 100)
+        )
+
+        INDEX_OF_ARR -> arrayOf(
+            generateParameter(parameters[1], data),
+            data.consumeLong(0, 100),
+            data.consumeLong(0, 100)
+        )
+
+        Source::startsWith -> defaultParams()
+        READ_BYTE_ARRAY -> arrayOf(data.consumeInt(0, 100))
+        Source::readTo -> arrayOf(Buffer(), data.consumeInt(0, 100))
+
+        Source::request -> arrayOf(data.consumeLong(0, 100))
+        Source::readLineStrict -> arrayOf(data.consumeLong(0, 100))
+
+        Source::transferTo -> defaultParams()
+
+        else -> when (name) {
+            "readAtMostTo" -> defaultParams()
+            "readString" -> defaultParams()
+            "readTo" -> defaultParams()
+            else -> error("Unexpected method: $this")
+        }
+//        else -> defaultParams()
     }
 }
 
