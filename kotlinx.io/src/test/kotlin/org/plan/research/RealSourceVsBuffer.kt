@@ -26,6 +26,10 @@ object RealSourceVsBuffer {
         template(source, buf, data, ReflectionUtils.sourceFunctions)
     }
 
+    val extensions = ReflectionUtils.sourceFunctions
+        .filter { it.parameters.first().kind == Kind.EXTENSION_RECEIVER }
+        .toTypedArray()
+
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun onlyExtensions(data: FuzzedDataProvider): Unit = with(data) {
         val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
@@ -33,11 +37,7 @@ object RealSourceVsBuffer {
         val source = initBytes.inputStream().asSource().buffered()
         val buf: Source = Buffer().apply { write(initBytes) }
 
-        val funs = ReflectionUtils.sourceFunctions
-            .filter { it.parameters.first().kind == Kind.EXTENSION_RECEIVER }
-            .toTypedArray()
-
-        template(source, buf, data, funs)
+        template(source, buf, data, extensions)
     }
 
     val batches = ReflectionUtils.sourceFunctions
