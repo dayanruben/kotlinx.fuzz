@@ -5,6 +5,7 @@ import com.code_intelligence.jazzer.junit.FuzzTest
 import kotlinx.io.Buffer
 import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.defaultParams
+import org.plan.research.utils.template
 
 object BufferTargets {
     @FuzzTest(maxDuration = Constants.MAX_DURATION)

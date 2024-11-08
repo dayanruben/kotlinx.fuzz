@@ -6,13 +6,10 @@ import kotlinx.io.Buffer
 import kotlinx.io.asSink
 import kotlinx.io.buffered
 import kotlinx.io.readByteArray
-import kotlinx.io.write
-import org.plan.research.SinkTests.toB
 import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.defaultParams
+import org.plan.research.utils.template
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import kotlin.test.Test
 import kotlin.test.assertContentEquals
 
 object SinkTests {
@@ -36,23 +33,3 @@ object SinkTests {
     }
 }
 
-object Aboba {
-    @Test
-    fun lol() {
-        val ostream = ByteArrayOutputStream()
-        val sink = ostream.asSink().buffered()
-        val buf = Buffer()
-
-        val bb = ByteBuffer.wrap(byteArrayOf(1, 2, 3))
-        val bb2 = ByteBuffer.wrap(byteArrayOf(1, 2, 3))
-
-        sink.write(bb)
-        buf.write(bb2)
-
-        sink.flush()
-        val sinkRes = ostream.toByteArray().toB()
-        val bufRes = buf.readByteArray().toB()
-        assertContentEquals(sinkRes, bufRes)
-    }
-
-}
