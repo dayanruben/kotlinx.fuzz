@@ -1,5 +1,6 @@
 package org.plan.research.utils
 
+ import kotlinx.io.Buffer
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.asByteChannel
@@ -10,10 +11,12 @@ import kotlinx.io.writeToInternalBuffer
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import kotlin.random.Random
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.jvm.jvmErasure
 import kotlin.reflect.jvm.kotlinFunction
 import kotlin.test.Test
 
@@ -22,44 +25,35 @@ import kotlin.test.Test
 object ReflectionUtils {
 
     val ref: Reflections = Reflections("kotlinx.io", *Scanners.entries.toTypedArray())
-    val sourceFunctions: Array<KFunction<*>> = getSourceCallables()
-    val sinkFunctions: Array<KFunction<*>> = getSinkCallables()
+    val sourceFunctions: Array<KFunction<*>> = getCallables(Source::class) { isBadSourceFunction() }
+    val sinkFunctions: Array<KFunction<*>> = getCallables(Sink::class) { isBadSinkFunction() }
+    val bufferFunctions: Array<KFunction<*>> = getCallables(Buffer::class) { isBadBufferFunction() }
 
-    private fun getSinkCallables(): Array<KFunction<*>> {
-        val extensionFunctions = ref.getMethodsWithParameter(Sink::class.java)
-            .mapNotNull { it.kotlinFunction }
-            .filter { it.isPublic }
-            .filter { it.parameters.first().kind != KParameter.Kind.VALUE }
-        val memberFunctions = Sink::class.memberFunctions
-        return (extensionFunctions + memberFunctions)
-            .filter { it.isPublic }
-            .filterNot { it.isBadSinkFunction() }
-            .sortedBy { it.name }
-            .shuffled(Random(42))
-            .toTypedArray()
-    }
 
-    private fun getSourceCallables(): Array<KFunction<*>> {
-        val extensionFunctions = ref.getMethodsWithParameter(Source::class.java)
+    private fun getCallables(
+        klass: KClass<*>,
+        isBad: KFunction<*>.() -> Boolean
+    ): Array<KFunction<*>> {
+        val extensionFunctions = ref.getMethodsWithParameter(klass.java)
             .mapNotNull { it.kotlinFunction }
-            .filter { it.isPublic }
-            .filter { it.parameters.first().kind != KParameter.Kind.VALUE }
-        val memberFunctions = Source::class.memberFunctions
-        return (extensionFunctions + memberFunctions)
-            .filter { it.isPublic }
-            .filterNot { it.isBadSourceFunction() }
-            .sortedBy { it.name }
-            .shuffled(Random(42))
-            .toTypedArray()
+        val memberFunctions = klass.memberFunctions
+        return fixFunctions(klass, extensionFunctions + memberFunctions, isBad)
     }
 
 
+    private fun fixFunctions(
+        klass: KClass<*>,
+        functions: Iterable<KFunction<*>>,
+        isBad: KFunction<*>.() -> Boolean
+    ): Array<KFunction<*>> = functions
+        .filter { it.isPublic }
+        .filter { it.parameters.first().type.jvmErasure == klass }
+        .filter { it.parameters.first().kind != KParameter.Kind.VALUE }
+        .filterNot { it.isBad() }
+        .sortedBy { it.name }
+        .shuffled(Random(42))
+        .toTypedArray()
 
-    // can't create map with both methods and setters, because can't call setters after method
-
-
-//    fun getSourceFunctions(): Array<KCallable<*>>{
-//    }
 
     @Test
     fun twf() {
@@ -75,10 +69,16 @@ object ReflectionUtils {
                 Sink::class.memberFunctions.filter { it.isPublic }).forEach { println(it) } //.let{println(it.size)} //.forEach { println(it) }
     }
 
+    @Test
+    fun a() {
+        val a = kotlinx.io.unsafe.UnsafeBufferOperations::forEachSegment
+        println(a.parameters.first().kind)
+    }
+
     val KFunction<*>.isPublic: Boolean get() = visibility == KVisibility.PUBLIC
 }
 
-private fun KFunction<*>.isBadSinkFunction(): Boolean {
+fun KFunction<*>.isBadSinkFunction(): Boolean {
     val bad = setOf<KFunction<*>>(
         Sink::buffered,
         Sink::close,
@@ -95,7 +95,7 @@ private fun KFunction<*>.isBadSinkFunction(): Boolean {
     return this in bad
 }
 
-private fun KFunction<*>.isBadSourceFunction(): Boolean {
+fun KFunction<*>.isBadSourceFunction(): Boolean {
     val bad = setOf(
         Source::require,
         Source::peek,
@@ -109,7 +109,14 @@ private fun KFunction<*>.isBadSourceFunction(): Boolean {
         Source::toString,
         Source::equals,
     )
-    val badNames = setOf<String>(
+    return this in bad
+}
+
+fun KFunction<*>.isBadBufferFunction(): Boolean {
+    val bad = setOf(
+        Buffer::toString,
+        Buffer::hashCode,
+        Buffer::equals,
     )
-    return this in bad || this.name in badNames
+    return this in bad
 }
