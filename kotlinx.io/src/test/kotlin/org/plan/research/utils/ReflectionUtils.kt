@@ -1,6 +1,6 @@
 package org.plan.research.utils
 
- import kotlinx.io.Buffer
+import kotlinx.io.Buffer
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.asByteChannel
@@ -69,10 +69,17 @@ object ReflectionUtils {
                 Sink::class.memberFunctions.filter { it.isPublic }).forEach { println(it) } //.let{println(it.size)} //.forEach { println(it) }
     }
 
-    @Test
-    fun a() {
-        val a = kotlinx.io.unsafe.UnsafeBufferOperations::forEachSegment
-        println(a.parameters.first().kind)
+    @JvmStatic
+    fun main(args: Array<String>) {
+        extracted(this@ReflectionUtils.sourceFunctions)
+        println()
+        extracted(this@ReflectionUtils.sinkFunctions)
+    }
+
+    private fun extracted(functions: Array<KFunction<*>>) {
+        println("Extensions: ${functions.filter { it.isExtension }.size}")
+        println("Members: ${functions.filter { it.isMember }.size}")
+        println("All: ${functions.size}")
     }
 
     val KFunction<*>.isPublic: Boolean get() = visibility == KVisibility.PUBLIC
@@ -120,3 +127,8 @@ fun KFunction<*>.isBadBufferFunction(): Boolean {
     )
     return this in bad
 }
+
+val KFunction<*>.isExtension: Boolean
+    get() = parameters.first().kind == KParameter.Kind.EXTENSION_RECEIVER
+val KFunction<*>.isMember: Boolean
+    get() = parameters.first().kind == KParameter.Kind.INSTANCE
