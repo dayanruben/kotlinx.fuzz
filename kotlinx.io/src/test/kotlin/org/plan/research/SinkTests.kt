@@ -21,15 +21,9 @@ object SinkTests {
 
         val ops = template(sink, buf, data, ReflectionUtils.sinkFunctions) { defaultParams(data) }
         sink.flush()
-        val sinkRes = ostream.toByteArray()//.toB()
-        val bufRes = buf.readByteArray()//.toB()
+        val sinkRes = ostream.toByteArray()
+        val bufRes = buf.readByteArray()
         assertContentEquals(sinkRes, bufRes)
-    }
-
-    fun ByteArray.toB(): ByteArray {
-        val r1 = indexOfLast { it != 0.toByte() }
-        if (r1 == -1) return byteArrayOf()
-        return sliceArray(0 until r1)
     }
 }
 

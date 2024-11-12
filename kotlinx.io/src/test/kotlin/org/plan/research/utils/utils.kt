@@ -1,9 +1,10 @@
 package org.plan.research.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import kotlinx.io.Buffer
 import kotlinx.io.IOException
+import kotlinx.io.snapshot
 import org.plan.research.Constants
-import org.plan.research.RealSourceVsBuffer
 import java.lang.reflect.InvocationTargetException
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
@@ -38,7 +39,6 @@ class Couple<T>(val test: T, val control: T) {
         args2: Array<*>,
         postAssertion: (Result<U>, Result<U>) -> Unit = ::assertEqualsComplete
     ) {
-        RealSourceVsBuffer.visited.compute(function) { _, v -> (v ?: 0) + 1 }
         val testRes = runCathing<U> { function.call(test, *args1) }
         val controlRes = runCathing<U> { function.call(control, *args2) }
         postAssertion(testRes, controlRes)
@@ -53,20 +53,27 @@ fun <U> assertEqualsComplete(testRes: Result<U>, controlRes: Result<U>) {
         if (testVal == null && controlVal == null) {
             Unit
         } else {
-            if (testVal!!::class == ByteArray::class)
-                assertContentEquals(testVal as ByteArray, controlVal as ByteArray)
-            else
-                assertEquals(testRes, controlRes)
+            when (testVal) {
+                is ByteArray -> assertContentEquals(testVal, controlVal as ByteArray)
+                is Buffer -> {
+                    controlVal as Buffer
+                    assertEquals(testVal.snapshot(), controlVal.snapshot())
+                }
+
+                else -> assertEquals(testRes, controlRes)
+            }
         }
     }
 }
 
-fun <T> FuzzedDataProvider.template(
+inline fun <T> FuzzedDataProvider.template(
     source: T,
     buf: T,
     data: FuzzedDataProvider,
     funs: Array<KFunction<*>>,
-    genArgsFallback: KCallable<*>.() -> Array<*> = { error("Unexpected method: $this") }
+    genArgsFallback: KCallable<*>.() -> Array<*> = fun KCallable<*>.(): Nothing {
+        return error("Unexpected method: $this")
+    }
 ): List<KCallable<*>> {
     val couple = Couple(source, buf)
     val ops = mutableListOf<KCallable<*>>()

@@ -5,12 +5,16 @@ import kotlinx.io.Buffer
 import kotlinx.io.RawSink
 import kotlinx.io.RawSource
 import kotlinx.io.Source
+import kotlinx.io.asInputStream
+import kotlinx.io.asOutputStream
 import kotlinx.io.bytestring.ByteString
 import kotlinx.io.indexOf
 import kotlinx.io.readByteArray
 import kotlinx.io.readByteString
 import kotlinx.io.readLineStrict
 import kotlinx.io.startsWith
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.Charset
 import kotlin.reflect.KCallable
@@ -56,6 +60,9 @@ fun generateParameter(parameter: KParameter, data: FuzzedDataProvider): Any? {
                     return ByteBuffer.allocateDirect(bytes.size).apply { put(bytes) }
                 }
             }
+
+            OutputStream::class -> Buffer().asOutputStream()
+            InputStream::class -> Buffer().asInputStream()
 
 
             else -> error("Unexpected parameter type: $paramType")
@@ -136,6 +143,7 @@ fun KCallable<*>.copyArguments(
     when (val arg = args[i]) {
         is RawSink -> Buffer()
         is ByteBuffer -> cloneByteBuffer(arg)
+        is ByteArray -> arg.clone()
         else -> args[i]
     }
 }

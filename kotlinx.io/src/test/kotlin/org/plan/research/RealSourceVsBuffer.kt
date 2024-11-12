@@ -6,14 +6,12 @@ import kotlinx.io.Buffer
 import kotlinx.io.Source
 import kotlinx.io.asSource
 import kotlinx.io.buffered
-import org.plan.research.utils.Couple
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readByteArray
 import org.plan.research.utils.ReflectionUtils
-import org.plan.research.utils.copyArguments
-import org.plan.research.utils.generateArguments
+import org.plan.research.utils.ReflectionUtils.removeLongOps
 import org.plan.research.utils.template
-import kotlin.random.Random
-import kotlin.reflect.KCallable
-import kotlin.reflect.KParameter.Kind
 
 object RealSourceVsBuffer {
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
@@ -26,58 +24,21 @@ object RealSourceVsBuffer {
         template(source, buf, data, ReflectionUtils.sourceFunctions)
     }
 
-    val extensions = ReflectionUtils.sourceFunctions
-        .filter { it.parameters.first().kind == Kind.EXTENSION_RECEIVER }
+    val manyBytes =
+        SystemFileSystem.source(Path("data.bin")).buffered().readByteArray()
+
+    val manyBuf = Buffer().apply { write(manyBytes) }
+    val fastOps = ReflectionUtils.sourceFunctions
+        .removeLongOps()
+        .filterNot { it.name == "readAtMostTo" }
         .toTypedArray()
 
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
-    fun onlyExtensions(data: FuzzedDataProvider): Unit = with(data) {
-        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
-
-        val source = initBytes.inputStream().asSource().buffered()
-        val buf: Source = Buffer().apply { write(initBytes) }
-
-        template(source, buf, data, extensions)
+    fun randomOpsManyData(data: FuzzedDataProvider): Unit = with(data) {
+        val source = manyBytes.inputStream().asSource().buffered()
+        val buf: Source = manyBuf.copy()
+        template(source, buf, data, fastOps)
     }
-
-    val batches = ReflectionUtils.sourceFunctions
-        .toList()
-        .sortedBy { it.name }
-        .shuffled(Random(42))
-        .chunked(5)
-        .map { it.toTypedArray() }
-        .toTypedArray()
-
-    @FuzzTest(maxExecutions = 1)
-    fun oaoaoa(data: FuzzedDataProvider): Unit = with(data) {
-        val r = java.security.SecureRandom()
-        println(r.nextLong())
-    }
-
-    @FuzzTest(maxDuration = Constants.MAX_DURATION)
-    fun batched(data: FuzzedDataProvider): Unit = with(data) {
-        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
-
-        val source = initBytes.inputStream().asSource().buffered()
-        val buf: Source = Buffer().apply { write(initBytes) }
-
-        val couple = Couple(source, buf)
-        val ops = mutableListOf<KCallable<*>>()
-        val n = consumeInt(0, 100)
-
-        repeat(n) {
-            for (op in ReflectionUtils.sourceFunctions) {
-                ops += op
-
-                val args = op.generateArguments(data)
-                val args2 = op.copyArguments(args, data)
-                couple.invokeOperation<Any?>(op, args, args2)
-            }
-        }
-    }
-
-    val visited = hashMapOf<KCallable<*>, Int>()
-
 }
 
 

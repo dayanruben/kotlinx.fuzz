@@ -27,7 +27,8 @@ object ReflectionUtils {
     val ref: Reflections = Reflections("kotlinx.io", *Scanners.entries.toTypedArray())
     val sourceFunctions: Array<KFunction<*>> = getCallables(Source::class) { isBadSourceFunction() }
     val sinkFunctions: Array<KFunction<*>> = getCallables(Sink::class) { isBadSinkFunction() }
-    val bufferFunctions: Array<KFunction<*>> = getCallables(Buffer::class) { isBadBufferFunction() }
+    val bufferFunctions: Array<KFunction<*>> =
+        getCallables(Buffer::class) { isBadBufferFunction() }
 
 
     private fun getCallables(
@@ -39,6 +40,9 @@ object ReflectionUtils {
         val memberFunctions = klass.memberFunctions
         return fixFunctions(klass, extensionFunctions + memberFunctions, isBad)
     }
+
+    fun Array<KFunction<*>>.removeLongOps(): Array<KFunction<*>> =
+        filter { it.name != "indexOf" }.toTypedArray()
 
 
     private fun fixFunctions(
@@ -74,6 +78,11 @@ object ReflectionUtils {
         extracted(this@ReflectionUtils.sourceFunctions)
         println()
         extracted(this@ReflectionUtils.sinkFunctions)
+        println()
+        extracted(this@ReflectionUtils.bufferFunctions)
+        println()
+
+        bufferFunctions.forEach { println(it) }
     }
 
     private fun extracted(functions: Array<KFunction<*>>) {
@@ -94,7 +103,7 @@ fun KFunction<*>.isBadSinkFunction(): Boolean {
         Sink::toString,
         Sink::equals,
 
-        Sink::asByteChannel,
+        Sink::asByteChannel, // trivial, wont fuzz
         Sink::asOutputStream,
 
         Sink::writeToInternalBuffer,
@@ -124,6 +133,10 @@ fun KFunction<*>.isBadBufferFunction(): Boolean {
         Buffer::toString,
         Buffer::hashCode,
         Buffer::equals,
+
+        Buffer::peek, // fuzzed in PeekSourceTargets
+        Buffer::require,
+        Buffer::asByteChannel,
     )
     return this in bad
 }
