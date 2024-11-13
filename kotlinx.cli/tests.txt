@@ -1,0 +1,3 @@
+org.plan.research.CliTests.fuzz arguments and options
+org.plan.research.CliTests.fuzz with subcommands
+org.plan.research.CliComparisonTests.comparisonTest
