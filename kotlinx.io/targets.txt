@@ -20,8 +20,8 @@ org.plan.research.BufferTargets.copyTest
 org.plan.research.BufferTargets.randomOps
 
 org.plan.research.ByteStringTargets.compareTo
-org.plan.research.ByteStringTargets.aaa
-org.plan.research.ByteStringTargets.aa
+org.plan.research.ByteStringTargets.toByteBufferAndBack
+org.plan.research.ByteStringTargets.fromStringAndBack
 
 org.plan.research.PeekSourceTargets.peekWorksSame
 org.plan.research.PeekSourceTargets.randomOps
