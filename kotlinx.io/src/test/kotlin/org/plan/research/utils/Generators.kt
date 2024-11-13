@@ -86,11 +86,11 @@ fun KCallable<*>.defaultParams(data: FuzzedDataProvider, skipFirst: Boolean = tr
         .map { generateParameter(it, data) }
         .toTypedArray()
 
-inline fun KCallable<*>.generateArguments(
+inline fun KFunction<*>.generateArguments(
     data: FuzzedDataProvider,
-    skipFirst: Boolean = true,
-    fallback: KCallable<*>.() -> Array<*> = { error("Unexpected method: $this") }
+    fallback: KFunction<*>.() -> Array<*> = { error("Unexpected method: $this") }
 ): Array<*> {
+    val skipFirst = isExtension || isMember
     return if (parameters.size == 1 && skipFirst) emptyArray<Any?>()
     else when (this) {
         READ_AT_MOST_ARR -> {
@@ -135,10 +135,9 @@ inline fun KCallable<*>.generateArguments(
     }
 }
 
-fun KCallable<*>.copyArguments(
+fun copyArguments(
     args: Array<*>,
     data: FuzzedDataProvider,
-    skipFirst: Boolean = true
 ) = Array(args.size) { i ->
     when (val arg = args[i]) {
         is RawSink -> Buffer()

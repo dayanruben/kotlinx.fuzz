@@ -6,6 +6,7 @@ import kotlinx.io.IOException
 import kotlinx.io.snapshot
 import org.plan.research.Constants
 import java.lang.reflect.InvocationTargetException
+import kotlin.random.Random
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -16,7 +17,7 @@ import kotlin.test.assertTrue
 
 class Couple<T>(val test: T, val control: T) {
     companion object {
-        inline fun <R> runCathing(
+        inline fun <R> catching(
             vararg catchingClass: KClass<out Throwable> = arrayOf(
                 RuntimeException::class,
                 IOException::class,
@@ -30,6 +31,11 @@ class Couple<T>(val test: T, val control: T) {
                 throw e
             }
             Result.failure(e)
+        } catch (e: Throwable) {
+            if (catchingClass.none { e::class.isSubclassOf(it) }) {
+                throw e
+            }
+            Result.failure(e)
         }
     }
 
@@ -39,8 +45,8 @@ class Couple<T>(val test: T, val control: T) {
         args2: Array<*>,
         postAssertion: (Result<U>, Result<U>) -> Unit = ::assertEqualsComplete
     ) {
-        val testRes = runCathing<U> { function.call(test, *args1) }
-        val controlRes = runCathing<U> { function.call(control, *args2) }
+        val testRes = catching<U> { function.call(test, *args1) }
+        val controlRes = catching<U> { function.call(control, *args2) }
         postAssertion(testRes, controlRes)
     }
 }
@@ -66,7 +72,7 @@ fun <U> assertEqualsComplete(testRes: Result<U>, controlRes: Result<U>) {
     }
 }
 
-inline fun <T> FuzzedDataProvider.template(
+inline fun <T> template(
     source: T,
     buf: T,
     data: FuzzedDataProvider,
@@ -76,15 +82,36 @@ inline fun <T> FuzzedDataProvider.template(
     }
 ): List<KCallable<*>> {
     val couple = Couple(source, buf)
-    val ops = mutableListOf<KCallable<*>>()
-    val n = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER)
+    val n = data.consumeInt(0, Constants.MAX_OPERATIONS_NUMBER)
+    return couple.callNOps(n, funs, data, genArgsFallback)
+}
+
+inline fun <T> Couple<T>.callNOps(
+    n: Int,
+    funs: Array<KFunction<*>>,
+    data: FuzzedDataProvider,
+    genArgsFallback: KFunction<*>.() -> Array<*> = { error("Unexpected method: $this") }
+): List<KFunction<*>> {
+    val ops = mutableListOf<KFunction<*>>()
     repeat(n) {
-        val op = pickValue(funs)
+        val op = data.pickValue(funs)
         ops += op
 
-        val args = op.generateArguments(data, skipFirst = true, genArgsFallback)
-        val args2 = op.copyArguments(args, data)
-        couple.invokeOperation(op, args, args2)
+        val args = op.generateArguments(data, genArgsFallback)
+        val args2 = copyArguments(args, data)
+        invokeOperation(op, args, args2)
     }
     return ops
 }
+
+inline fun <reified T> Array<T>.getChunk(
+    chunkNumber: Int, chunkSize: Int
+): Array<T> = toList()
+    .shuffled(Random(chunkNumber))
+    .take(chunkSize)
+    .toTypedArray()
+
+inline fun <reified T> Array<T>.splitIntoChunks(
+    chunksCount: Int,
+    chunkSize: Int
+): Array<Array<T>> = Array(chunksCount) { i -> this.getChunk(i, chunkSize) }

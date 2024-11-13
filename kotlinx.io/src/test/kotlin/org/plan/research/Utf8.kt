@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 
 object Utf8 {
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
-    fun aa(data: FuzzedDataProvider): Unit = with(data) {
+    fun bufferWriteReadString(data: FuzzedDataProvider): Unit = with(data) {
         val s = data.consumeRemainingAsString()
         val buf = Buffer()
         buf.writeString(s)

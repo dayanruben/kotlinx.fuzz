@@ -2,15 +2,12 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import kotlinx.io.Buffer
-import kotlinx.io.Source
-import kotlinx.io.asSource
-import kotlinx.io.buffered
+import kotlinx.io.*
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import kotlinx.io.readByteArray
-import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.ReflectionUtils.removeLongOps
+import org.plan.research.utils.ReflectionUtils.sourceFunctions
+import org.plan.research.utils.splitIntoChunks
 import org.plan.research.utils.template
 
 object RealSourceVsBuffer {
@@ -21,14 +18,14 @@ object RealSourceVsBuffer {
         val source = initBytes.inputStream().asSource().buffered()
         val buf: Source = Buffer().apply { write(initBytes) }
 
-        template(source, buf, data, ReflectionUtils.sourceFunctions)
+        template(source, buf, data, sourceFunctions)
     }
 
     val manyBytes =
         SystemFileSystem.source(Path("data.bin")).buffered().readByteArray()
 
     val manyBuf = Buffer().apply { write(manyBytes) }
-    val fastOps = ReflectionUtils.sourceFunctions
+    val fastOps = sourceFunctions
         .removeLongOps()
         .filterNot { it.name == "readAtMostTo" }
         .toTypedArray()
@@ -39,6 +36,35 @@ object RealSourceVsBuffer {
         val buf: Source = manyBuf.copy()
         template(source, buf, data, fastOps)
     }
+
+
+    val chunkedFunctions = sourceFunctions.splitIntoChunks(5, 20)
+    private inline fun chunkedTemplate(data: FuzzedDataProvider, functionsNumber: Int) {
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+
+        val source = initBytes.inputStream().asSource().buffered()
+        val buf: Source = Buffer().apply { write(initBytes) }
+
+        template(source, buf, data, chunkedFunctions[functionsNumber])
+    }
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch0(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 0)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch1(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 1)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch2(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 2)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch3(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 3)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch4(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 4)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun ch5(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 5)
 }
 
 

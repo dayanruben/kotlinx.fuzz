@@ -46,8 +46,8 @@ object BufferTargets {
             val op = pickValue(funs)
             ops += op
 
-            val args = op.generateArguments(data, skipFirst = true) { defaultParams(data) }
-            results += Couple.runCathing { op.call(buf, *args) }
+            val args = op.generateArguments(data) { defaultParams(data) }
+            results += Couple.catching { op.call(buf, *args) }
         }
         return ops to results
     }

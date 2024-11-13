@@ -9,9 +9,11 @@ import kotlinx.io.buffered
 import org.plan.research.utils.Couple
 import org.plan.research.utils.ReflectionUtils
 import org.plan.research.utils.ReflectionUtils.removeLongOps
+import org.plan.research.utils.assertEqualsComplete
+import org.plan.research.utils.callNOps
 import org.plan.research.utils.copyArguments
 import org.plan.research.utils.generateArguments
-import kotlin.reflect.KCallable
+import kotlin.reflect.KFunction
 
 object PeekSourceTargets {
     @FuzzTest
@@ -22,29 +24,46 @@ object PeekSourceTargets {
 
         val couple = Couple<Source>(fromRealSource, fromBuffer)
 
-        val ops1 = doSomeOps(data, couple)
+        fun getN(): Int = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER / 3)
+
+        val ops1 = couple.callNOps(getN(), fastOps, data)
         val peekCouple = Couple<Source>(fromRealSource.peek(), fromBuffer.peek())
-        val ops2 = doSomeOps(data, peekCouple)
-        val ops3 = doSomeOps(data, couple)
+        val ops2 = peekCouple.callNOps(getN(), fastOps, data)
+        val ops3 = couple.callNOps(getN(), fastOps, data)
     }
 
-    val fastOps = ReflectionUtils.sourceFunctions.removeLongOps()
+    @FuzzTest
+    fun peekWorksSame(data: FuzzedDataProvider): Unit = with(data) {
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+        val fromRealSource = initBytes.inputStream().asSource().buffered()
 
+        repeat(getN()) {
+            val op = pickValue(fastOps)
+            val args = op.generateArguments(data)
+            Couple.catching { op.call(fromRealSource, *args) }
+        }
 
-    private fun FuzzedDataProvider.doSomeOps(
-        data: FuzzedDataProvider,
-        couple: Couple<Source>
-    ): List<KCallable<*>> {
-        val n = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER / 3)
-        val ops = mutableListOf<KCallable<*>>()
-        repeat(n) {
+        val ops = mutableListOf<KFunction<*>>()
+        val argCopies = mutableListOf<Array<*>>()
+        val ans = mutableListOf<Result<*>>()
+        val peekSource = fromRealSource.peek()
+        repeat(getN()) {
             val op = pickValue(fastOps)
             ops += op
-
-            val args = op.generateArguments(data, skipFirst = true)
-            val args2 = op.copyArguments(args, data)
-            couple.invokeOperation<Any?>(op, args, args2)
+            val args = op.generateArguments(data)
+            argCopies += copyArguments(args, data)
+            ans += Couple.catching { op.call(peekSource, *args) }
         }
-        return ops
+
+        for (i in 0 until getN()) {
+            val op = ops[i]
+            val args = argCopies[i]
+            val res = Couple.catching { op.call(fromRealSource, *args) }
+            assertEqualsComplete(res, ans[i])
+        }
     }
+
+    private fun FuzzedDataProvider.getN(): Int = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER / 3)
+
+    private val fastOps = ReflectionUtils.sourceFunctions.removeLongOps()
 }
