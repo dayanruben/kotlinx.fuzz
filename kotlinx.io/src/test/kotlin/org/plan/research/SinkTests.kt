@@ -8,12 +8,8 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readByteArray
-import org.plan.research.utils.Couple
+import org.plan.research.utils.*
 import org.plan.research.utils.ReflectionUtils.sinkFunctions
-import org.plan.research.utils.assertEqualsComplete
-import org.plan.research.utils.defaultParams
-import org.plan.research.utils.splitIntoChunks
-import org.plan.research.utils.template
 import java.io.ByteArrayOutputStream
 import kotlin.reflect.KFunction
 import kotlin.test.assertContentEquals
@@ -36,8 +32,8 @@ object SinkTests {
             ops += byteCount
             val peek = source.peek()
 
-            val r1 = Couple.catching { peek.readTo(sink, byteCount) }
-            val r2 = Couple.catching { source.readTo(buf, byteCount) }
+            val r1 = catching { peek.readTo(sink, byteCount) }
+            val r2 = catching { source.readTo(buf, byteCount) }
             assertEqualsComplete(r1, r2)
         }
 

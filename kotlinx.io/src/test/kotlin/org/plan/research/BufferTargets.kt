@@ -64,7 +64,7 @@ object BufferTargets {
             ops += op
 
             val args = op.generateArguments(data) { defaultParams(data) }
-            results += Couple.catching { op.call(buf, *args) }
+            results += catching { op.call(buf, *args) }
         }
         return ops to results
     }

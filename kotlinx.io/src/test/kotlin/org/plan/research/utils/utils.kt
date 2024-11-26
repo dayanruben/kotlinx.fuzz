@@ -15,28 +15,30 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class Couple<T>(val test: T, val control: T) {
-    companion object {
-        inline fun <R> catching(
-            vararg catchingClass: KClass<out Throwable> = arrayOf(
-                RuntimeException::class,
-                IOException::class,
-            ),
-            block: () -> R
-        ): Result<R> = try {
-            Result.success(block())
-        } catch (e: InvocationTargetException) {
+inline fun <R> catching(
+    vararg catchingClass: KClass<out Throwable> = arrayOf(
+        RuntimeException::class,
+        IOException::class,
+    ),
+    block: () -> R
+): Result<R> = try {
+    Result.success(block())
+} catch (e: InvocationTargetException) {
 //            e as InvocationTargetException
-            if (catchingClass.none { e.targetException::class.isSubclassOf(it) }) {
-                throw e
-            }
-            Result.failure(e)
-        } catch (e: Throwable) {
-            if (catchingClass.none { e::class.isSubclassOf(it) }) {
-                throw e
-            }
-            Result.failure(e)
-        }
+    if (catchingClass.none { e.targetException::class.isSubclassOf(it) }) {
+        throw e
+    }
+    Result.failure(e)
+} catch (e: Throwable) {
+    if (catchingClass.none { e::class.isSubclassOf(it) }) {
+        throw e
+    }
+    Result.failure(e)
+}
+
+class Couple<T>(val test: T, val control: T) {
+
+    companion object {
     }
 
     fun <U> invokeOperation(
@@ -115,3 +117,26 @@ inline fun <reified T> Array<T>.splitIntoChunks(
     chunksCount: Int,
     chunkSize: Int
 ): Array<Array<T>> = Array(chunksCount) { i -> this.getChunk(i, chunkSize) }
+
+inline fun <T> T.callOps(
+    n: Int,
+    funs: Array<KFunction<*>>,
+    data: FuzzedDataProvider,
+    genArgsFallback: KCallable<*>.() -> Array<*> = { error("Unexpected method: $this") }
+): List<KFunction<*>> {
+    val ops = mutableListOf<KFunction<*>>()
+    repeat(n) {
+        val op = data.pickValue(funs)
+        ops += op
+        val args = op.generateArguments(data, genArgsFallback)
+        catching { op.call(this, *args) }
+//        invokeOperation(op, args, args2)
+    }
+    return ops
+}
+
+inline fun <T> tryOrNull(block: () -> T): T? = try {
+    block()
+} catch (_: Throwable) {
+    null
+}
