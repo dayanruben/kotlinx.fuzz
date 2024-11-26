@@ -33,3 +33,8 @@ org.plan.research.SinkTests.ch5
 org.plan.research.SinkTests.ch0
 
 org.plan.research.BuffersJvmKt.randomOps
+
+org.plan.research.BuffersKt.indexOfByte
+org.plan.research.BuffersKt.indexOfByteString
+org.plan.research.BuffersKt.getManyBytes
+org.plan.research.BuffersKt.snapshot

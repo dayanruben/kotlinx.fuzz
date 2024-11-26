@@ -2,3 +2,8 @@ org.plan.research.RealSourceVsBuffer.readLineStrict
 org.plan.research.BufferTargets.writeDecimalLong
 org.plan.research.Utf8.commonReadUtf8CodePoint
 org.plan.research.BuffersJvmKt.randomOps
+
+org.plan.research.BuffersKt.indexOfByte
+org.plan.research.BuffersKt.indexOfByteString
+org.plan.research.BuffersKt.getManyBytes
+org.plan.research.BuffersKt.snapshot
