@@ -1,18 +1,8 @@
 package org.plan.research.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
-import kotlinx.io.Buffer
-import kotlinx.io.RawSink
-import kotlinx.io.RawSource
-import kotlinx.io.Source
-import kotlinx.io.asInputStream
-import kotlinx.io.asOutputStream
+import kotlinx.io.*
 import kotlinx.io.bytestring.ByteString
-import kotlinx.io.indexOf
-import kotlinx.io.readByteArray
-import kotlinx.io.readByteString
-import kotlinx.io.readLineStrict
-import kotlinx.io.startsWith
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
@@ -86,52 +76,63 @@ fun KCallable<*>.defaultParams(data: FuzzedDataProvider, skipFirst: Boolean = tr
         .map { generateParameter(it, data) }
         .toTypedArray()
 
+val WRITE_STRING: Sink.(String, Charset, Int, Int) -> Unit = Sink::writeString
+
 inline fun KFunction<*>.generateArguments(
     data: FuzzedDataProvider,
     fallback: KFunction<*>.() -> Array<*> = { error("Unexpected method: $this") }
 ): Array<*> {
     val skipFirst = isExtension || isMember
     return if (parameters.size == 1 && skipFirst) emptyArray<Any?>()
-    else when (this) {
-        READ_AT_MOST_ARR -> {
-            val bytes = ByteArray(10)
-            val first = data.consumeInt(0, bytes.size - 1)
-            val last = data.consumeInt(first, bytes.size)
-            arrayOf(bytes, first, last)
+    else {
+        when (this) {
+            READ_AT_MOST_ARR -> {
+                val bytes = ByteArray(10)
+                val first = data.consumeInt(0, bytes.size - 1)
+                val last = data.consumeInt(first, bytes.size)
+                arrayOf(bytes, first, last)
+            }
+
+            READ_AT_MOST_BUF -> arrayOf(Buffer(), data.consumeLong(0, 100))
+            Source::skip -> arrayOf(data.consumeLong(0, 100))
+
+            READ_BYTE_STRING -> arrayOf(data.consumeInt(0, 100))
+
+            INDEX_OF_BSTRING -> arrayOf(
+                generateParameter(parameters[1], data),
+                data.consumeLong(0, 100)
+            )
+
+            INDEX_OF_ARR -> arrayOf(
+                generateParameter(parameters[1], data),
+                data.consumeLong(0, 100),
+                data.consumeLong(0, 100)
+            )
+
+            Source::startsWith -> defaultParams(data, skipFirst)
+            READ_BYTE_ARRAY -> arrayOf(data.consumeInt(0, 100))
+            Source::readTo -> arrayOf(Buffer(), data.consumeInt(0, 100))
+
+            Source::request -> arrayOf(data.consumeLong(0, 100))
+            Source::readLineStrict -> arrayOf(data.consumeLong(0, 100))
+
+            Source::transferTo -> defaultParams(data, skipFirst)
+            WRITE_STRING -> {
+                val s = data.consumeString(10)
+                val charset = data.pickValue(CHARSETS)
+                val startIndex = data.consumeInt(0, s.length)
+                val endIndex = data.consumeInt(startIndex, s.length)
+                arrayOf(s, charset, startIndex, endIndex)
+            }
+
+            else -> when (name) {
+                "readAtMostTo" -> defaultParams(data, skipFirst)
+                "readString" -> defaultParams(data, skipFirst)
+                "readTo" -> defaultParams(data, skipFirst)
+                else -> fallback()
+            }
+            //        else -> defaultParams()
         }
-
-        READ_AT_MOST_BUF -> arrayOf(Buffer(), data.consumeLong(0, 100))
-        Source::skip -> arrayOf(data.consumeLong(0, 100))
-
-        READ_BYTE_STRING -> arrayOf(data.consumeInt(0, 100))
-
-        INDEX_OF_BSTRING -> arrayOf(
-            generateParameter(parameters[1], data),
-            data.consumeLong(0, 100)
-        )
-
-        INDEX_OF_ARR -> arrayOf(
-            generateParameter(parameters[1], data),
-            data.consumeLong(0, 100),
-            data.consumeLong(0, 100)
-        )
-
-        Source::startsWith -> defaultParams(data, skipFirst)
-        READ_BYTE_ARRAY -> arrayOf(data.consumeInt(0, 100))
-        Source::readTo -> arrayOf(Buffer(), data.consumeInt(0, 100))
-
-        Source::request -> arrayOf(data.consumeLong(0, 100))
-        Source::readLineStrict -> arrayOf(data.consumeLong(0, 100))
-
-        Source::transferTo -> defaultParams(data, skipFirst)
-
-        else -> when (name) {
-            "readAtMostTo" -> defaultParams(data, skipFirst)
-            "readString" -> defaultParams(data, skipFirst)
-            "readTo" -> defaultParams(data, skipFirst)
-            else -> fallback()
-        }
-//        else -> defaultParams()
     }
 }
 

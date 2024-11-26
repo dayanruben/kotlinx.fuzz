@@ -3,10 +3,7 @@ package org.plan.research
 //import sun.nio.cs.ext.MacCyrillic
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import kotlinx.io.bytestring.ByteString
-import kotlinx.io.bytestring.asReadOnlyByteBuffer
-import kotlinx.io.bytestring.decodeToString
-import kotlinx.io.bytestring.getByteString
+import kotlinx.io.bytestring.*
 import org.plan.research.Constants.INIT_BYTES_COUNT
 import java.nio.charset.Charset
 import kotlin.test.assertEquals

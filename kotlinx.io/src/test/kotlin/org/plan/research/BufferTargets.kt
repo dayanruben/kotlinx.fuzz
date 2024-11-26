@@ -3,11 +3,11 @@ package org.plan.research
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import kotlinx.io.Buffer
-import org.plan.research.utils.Couple
-import org.plan.research.utils.ReflectionUtils
-import org.plan.research.utils.defaultParams
-import org.plan.research.utils.generateArguments
-import org.plan.research.utils.template
+import kotlinx.io.bytestring.ByteString
+import kotlinx.io.snapshot
+import kotlinx.io.writeDecimalLong
+import kotlinx.io.writeString
+import org.plan.research.utils.*
 import kotlin.reflect.KCallable
 import kotlin.test.assertEquals
 
@@ -33,6 +33,24 @@ object BufferTargets {
         val copy = buf.copy()
         template(buf, copy, data, funs_stable) { defaultParams(data) }
         assertEquals(buf.toString(), copy.toString())
+    }
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun writeDecimalLong(data: FuzzedDataProvider): Unit = with(data) {
+        val buf = Buffer()
+        val secBuf = buf.copy()
+//        buf.snapshot().let { s -> Buffer().apply {  }
+        val n = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER)
+        repeat(n) {
+            val long = consumeLong()
+            buf.writeDecimalLong(long)
+            secBuf.writeString(long.toString())
+            assertEquals(buf.snapshot(), secBuf.snapshot())
+            buf.clear()
+            secBuf.clear()
+            assertEquals(ByteString(byteArrayOf()), buf.snapshot())
+            assertEquals(ByteString(byteArrayOf()), secBuf.snapshot())
+        }
     }
 
     private fun FuzzedDataProvider.doNOps(
