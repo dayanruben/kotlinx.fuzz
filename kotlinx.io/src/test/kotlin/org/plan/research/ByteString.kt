@@ -59,6 +59,19 @@ object ByteStringTargets {
         assertEquals(b, bb)
     }
 
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun builder(data: FuzzedDataProvider): Unit = with(data) {
+        val builder = ByteStringBuilder()
+        val sb = StringBuilder()
+        val opsN = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER)
+        repeat(opsN) {
+            val s = data.consumeString(10)
+            builder.append(s.encodeToByteString())
+            sb.append(s)
+        }
+        assertEquals(sb.length, builder.toByteString().decodeToString().length)
+    }
+
     fun Int.normalize() = when {
         this == 0 -> 0
         this < 0 -> -1

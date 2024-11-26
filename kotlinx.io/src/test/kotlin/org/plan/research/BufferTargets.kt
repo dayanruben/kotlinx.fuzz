@@ -2,11 +2,8 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import kotlinx.io.Buffer
+import kotlinx.io.*
 import kotlinx.io.bytestring.ByteString
-import kotlinx.io.snapshot
-import kotlinx.io.writeDecimalLong
-import kotlinx.io.writeString
 import org.plan.research.utils.*
 import kotlin.reflect.KCallable
 import kotlin.test.assertEquals
@@ -46,6 +43,8 @@ object BufferTargets {
             buf.writeDecimalLong(long)
             secBuf.writeString(long.toString())
             assertEquals(buf.snapshot(), secBuf.snapshot())
+            val v = buf.readDecimalLong()
+            assertEquals(long, v)
             buf.clear()
             secBuf.clear()
             assertEquals(ByteString(byteArrayOf()), buf.snapshot())

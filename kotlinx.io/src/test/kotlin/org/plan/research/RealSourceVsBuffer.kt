@@ -65,6 +65,14 @@ object RealSourceVsBuffer {
 
     @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun ch5(data: FuzzedDataProvider): Unit = chunkedTemplate(data, 5)
+
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
+    fun readLineStrict(data: FuzzedDataProvider): Unit = with(data) {
+        val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
+        val source = initBytes.inputStream().asSource().buffered()
+        val buf: Source = Buffer().apply { write(initBytes) }
+        template(source, buf, data, arrayOf(Source::readLineStrict))
+    }
 }
 
 
