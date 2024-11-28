@@ -3,6 +3,7 @@ package org.plan.research.utils
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.io.*
 import kotlinx.io.bytestring.ByteString
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
@@ -51,13 +52,45 @@ fun generateParameter(parameter: KParameter, data: FuzzedDataProvider): Any? {
                 }
             }
 
-            OutputStream::class -> Buffer().asOutputStream()
-            InputStream::class -> Buffer().asInputStream()
+            OutputStream::class -> Buffer().asBufferOutputStream()
+            InputStream::class -> Buffer().asBufferInputStream()
 
 
             else -> error("Unexpected parameter type: $paramType")
         }
     }
+}
+
+private fun Buffer.asBufferOutputStream(): OutputStream = BufferAsOutputStream(this)
+private class BufferAsOutputStream(
+    val buffer: Buffer,
+    val ostream: OutputStream = buffer.asOutputStream()
+) : OutputStream() {
+
+    override fun write(byte: Int) = ostream.write(byte)
+
+    override fun write(data: ByteArray, offset: Int, byteCount: Int) =
+        ostream.write(data, offset, byteCount)
+
+    override fun flush() = ostream.flush()
+
+    override fun close() = ostream.close()
+
+    override fun toString() = ostream.toString()
+}
+
+private fun Buffer.asBufferInputStream(): InputStream = BufferAsInputStream(this)
+private class BufferAsInputStream(
+    val buffer: Buffer,
+    val istream: InputStream = buffer.asInputStream()
+) :
+    InputStream() {
+    override fun read(): Int = istream.read()
+    override fun read(b: ByteArray, off: Int, len: Int): Int = istream.read(b, off, len)
+
+    override fun available(): Int = istream.available()
+
+    override fun close() = istream.close()
 }
 
 val CHARSETS = Charset.availableCharsets().values.toTypedArray()
@@ -144,6 +177,15 @@ fun copyArguments(
         is RawSink -> Buffer()
         is ByteBuffer -> cloneByteBuffer(arg)
         is ByteArray -> arg.clone()
+        is BufferAsInputStream -> arg.buffer.copy().asBufferInputStream()
+        is BufferAsOutputStream -> arg.buffer.copy().asBufferOutputStream()
+        is ByteArrayOutputStream -> ByteArrayOutputStream().apply {
+            write(arg.toByteArray())
+        }
+
+        is OutputStream -> error("output stream")
+        is InputStream -> error("input stream")
+
         else -> args[i]
     }
 }
