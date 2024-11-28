@@ -39,12 +39,14 @@ object BuffersKt {
     @FuzzTest(maxDuration = MAX_DURATION)
     fun indexOfByte(data: FuzzedDataProvider): Unit = with(data) {
         val b = consumeByte()
-        buf.indexOf(b)
+        val idx = consumeLong()
+        buf.indexOf(b, idx)
     }
 
     @FuzzTest(maxDuration = MAX_DURATION)
     fun indexOfByteString(data: FuzzedDataProvider): Unit = with(data) {
         val bytes = ByteString(consumeBytes(10))
-        buf.indexOf(bytes)
+        val idx = consumeLong()
+        buf.indexOf(bytes, idx)
     }
 }
