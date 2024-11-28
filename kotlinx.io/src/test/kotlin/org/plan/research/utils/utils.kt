@@ -5,6 +5,7 @@ import kotlinx.io.Buffer
 import kotlinx.io.IOException
 import kotlinx.io.snapshot
 import org.plan.research.Constants
+import java.io.File
 import java.lang.reflect.InvocationTargetException
 import kotlin.random.Random
 import kotlin.reflect.KCallable
@@ -141,4 +142,10 @@ inline fun <T> tryOrNull(block: () -> T): T? = try {
     block()
 } catch (_: Throwable) {
     null
+}
+
+fun main() {
+    val random = Random(777)
+    val f = File("data.bin")
+    f.writeBytes(random.nextBytes(2L.shl(16).toInt()))
 }
