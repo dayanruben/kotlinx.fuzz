@@ -38,7 +38,7 @@ object RealSourceVsBuffer {
     }
 
 
-    val chunkedFunctions = sourceFunctions.splitIntoChunks(5, 20)
+    val chunkedFunctions = sourceFunctions.splitIntoChunks(6, 20)
     private inline fun chunkedTemplate(data: FuzzedDataProvider, functionsNumber: Int) {
         val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
 
