@@ -28,7 +28,10 @@ object ByteStringTargets {
     fun fromStringAndBack(data: FuzzedDataProvider): Unit = with(data) {
         val charset = pickValue(CHARSETS)
         val s = data.consumeRemainingAsString()
-        val bs = ByteString(s.toByteArray(charset))
+
+        if (s != charset.decode(charset.encode(s)).toString()) return
+
+        val bs = s.encodeToByteString(charset)
         val res = bs.decodeToString(charset)
         assertEquals(s, res)
     }

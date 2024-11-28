@@ -55,7 +55,8 @@ object BufferTargets {
     private fun FuzzedDataProvider.doNOps(
         n: Int,
         data: FuzzedDataProvider,
-        buf: Buffer
+        buf: Buffer,
+        printArgs : Boolean = false
     ): Pair<List<KCallable<*>>, List<*>> {
         val ops = mutableListOf<KCallable<*>>()
         val results = mutableListOf<Any?>()
@@ -64,6 +65,7 @@ object BufferTargets {
             ops += op
 
             val args = op.generateArguments(data) { defaultParams(data) }
+            if (printArgs) println(args.toList())
             results += catching { op.call(buf, *args) }
         }
         return ops to results

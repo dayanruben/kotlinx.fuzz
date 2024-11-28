@@ -95,11 +95,13 @@ inline fun <T> Couple<T>.callNOps(
     genArgsFallback: KFunction<*>.() -> Array<*> = { error("Unexpected method: $this") }
 ): List<KFunction<*>> {
     val ops = mutableListOf<KFunction<*>>()
+    val largs = mutableListOf<Array<*>>()
     repeat(n) {
         val op = data.pickValue(funs)
         ops += op
 
         val args = op.generateArguments(data, genArgsFallback)
+        largs += args
         val args2 = copyArguments(args, data)
         invokeOperation(op, args, args2)
     }
