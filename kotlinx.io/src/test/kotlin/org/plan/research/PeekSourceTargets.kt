@@ -42,7 +42,8 @@ object PeekSourceTargets {
         val argCopies = mutableListOf<Array<*>>()
         val ans = mutableListOf<Result<*>>()
         val peekSource = fromRealSource.peek()
-        repeat(getN()) {
+        val n = getN()
+        repeat(n) {
             val op = pickValue(fastOps)
             ops += op
             val args = op.generateArguments(data)
@@ -50,7 +51,7 @@ object PeekSourceTargets {
             ans += catching { op.call(peekSource, *args) }
         }
 
-        for (i in 0 until getN()) {
+        for (i in 0 until n) {
             val op = ops[i]
             val args = argCopies[i]
             val res = catching { op.call(fromRealSource, *args) }
