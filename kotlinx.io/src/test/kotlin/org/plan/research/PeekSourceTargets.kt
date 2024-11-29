@@ -11,7 +11,7 @@ import org.plan.research.utils.ReflectionUtils.removeLongOps
 import kotlin.reflect.KFunction
 
 object PeekSourceTargets {
-    @FuzzTest
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun randomOps(data: FuzzedDataProvider): Unit = with(data) {
         val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
         val fromRealSource = initBytes.inputStream().asSource().buffered().peek()
@@ -27,7 +27,7 @@ object PeekSourceTargets {
         val ops3 = couple.callNOps(getN(), fastOps, data)
     }
 
-    @FuzzTest
+    @FuzzTest(maxDuration = Constants.MAX_DURATION)
     fun peekWorksSame(data: FuzzedDataProvider): Unit = with(data) {
         val initBytes = data.consumeBytes(Constants.INIT_BYTES_COUNT)
         val fromRealSource = initBytes.inputStream().asSource().buffered()

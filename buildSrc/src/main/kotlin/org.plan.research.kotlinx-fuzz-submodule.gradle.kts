@@ -26,7 +26,7 @@ tasks.named<Test>("test") {
     // set up Jazzer options
     environment(mapOf("JAZZER_FUZZ" to "1"))
     maxHeapSize = "${1024 * 4}m"
-    jvmArgs("-Xss1g")
+    jvmArgs("-Xss1g", "-XX:+UseParallelGC")
 }
 
 task("copyDependencies", Copy::class) {
