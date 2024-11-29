@@ -53,7 +53,32 @@ object BuffersKt {
 
     @FuzzTest(maxDuration = MAX_DURATION)
     fun indexOfByteString(data: FuzzedDataProvider): Unit = with(data) {
-        val bytes = ByteString(consumeBytes(10))
+        if (data.consumeInt(0, 9) != 9) {
+            indexOfByteStringSmallTarget()
+            return
+        }
+
+        val size = (8192 * consumeRegularFloat(1.0f, 3f)).toInt()
+        val startIndex = consumeInt(0, manyBytes.size.toInt() - size - 1)
+        val isOriginal = data.consumeBoolean()
+        val bs = if (isOriginal) {
+            manyBytes.substring(startIndex.toInt(), startIndex.toInt() + size.toInt())
+        } else { // mutating random byte
+            manyBytes.toByteArray(startIndex.toInt(), startIndex.toInt() + size.toInt()).apply {
+                val indx = consumeInt(0, this.size - 1)
+                this[indx] = (this[indx] + 10).toByte()
+            }.let { ByteString(it) }
+        }
+        val res = buf.indexOf(bs)
+        if (isOriginal) {
+            assertEquals(startIndex, res.toInt())
+        } else {
+            assertEquals(-1L, res)
+        }
+    }
+
+    private fun FuzzedDataProvider.indexOfByteStringSmallTarget() {
+        val bytes = ByteString(consumeBytes(consumeInt(1, 1000)))
         val idx = consumeLong()
         ignoreIndexExceptions { buf.indexOf(bytes, idx) }
     }
