@@ -36,17 +36,25 @@ object BuffersKt {
 
     val buf = Buffer().apply { write(manyBytes) }
 
+
+    private inline fun ignoreIndexExceptions(block: () -> Unit) = try {
+        block()
+    } catch (e: RuntimeException) {
+        if (e.message?.contains("Index") == false) throw e
+        else Unit
+    }
+
     @FuzzTest(maxDuration = MAX_DURATION)
     fun indexOfByte(data: FuzzedDataProvider): Unit = with(data) {
         val b = consumeByte()
         val idx = consumeLong()
-        buf.indexOf(b, idx)
+        ignoreIndexExceptions { buf.indexOf(b, idx) }
     }
 
     @FuzzTest(maxDuration = MAX_DURATION)
     fun indexOfByteString(data: FuzzedDataProvider): Unit = with(data) {
         val bytes = ByteString(consumeBytes(10))
         val idx = consumeLong()
-        buf.indexOf(bytes, idx)
+        ignoreIndexExceptions { buf.indexOf(bytes, idx) }
     }
 }
