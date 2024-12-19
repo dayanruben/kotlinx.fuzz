@@ -5,7 +5,6 @@ package org.plan.research
 import kotlinx.serialization.*
 import kotlinx.serialization.protobuf.ProtoBuf
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.test.assertTrue
 
 // Conditions for reproduction

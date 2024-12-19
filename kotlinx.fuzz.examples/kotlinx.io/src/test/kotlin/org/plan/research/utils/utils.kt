@@ -80,8 +80,8 @@ inline fun <T> template(
     buf: T,
     data: FuzzedDataProvider,
     funs: Array<KFunction<*>>,
-    genArgsFallback: KCallable<*>.() -> Array<*> = fun KCallable<*>.(): Nothing {
-        return error("Unexpected method: $this")
+    genArgsFallback: KCallable<*>.() -> Array<*> = {
+        error("Unexpected method: $this")
     }
 ): List<KCallable<*>> {
     val couple = Couple(source, buf)

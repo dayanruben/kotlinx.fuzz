@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider

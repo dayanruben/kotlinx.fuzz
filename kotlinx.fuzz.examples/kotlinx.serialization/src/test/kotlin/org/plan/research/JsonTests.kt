@@ -1,3 +1,5 @@
+@file:Suppress("ASSIGNED_BUT_NEVER_ACCESSED_VARIABLE", "UNUSED_VALUE")
+
 package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider

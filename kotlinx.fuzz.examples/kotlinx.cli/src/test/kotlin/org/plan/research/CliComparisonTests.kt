@@ -64,7 +64,7 @@ object CliComparisonTests {
         apache.addOption(apacheOpt)
 
         with(kotlinx) {
-            var opt = option(
+            val opt = option(
                 type = if (hasValue) ArgType.String else ArgType.Boolean,
                 fullName = longName,
                 shortName = shortName,

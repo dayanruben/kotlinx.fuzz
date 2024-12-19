@@ -1,3 +1,5 @@
+@file:Suppress("UNUSED_VARIABLE")
+
 package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
@@ -17,12 +19,12 @@ object PeekSourceTargets {
         val fromRealSource = initBytes.inputStream().asSource().buffered().peek()
         val fromBuffer = Buffer().apply { write(initBytes) }.peek()
 
-        val couple = Couple<Source>(fromRealSource, fromBuffer)
+        val couple = Couple(fromRealSource, fromBuffer)
 
         fun getN(): Int = consumeInt(0, Constants.MAX_OPERATIONS_NUMBER / 3)
 
         val ops1 = couple.callNOps(getN(), fastOps, data)
-        val peekCouple = Couple<Source>(fromRealSource.peek(), fromBuffer.peek())
+        val peekCouple = Couple(fromRealSource.peek(), fromBuffer.peek())
         val ops2 = peekCouple.callNOps(getN(), fastOps, data)
         val ops3 = couple.callNOps(getN(), fastOps, data)
     }

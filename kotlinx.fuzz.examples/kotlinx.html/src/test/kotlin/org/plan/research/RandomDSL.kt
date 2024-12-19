@@ -19,7 +19,7 @@ object RandomDSL {
 
     @FuzzTest(maxDuration = MAX_DURATION)
     fun toStreamParseJsoup(data: FuzzedDataProvider) {
-        common(data, createHTML(data.consumeBoolean())) { html -> Jsoup.parse(html)!! }
+        common(data, createHTML(data.consumeBoolean())) { html -> Jsoup.parse(html) }
     }
 
     @FuzzTest(maxDuration = MAX_DURATION)

@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider

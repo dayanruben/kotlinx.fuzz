@@ -4,6 +4,7 @@ import com.code_intelligence.jazzer.api.HookType;
 import com.code_intelligence.jazzer.api.MethodHook;
 import java.lang.invoke.MethodHandle;
 
+@SuppressWarnings("unused")
 public class MyHook {
 
 /*

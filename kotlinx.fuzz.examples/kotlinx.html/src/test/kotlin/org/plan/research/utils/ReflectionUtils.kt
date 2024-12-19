@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package org.plan.research.utils
 
 import kotlinx.html.HtmlTagMarker
@@ -102,7 +104,7 @@ object ReflectionUtils {
     }
 
     fun getEnumToValues(ref: Reflections): Map<KClass<out Enum<*>>, Array<out Enum<*>>> {
-        val enumClasses = ref.getSubTypesOf(Enum::class.java).map { it.kotlin!! }
+        val enumClasses = ref.getSubTypesOf(Enum::class.java).map { it.kotlin }
         return enumClasses.associateWithTo(hashMapOf()) { enumClass -> enumClass.java.enumConstants }
     }
 

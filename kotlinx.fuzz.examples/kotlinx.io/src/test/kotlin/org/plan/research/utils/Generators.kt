@@ -169,6 +169,7 @@ inline fun KFunction<*>.generateArguments(
     }
 }
 
+@Suppress("UNUSED_PARAMETER")
 fun copyArguments(
     args: Array<*>,
     data: FuzzedDataProvider,
