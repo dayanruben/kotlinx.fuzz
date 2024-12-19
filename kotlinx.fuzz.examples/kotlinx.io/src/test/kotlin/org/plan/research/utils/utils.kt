@@ -138,12 +138,6 @@ inline fun <T> T.callOps(
     return ops
 }
 
-inline fun <T> tryOrNull(block: () -> T): T? = try {
-    block()
-} catch (_: Throwable) {
-    null
-}
-
 fun main() {
     val random = Random(777)
     val f = File("data.bin")
