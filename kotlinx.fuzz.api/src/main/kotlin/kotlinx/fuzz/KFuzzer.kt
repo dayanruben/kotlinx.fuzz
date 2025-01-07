@@ -10,9 +10,9 @@ interface KFuzzer {
     // Add consuming of an object (related to random method call)
 
     fun consumeBoolean(probability: Double): Boolean
-    fun consumeNullableBoolean(probability: Double): Boolean?
+    fun consumeNullableBoolean(trueProbability: Double, nullProbability: Double): Boolean?
     fun consumeBooleans(probability: Double, maxLength: Int): BooleanArray
-    fun consumeNullableBooleans(probability: Double, maxLength: Int): BooleanArray?
+    fun consumeNullableBooleans(trueProbability: Double, nullProbability: Double, maxLength: Int): BooleanArray?
 
     fun consumeByte(
         range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE,
@@ -21,7 +21,8 @@ interface KFuzzer {
 
     fun consumeNullableByte(
         range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Byte?
 
     fun consumeBytes(
@@ -33,7 +34,8 @@ interface KFuzzer {
     fun consumeNullableBytes(
         maxLength: Int,
         range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): ByteArray?
 
     fun consumeRemainingAsByteArray(): ByteArray
@@ -45,7 +47,8 @@ interface KFuzzer {
 
     fun consumeNullableShort(
         range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Short?
 
     fun consumeShorts(
@@ -57,7 +60,8 @@ interface KFuzzer {
     fun consumeNullableShorts(
         maxLength: Int,
         range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): ShortArray?
 
     fun consumeInt(
@@ -67,7 +71,8 @@ interface KFuzzer {
 
     fun consumeNullableInt(
         range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Int?
 
     fun consumeInts(
@@ -79,7 +84,8 @@ interface KFuzzer {
     fun consumeNullableInts(
         maxLength: Int,
         range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): IntArray?
 
     fun consumeLong(
@@ -89,7 +95,8 @@ interface KFuzzer {
 
     fun consumeNullableLong(
         range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Long?
 
     fun consumeLongs(
@@ -101,7 +108,8 @@ interface KFuzzer {
     fun consumeNullableLongs(
         maxLength: Int,
         range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): LongArray?
 
     fun consumeFloat(
@@ -111,7 +119,8 @@ interface KFuzzer {
 
     fun consumeNullableFloat(
         range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Float?
 
     fun consumeFloats(
@@ -123,7 +132,8 @@ interface KFuzzer {
     fun consumeNullableFloats(
         maxLength: Int,
         range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): FloatArray?
 
     fun consumeDouble(
@@ -134,19 +144,24 @@ interface KFuzzer {
 
     fun consumeNullableDouble(
         range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Boolean = true, distribution: Distribution = Distribution.UNIFORM
+        includeSpecialValues: Boolean = true,
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Double?
 
     fun consumeDoubles(
         maxLength: Int,
         range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Boolean = true, distribution: Distribution = Distribution.UNIFORM
+        includeSpecialValues: Boolean = true,
+        distribution: Distribution = Distribution.UNIFORM
     ): DoubleArray
 
     fun consumeNullableDoubles(
         maxLength: Int,
         range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Boolean = true, distribution: Distribution = Distribution.UNIFORM
+        includeSpecialValues: Boolean = true,
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): DoubleArray?
 
     fun consumeChar(
@@ -156,7 +171,8 @@ interface KFuzzer {
 
     fun consumeNullableChar(
         range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
     ): Char?
 
     fun consumeChars(
@@ -168,16 +184,18 @@ interface KFuzzer {
     fun consumeNullableChars(
         maxLength: Int,
         range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE,
-        distribution: Distribution = Distribution.UNIFORM): CharArray?
+        distribution: Distribution = Distribution.UNIFORM,
+        nullProbability: Double
+    ): CharArray?
 
     fun consumeString(maxLength: Int, charset: Charset = Charsets.UTF_8): String
-    fun consumeNullableString(maxLength: Int, charset: Charset = Charsets.UTF_8): String?
+    fun consumeNullableString(maxLength: Int, charset: Charset = Charsets.UTF_8, nullProbability: Double): String?
     fun consumeRemainingAsString(charset: Charset = Charsets.UTF_8): String
     fun consumeAsciiString(maxLength: Int, charset: Charset = Charsets.UTF_8): String
-    fun consumeNullableAsciiString(maxLength: Int, charset: Charset = Charsets.UTF_8): String?
+    fun consumeNullableAsciiString(maxLength: Int, charset: Charset = Charsets.UTF_8, nullProbability: Double): String?
     fun consumeRemainingAsAsciiString(charset: Charset = Charsets.UTF_8): String
     fun consumeLetterString(maxLength: Int, charset: Charset = Charsets.UTF_8): String
-    fun consumeNullableLetterString(maxLength: Int, charset: Charset = Charsets.UTF_8): String?
+    fun consumeNullableLetterString(maxLength: Int, charset: Charset = Charsets.UTF_8, nullProbability: Double): String?
     fun consumeRemainingAsLetterString(charset: Charset = Charsets.UTF_8): String
 
 
