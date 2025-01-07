@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 object CborTests {
     private fun isCborDecodingException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.cbor.internal.CborDecodingException"
+
     private fun isSerializerSubclassException(e: Throwable): Boolean =
         e.javaClass.name == "kotlinx.serialization.SerializationException"
                 && e.message.orEmpty().startsWith("Serializer for subclass")

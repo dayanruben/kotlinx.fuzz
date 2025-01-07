@@ -1,6 +1,10 @@
 # kotlinx.fuzz
 Fuzzer for Kotlin libraries
 
+The tests are disabled by default, so that they don't take too much time when building the project. They can be enabled by defining the `enableTests` property:
+```
+./gradlew :kotlinx.fuzz.examples:kotlinx.serialization:test -PenableTests=true
+```
 
 # Setup instructions
 

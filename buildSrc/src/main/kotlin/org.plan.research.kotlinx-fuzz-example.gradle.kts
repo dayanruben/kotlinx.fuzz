@@ -46,4 +46,11 @@ tasks.create<CheckTargetsExist>("checkTargetsExist") {
 
 
 tasks.getByName("test").dependsOn("copyDependencies")
-tasks.getByName("test").enabled = false
+
+val enableTests: Boolean = if (project.hasProperty("enableTests")) {
+    project.property("enableTests").toString().toBoolean()
+} else {
+    false
+}
+
+tasks.getByName("test").enabled = enableTests
