@@ -6,8 +6,8 @@ from os import path
 
 def get_run_command(target_name, module):
     if module is None:
-        return ["./gradlew", ":test", "--tests", target_name]
-    return ["./gradlew", f":{module}:test", "--tests", target_name]
+        return ["./gradlew", ":test", "--tests", target_name, "-PenableTests=true"]
+    return ["./gradlew", f":{module}:test", "--tests", target_name, "-PenableTests=true"]
 
 
 def run_target(target_name, home_dir, logs_dir, jacoco_exec_dir, module = None):
