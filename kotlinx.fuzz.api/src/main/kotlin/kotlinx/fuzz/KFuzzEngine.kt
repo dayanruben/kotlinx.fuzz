@@ -1,18 +1,9 @@
 package kotlinx.fuzz
 
-import java.nio.charset.Charset
+import java.io.File
 
 interface KFuzzEngine {
-    fun nextBoolean(): Boolean
-    fun nextByte(): Byte
-    fun nextShort(): Short
-    fun nextInt(): Int
-    fun nextLong(): Long
-    fun nextFloat(): Float
-    fun nextDouble(includeSpecialValues: Boolean): Double
-    fun nextChar(): Char
-    fun nextString(maxLength: Int, charset: Charset): String
-    fun nextAsciiString(maxLength: Int): String
-    fun nextLetterString(maxLength: Int): String
-    fun isInputFinished(): Boolean
+    fun initialise(classpath: String, pathToSrc: Set<File>, settings: Map<String, String>)
+    fun runTarget(target: String)
+    fun exportStatistics(): Map<String, Any>
 }

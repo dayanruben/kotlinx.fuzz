@@ -3,6 +3,9 @@ package kotlinx.fuzz
 import java.nio.charset.Charset
 import kotlin.text.Charsets
 
+typealias FloatRange = ClosedFloatingPointRange<Float>
+typealias DoubleRange = ClosedFloatingPointRange<Double>
+
 interface KFuzzer {
     // Add regex-based string generation
     // Add DSL-like approach
@@ -13,42 +16,34 @@ interface KFuzzer {
     /**
      * Consumes a not null boolean from the fuzzer input.
      *
-     * @param probability denotes desired probability of bool to be true. Should be in [0.0, 1.0]. 0.5 by default
-     *
-     * @return boolean that has true value with given probability
+     * @return boolean
      */
-    fun consumeBoolean(probability: Double = 0.5): Boolean
+    fun consumeBoolean(): Boolean
 
     /**
      * Consumes a nullable boolean from the fuzzer input.
      *
-     * @param trueProbability denotes desired probability of bool to be true. Should be in [0.0, 1.0]. 0.33 by default
-     * @param nullProbability denotes desired probability of bool to be null. Should be in [0.0, 1.0] and nullProbability + trueProbability should be in [0.0, 1.0]. 0.33 by default
-     *
-     * @return nullable boolean that has true value with given probability
+     * @return nullable boolean
      */
-    fun consumeNullableBoolean(trueProbability: Double = 1.0 / 3, nullProbability: Double = 1.0 / 3): Boolean?
+    fun consumeBooleanOrNull(): Boolean?
 
     /**
-     * Consumes a not null boolean array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null boolean array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter. In this case it will be shorter
      *
-     * @param probability denotes desired probability of each bool to be true. Should be in [0.0, 1.0]. 0.5 by default
      * @param maxLength the maximum length of the array
      *
-     * @return boolean array that has true in each value with given probability
+     * @return boolean array
      */
-    fun consumeBooleans(maxLength: Int, probability: Double = 0.5): BooleanArray
+    fun consumeBooleans(maxLength: Int): BooleanArray
 
     /**
-     * Consumes a nullable boolean array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable boolean array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter. In this case it will be shorter
      *
-     * @param trueProbability denotes desired probability of each bool to be true. Should be in [0.0, 1.0]. 0.5 by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      * @param maxLength the maximum length of the array
      *
-     * @return nullable boolean array that has true in each value with given probability
+     * @return nullable boolean array
      */
-    fun consumeNullableBooleans(maxLength: Int, trueProbability: Double = 0.5, nullProbability: Double = 0.5): BooleanArray?
+    fun consumeBooleansOrNull(maxLength: Int): BooleanArray?
 
     /**
      * Consumes a not null byte from the fuzzer input.
@@ -57,50 +52,36 @@ interface KFuzzer {
      *
      * @return byte that has value in the given range
      */
-    fun consumeByte(
-        range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE
-    ): Byte
+    fun consumeByte(range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE): Byte
 
     /**
      * Consumes a nullable byte from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Byte.MIN_VALUE, Byte.MAX_VALUE]. [Byte.MIN_VALUE, Byte.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable byte that has value in the given range
      */
-    fun consumeNullableByte(
-        range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Byte?
+    fun consumeByteOrNull(range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE): Byte?
 
     /**
-     * Consumes a not null byte array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null byte array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Byte.MIN_VALUE, Byte.MAX_VALUE]. [Byte.MIN_VALUE, Byte.MAX_VALUE] by default
      *
      * @return byte array that has each value in given range
      */
-    fun consumeBytes(
-        maxLength: Int,
-        range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE
-    ): ByteArray
+    fun consumeBytes(maxLength: Int, range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE): ByteArray
 
     /**
-     * Consumes a nullable byte array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable byte array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Byte.MIN_VALUE, Byte.MAX_VALUE]. [Byte.MIN_VALUE, Byte.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable byte array that has each value in given range
      */
-    fun consumeNullableBytes(
-        maxLength: Int,
-        range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): ByteArray?
+    fun consumeBytesOrNull(maxLength: Int, range: IntRange = Byte.MIN_VALUE..Byte.MAX_VALUE): ByteArray?
 
     /**
      * Consumes remaining fuzzing input as not null byte array. After calling this method, further calls to methods of this interface will return fixed values only.
@@ -116,50 +97,36 @@ interface KFuzzer {
      *
      * @return short that has value in the given range
      */
-    fun consumeShort(
-        range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE
-    ): Short
+    fun consumeShort(range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): Short
 
     /**
      * Consumes a nullable short from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Short.MIN_VALUE, Short.MAX_VALUE]. [Short.MIN_VALUE, Short.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable short that has value in the given range
      */
-    fun consumeNullableShort(
-        range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Short?
+    fun consumeShortOrNull(range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): Short?
 
     /**
-     * Consumes a not null short array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null short array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Short.MIN_VALUE, Short.MAX_VALUE]. [Short.MIN_VALUE, Short.MAX_VALUE] by default
      *
      * @return short array that has each value in given range
      */
-    fun consumeShorts(
-        maxLength: Int,
-        range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE
-    ): ShortArray
+    fun consumeShorts(maxLength: Int, range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): ShortArray
 
     /**
-     * Consumes a nullable short array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable short array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Short.MIN_VALUE, Short.MAX_VALUE]. [Short.MIN_VALUE, Short.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable short array that has each value in given range
      */
-    fun consumeNullableShorts(
-        maxLength: Int,
-        range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): ShortArray?
+    fun consumeShortsOrNull(maxLength: Int, range: IntRange = Short.MIN_VALUE..Short.MAX_VALUE): ShortArray?
 
     /**
      * Consumes a not null int from the fuzzer input.
@@ -168,50 +135,36 @@ interface KFuzzer {
      *
      * @return int that has value in the given range
      */
-    fun consumeInt(
-        range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE
-    ): Int
+    fun consumeInt(range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE): Int
 
     /**
      * Consumes a nullable int from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Int.MIN_VALUE, Int.MAX_VALUE]. [Int.MIN_VALUE, Int.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable int that has value in the given range
      */
-    fun consumeNullableInt(
-        range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Int?
+    fun consumeIntOrNull(range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE): Int?
 
     /**
-     * Consumes a not null int array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null int array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Int.MIN_VALUE, Int.MAX_VALUE]. [Int.MIN_VALUE, Int.MAX_VALUE] by default
      *
      * @return int array that has each value in given range
      */
-    fun consumeInts(
-        maxLength: Int,
-        range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE
-    ): IntArray
+    fun consumeInts(maxLength: Int, range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE): IntArray
 
     /**
-     * Consumes a nullable int array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable int array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Int.MIN_VALUE, Int.MAX_VALUE]. [Int.MIN_VALUE, Int.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable int array that has each value in given range
      */
-    fun consumeNullableInts(
-        maxLength: Int,
-        range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): IntArray?
+    fun consumeIntsOrNull(maxLength: Int, range: IntRange = Int.MIN_VALUE..Int.MAX_VALUE): IntArray?
 
     /**
      * Consumes a not null long from the fuzzer input.
@@ -220,50 +173,36 @@ interface KFuzzer {
      *
      * @return long that has value in the given range
      */
-    fun consumeLong(
-        range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE
-    ): Long
+    fun consumeLong(range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE): Long
 
     /**
      * Consumes a nullable long from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Long.MIN_VALUE, Long.MAX_VALUE]. [Long.MIN_VALUE, Long.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable long that has value in the given range
      */
-    fun consumeNullableLong(
-        range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Long?
+    fun consumeLongOrNull(range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE): Long?
 
     /**
-     * Consumes a not null long array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null long array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Long.MIN_VALUE, Long.MAX_VALUE]. [Long.MIN_VALUE, Long.MAX_VALUE] by default
      *
      * @return long array that has each value in given range
      */
-    fun consumeLongs(
-        maxLength: Int,
-        range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE
-    ): LongArray
+    fun consumeLongs(maxLength: Int, range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE): LongArray
 
     /**
-     * Consumes a nullable long array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable long array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Long.MIN_VALUE, Long.MAX_VALUE]. [Long.MIN_VALUE, Long.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable long array that has each value in given range
      */
-    fun consumeNullableLongs(
-        maxLength: Int,
-        range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): LongArray?
+    fun consumeLongsOrNull(maxLength: Int, range: LongRange = Long.MIN_VALUE..Long.MAX_VALUE): LongArray?
 
     /**
      * Consumes a not null float from the fuzzer input.
@@ -272,110 +211,74 @@ interface KFuzzer {
      *
      * @return float that has value in the given range
      */
-    fun consumeFloat(
-        range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE
-    ): Float
+    fun consumeFloat(range: FloatRange = Float.MIN_VALUE..Float.MAX_VALUE): Float
 
     /**
      * Consumes a nullable float from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Float.MIN_VALUE, Float.MAX_VALUE]. [Float.MIN_VALUE, Float.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable float that has value in the given range
      */
-    fun consumeNullableFloat(
-        range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Float?
+    fun consumeFloatOrNull(range: FloatRange = Float.MIN_VALUE..Float.MAX_VALUE): Float?
 
     /**
-     * Consumes a not null float array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null float array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Float.MIN_VALUE, Float.MAX_VALUE]. [Float.MIN_VALUE, Float.MAX_VALUE] by default
      *
      * @return float array that has each value in given range
      */
-    fun consumeFloats(
-        maxLength: Int,
-        range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE
-    ): FloatArray
+    fun consumeFloats(maxLength: Int, range: FloatRange = Float.MIN_VALUE..Float.MAX_VALUE): FloatArray
 
     /**
-     * Consumes a nullable float array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable float array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Float.MIN_VALUE, Float.MAX_VALUE]. [Float.MIN_VALUE, Float.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable float array that has each value in given range
      */
-    fun consumeNullableFloats(
-        maxLength: Int,
-        range: ClosedFloatingPointRange<Float> = Float.MIN_VALUE..Float.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): FloatArray?
+    fun consumeFloatsOrNull(maxLength: Int, range: FloatRange = Float.MIN_VALUE..Float.MAX_VALUE): FloatArray?
 
     /**
      * Consumes a not null double from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Double.MIN_VALUE, Double.MAX_VALUE]. [Double.MIN_VALUE, Double.MAX_VALUE] by default
-     * @param includeSpecialValues denotes probability of one of special values (±infinity and NaN) to be chosen. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return double that has value in the given range
      */
-    fun consumeDouble(
-        range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Double = 0.5
-    ): Double
+    fun consumeDouble(range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE): Double
 
     /**
      * Consumes a nullable double from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Double.MIN_VALUE, Double.MAX_VALUE]. [Double.MIN_VALUE, Double.MAX_VALUE] by default
-     * @param includeSpecialValues denotes probability of one of special values (±infinity and NaN) to be chosen. Should be in [0.0, 1.0]. 0.5 by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable double that has value in the given range
      */
-    fun consumeNullableDouble(
-        range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Double = 0.5,
-        nullProbability: Double = 0.5
-    ): Double?
+    fun consumeDoubleOrNull(range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE): Double?
 
     /**
-     * Consumes a not null double array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null double array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
-     * @param includeSpecialValues denotes probability of one of special values (±infinity and NaN) to be chosen. Should be in [0.0, 1.0]. 0.5 by default
      * @param range denotes desired range for each value. Should be a subset of [Double.MIN_VALUE, Double.MAX_VALUE]. [Double.MIN_VALUE, Double.MAX_VALUE] by default
      *
      * @return double array that has each value in given range
      */
-    fun consumeDoubles(
-        maxLength: Int,
-        range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Double = 0.5
-    ): DoubleArray
+    fun consumeDoubles(maxLength: Int, range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE): DoubleArray
 
     /**
-     * Consumes a nullable double array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable double array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Double.MIN_VALUE, Double.MAX_VALUE]. [Double.MIN_VALUE, Double.MAX_VALUE] by default
-     * @param includeSpecialValues denotes probability of one of special values (±infinity and NaN) to be chosen. Should be in [0.0, 1.0]. 0.5 by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable double array that has each value in given range
      */
-    fun consumeNullableDoubles(
-        maxLength: Int,
-        range: ClosedFloatingPointRange<Double> = Double.MIN_VALUE..Double.MAX_VALUE,
-        includeSpecialValues: Double = 0.5,
-        nullProbability: Double = 0.5
-    ): DoubleArray?
+    fun consumeDoublesOrNull(maxLength: Int, range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE): DoubleArray?
 
     /**
      * Consumes a not null char from the fuzzer input.
@@ -384,50 +287,36 @@ interface KFuzzer {
      *
      * @return char that has value in the given range
      */
-    fun consumeChar(
-        range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE
-    ): Char
+    fun consumeChar(range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): Char
 
     /**
      * Consumes a nullable char from the fuzzer input.
      *
      * @param range denotes desired range for resulting value. Should be a subset of [Char.MIN_VALUE, Char.MAX_VALUE]. [Char.MIN_VALUE, Char.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable char that has value in the given range
      */
-    fun consumeNullableChar(
-        range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): Char?
+    fun consumeCharOrNull(range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): Char?
 
     /**
-     * Consumes a not null char array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a not null char array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Char.MIN_VALUE, Char.MAX_VALUE]. [Char.MIN_VALUE, Char.MAX_VALUE] by default
      *
      * @return char array that has each value in given range
      */
-    fun consumeChars(
-        maxLength: Int,
-        range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE
-    ): CharArray
+    fun consumeChars(maxLength: Int, range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): CharArray
 
     /**
-     * Consumes a nullable char array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long
+     * Consumes a nullable char array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
      *
      * @param maxLength the maximum length of the array
      * @param range denotes desired range for each value. Should be a subset of [Char.MIN_VALUE, Char.MAX_VALUE]. [Char.MIN_VALUE, Char.MAX_VALUE] by default
-     * @param nullProbability denotes desired probability of the whole array to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable char array that has each value in given range
      */
-    fun consumeNullableChars(
-        maxLength: Int,
-        range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE,
-        nullProbability: Double = 0.5
-    ): CharArray?
+    fun consumeCharsOrNull(maxLength: Int, range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): CharArray?
 
     /**
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
@@ -444,11 +333,10 @@ interface KFuzzer {
      *
      * @param maxLength the maximum length of the string
      * @param charset charset that is used for resulting string. UTF-8 by default
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable string of length between 0 and maxLength (inclusive) in given charset
      */
-    fun consumeNullableString(maxLength: Int, charset: Charset = Charsets.UTF_8, nullProbability: Double = 0.5): String?
+    fun consumeStringOrNull(maxLength: Int, charset: Charset = Charsets.UTF_8): String?
 
     /**
      * Consumes remaining fuzzing input as not null string. After calling this method, further calls to methods of this interface will return fixed values only.
@@ -472,11 +360,10 @@ interface KFuzzer {
      * Consumes a nullable ascii string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param maxLength the maximum length of the string
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable ascii string of length between 0 and maxLength (inclusive)
      */
-    fun consumeNullableAsciiString(maxLength: Int, nullProbability: Double = 0.5): String?
+    fun consumeAsciiStringOrNull(maxLength: Int): String?
 
     /**
      * Consumes remaining fuzzing input as not null ascii string. After calling this method, further calls to methods of this interface will return fixed values only.
@@ -498,11 +385,10 @@ interface KFuzzer {
      * Consumes a nullable string consisting of letters of latin alphabet from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param maxLength the maximum length of the string
-     * @param nullProbability denotes desired probability of the value to be null. Should be in [0.0, 1.0]. 0.5 by default
      *
      * @return nullable string consisting of letters of latin alphabet of length between 0 and maxLength (inclusive)
      */
-    fun consumeNullableLetterString(maxLength: Int, nullProbability: Double = 0.5): String?
+    fun consumeLetterStringOrNull(maxLength: Int): String?
 
     /**
      * Consumes remaining fuzzing input as not null string consisting of letters of latin alphabet. After calling this method, further calls to methods of this interface will return fixed values only.
