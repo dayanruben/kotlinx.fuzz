@@ -18,6 +18,8 @@ import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import java.lang.reflect.Method
 import java.net.URI
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.deleteRecursively
 
 
 class KFuzzJunitEngine : TestEngine {
@@ -84,6 +86,7 @@ class KFuzzJunitEngine : TestEngine {
 
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
+        configureJazzer()
         root.children.forEach { child -> executeImpl(request, child) }
     }
 
@@ -114,17 +117,38 @@ class KFuzzJunitEngine : TestEngine {
         }
     }
 
+    @OptIn(ExperimentalPathApi::class)
     private fun jazzerDoFuzzing(instance: Any, method: Method): Throwable? {
         val libFuzzerArgs = mutableListOf<String>("fake_argv0")
         val corpusDir = kotlin.io.path.createTempDirectory("jazzer-corpus")
 
-        Log.fixOutErr(System.out, System.err)
-
         libFuzzerArgs += corpusDir.toString()
-        libFuzzerArgs += "-max_total_time=10"
-//        libFuzzerArgs += "-runs=10"
+        libFuzzerArgs += "-max_total_time=10" // TODO: remove hardcoded args
         libFuzzerArgs += "-rss_limit_mb=0"
 
+        FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
+            method,
+            LifecycleMethodsInvoker.noop(instance)
+        )
+
+        val atomicFinding = AtomicReference<Throwable>()
+        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
+            println("fatal finding handler invoked")
+            atomicFinding.set(finding)
+        }
+
+        val exitCode = FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+
+        corpusDir.deleteRecursively()
+
+        return atomicFinding.get()
+    }
+
+    private fun configureJazzer() {
+        Log.fixOutErr(System.out, System.err)
+
+        Opt.hooks.setIfDefault(false)
+        Opt.instrument.setIfDefault(listOf("kotlinx.fuzz.test.**"))
         Opt.customHookExcludes.setIfDefault(
             listOf(
                 "com.google.testing.junit.**",
@@ -143,33 +167,7 @@ class KFuzzJunitEngine : TestEngine {
                 "org.gradle.**"
             )
         )
-//        Opt.instrument.setIfDefault(mutableListOf())
-        Opt.hooks.setIfDefault(false)
-
-        Opt.instrument.setIfDefault(listOf("kotlinx.fuzz.test.**"))
-
-//        Opt.instrument.setIfDefault(determineInstrumentationFilters(extensionContext));
-//        Opt.customHookIncludes.setIfDefault(Opt.instrument.get());
-//        Opt.instrumentationIncludes.setIfDefault(Opt.instrument.get());
-
         AgentInstaller.install(Opt.hooks.get())
-
-        FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
-            method,
-            LifecycleMethodsInvoker.noop(instance)
-        )
-
-        val atomicFinding = AtomicReference<Throwable>()
-        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
-            println("fatal finding handler invoked")
-            atomicFinding.set(finding)
-//            throw finding
-        }
-
-
-        // api stats ???
-        val exitCode = FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-        return atomicFinding.get()
     }
 }
 
