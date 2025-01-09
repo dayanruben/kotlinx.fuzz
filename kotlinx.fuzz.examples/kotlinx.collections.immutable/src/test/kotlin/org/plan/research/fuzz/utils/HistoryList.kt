@@ -9,6 +9,7 @@ package org.plan.research.fuzz.utils
 
 import kotlinx.collections.immutable.PersistentList
 
+@ConsistentCopyVisibility
 data class HistoryList<T> private constructor(val history: MutableList<List<T>>) {
     companion object {
         fun <T> historyList(list: List<T>) = HistoryList(mutableListOf(list.toList()))
