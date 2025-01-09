@@ -319,6 +319,38 @@ interface KFuzzer {
     fun consumeCharsOrNull(maxLength: Int, range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): CharArray?
 
     /**
+     * Consumes a not null letter ([a-zA-Z]) from the fuzzer input.
+     *
+     * @return char that has value in the given range
+     */
+    fun consumeLetter(): Char
+
+    /**
+     * Consumes a nullable letter ([a-zA-Z]) from the fuzzer input.
+     *
+     * @return nullable char that has value in the given range
+     */
+    fun consumeLetterOrNull(): Char?
+
+    /**
+     * Consumes a not null letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
+     *
+     * @param maxLength the maximum length of the array
+     *
+     * @return char array that has each value in given range
+     */
+    fun consumeLetters(maxLength: Int): CharArray
+
+    /**
+     * Consumes a nullable letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer input is insufficiently long. In this case it will be shorter
+     *
+     * @param maxLength the maximum length of the array
+     *
+     * @return nullable char array that has each value in given range
+     */
+    fun consumeLettersOrNull(maxLength: Int): CharArray?
+
+    /**
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param maxLength the maximum length of the string
