@@ -1,6 +1,10 @@
 package kotlinx.fuzz
 
 import com.github.curiousoddman.rgxgen.RgxGen
+import com.github.curiousoddman.rgxgen.config.RgxGenOption
+import com.github.curiousoddman.rgxgen.config.RgxGenProperties
+import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
+import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
@@ -33,13 +37,13 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         fun readDouble() = Double.fromBits(readLong())
     }
 
-    private class MyRandom(private val kFuzzer: KFuzzer) : Random() {
-        override fun nextInt(bound: Int): Int {
-            return kFuzzer.consumeInt(0 until bound)
-        }
+    private class KFuzzerRandom(private val kFuzzer: KFuzzer) : Random() {
+        override fun nextInt(bound: Int) = kFuzzer.consumeInt(0 until bound)
+        override fun nextInt() = kFuzzer.consumeInt()
+        override fun nextBoolean() = kFuzzer.consumeBoolean()
     }
 
-    private val rnd = MyRandom(this)
+    private val rnd = KFuzzerRandom(this)
 
     private val iterator = Reader(data)
 
@@ -444,11 +448,21 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         }
     }
 
-    override fun consumeRegexString(regex: Regex): String {
-        val rgxGen = RgxGen.parse(regex.pattern)
+    override fun consumeRegexString(regex: Regex, options: Map<String, Any>): String {
+        val properties = RgxGenProperties()
+        for ((key, value) in options.entries) {
+            when (key) {
+                "INFINITE_PATTERN_REPETITION" -> RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(properties, value as Int)
+                "CASE_INSENSITIVE" -> RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, value as Boolean)
+                "DOT_MATCHES_ONLY" -> RgxGenOption.DOT_MATCHES_ONLY.setInProperties(properties, value as RgxGenCharsDefinition)
+                "WHITESPACE_DEFINITION" -> RgxGenOption.WHITESPACE_DEFINITION.setInProperties(properties, value as List<WhitespaceChar>)
+            }
+        }
+        val rgxGen = RgxGen.parse(properties, regex.pattern)
         return rgxGen.generate(rnd)
     }
 
-    override fun consumeRegexStringOrNull(regex: Regex) = if (consumeBoolean()) null else consumeRegexString(regex)
+    override fun consumeRegexStringOrNull(regex: Regex, options: Map<String, Any>) =
+        if (consumeBoolean()) null else consumeRegexString(regex, options)
 
 }

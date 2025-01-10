@@ -105,4 +105,13 @@ class KFuzzerImplTest {
         val result = kFuzzer.consumeChar('A'..'Z')
         assertEquals('A', result)
     }
+
+    @Test
+    fun `test consumeRegexString`() {
+        val data = byteArrayOf()
+        val kFuzzer = KFuzzerImpl(data)
+        val reg = Regex("[a-z]+(abc){3,}[a-z]{1,2}q")
+        val result = kFuzzer.consumeRegexString(reg)
+        assertTrue(result.matches(reg))
+    }
 }
