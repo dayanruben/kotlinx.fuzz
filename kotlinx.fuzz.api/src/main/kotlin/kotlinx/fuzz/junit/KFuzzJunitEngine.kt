@@ -24,7 +24,7 @@ import kotlin.io.path.deleteRecursively
 import kotlin.reflect.jvm.javaMethod
 
 
-class KFuzzJunitEngine : TestEngine {
+internal class KFuzzJunitEngine : TestEngine {
     val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
         AnnotationSupport.isAnnotated(klass, KFuzzTest::class.java)
     }

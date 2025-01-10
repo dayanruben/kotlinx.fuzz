@@ -4,7 +4,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import java.lang.invoke.MethodHandle
 import java.util.concurrent.atomic.AtomicReference
 
-object JazzerTarget {
+internal object JazzerTarget {
     private val target: AtomicReference<MethodHandle> = AtomicReference()
     private val instance: AtomicReference<Any> = AtomicReference()
 
