@@ -11,7 +11,7 @@ object KFuzzJunitEngineTest {
         }
     }
 
-//    @KFuzzTest
-//    fun `aaa test`(data: FuzzedDataProvider) {
-//    }
+    @KFuzzTest
+    fun `second test`(data: FuzzedDataProvider) {
+    }
 }
