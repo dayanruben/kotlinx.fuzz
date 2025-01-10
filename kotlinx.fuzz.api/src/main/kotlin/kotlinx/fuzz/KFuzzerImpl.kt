@@ -1,10 +1,13 @@
 package kotlinx.fuzz
 
+import com.github.curiousoddman.rgxgen.RgxGen
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
+import java.util.Random
 
 class KFuzzerImpl(data: ByteArray) : KFuzzer {
+    private val rnd = MyRandom(this)
     private val iterator = Reader(data)
 
     private operator fun IntRange.contains(other: IntRange): Boolean =
@@ -447,6 +450,19 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         }
     }
 
+    override fun consumeRegexString(regex: Regex): String {
+        val rgxGen = RgxGen.parse(regex.pattern)
+        return rgxGen.generate(rnd)
+    }
+
+    override fun consumeRegexStringOrNull(regex: Regex) = if (consumeBoolean()) null else consumeRegexString(regex)
+
+    private class MyRandom(private val kFuzzer: KFuzzer) : Random() {
+        override fun nextInt(bound: Int): Int {
+            return kFuzzer.consumeInt(0 until bound)
+        }
+    }
+
     private class Reader(data: ByteArray) {
         private val iterator = data.iterator()
 
@@ -463,7 +479,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
 
         fun readInt(): Int =
             (readByte().toInt() shl 24) or ((readByte().toInt() and 0xFF) shl 16) or
-                ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
+                    ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
 
         fun readLong(): Long = (readInt().toLong() shl 32) or (readInt().toLong() and 0xFF_FF_FF_FFL)
 

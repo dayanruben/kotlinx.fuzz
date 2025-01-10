@@ -447,6 +447,25 @@ interface KFuzzer {
     fun consumeRemainingAsLetterString(): String
 
     /**
+     * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
+     *
+     * @param regex regular expression that will be used as a template for string
+     *
+     * @return string that matches given regex
+     */
+    fun consumeRegexString(regex: Regex = Regex(".*", RegexOption.DOT_MATCHES_ALL)): String
+
+    /**
+     * Consumes a nullable string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
+     *
+     * @param regex regular expression that will be used as a template for string
+     *
+     * @return nullable string that matches given regex
+     * */
+    fun consumeRegexStringOrNull(regex: Regex = Regex(".*", RegexOption.DOT_MATCHES_ALL)): String?
+
+
+    /**
      * Picks an element from collection based on the fuzzer input.
      *
      * @param collection collection to pick an element from
