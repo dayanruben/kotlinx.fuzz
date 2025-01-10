@@ -450,19 +450,21 @@ interface KFuzzer {
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param regex regular expression that will be used as a template for string
+     * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
      *
      * @return string that matches given regex
      */
-    fun consumeRegexString(regex: Regex = Regex(".*", RegexOption.DOT_MATCHES_ALL)): String
+    fun consumeRegexString(regex: Regex, options: Map<String, Any> = emptyMap()): String
 
     /**
      * Consumes a nullable string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param regex regular expression that will be used as a template for string
+     * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
      *
      * @return nullable string that matches given regex
      * */
-    fun consumeRegexStringOrNull(regex: Regex = Regex(".*", RegexOption.DOT_MATCHES_ALL)): String?
+    fun consumeRegexStringOrNull(regex: Regex, options: Map<String, Any> = emptyMap()): String?
 
 
     /**
