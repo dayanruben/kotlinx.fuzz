@@ -20,7 +20,7 @@ class KFuzzerImplTest {
     }
 
     @Test
-    fun `test consumeBooleansOrNull with null`() {
+    fun `test consumeBooleansOrNull`() {
         val data = byteArrayOf(1)
         val kFuzzer = KFuzzerImpl(data)
         assertNull(kFuzzer.consumeBooleansOrNull(5))
@@ -36,9 +36,9 @@ class KFuzzerImplTest {
 
     @Test
     fun `test consumeByteOrNull`() {
-        val data = byteArrayOf(1, 100)
+        val data = byteArrayOf(0, 100)
         val kFuzzer = KFuzzerImpl(data)
-        assertNull(kFuzzer.consumeByteOrNull())
+        assertEquals(kFuzzer.consumeByteOrNull(), 100.toByte())
     }
 
     @Test
@@ -64,6 +64,20 @@ class KFuzzerImplTest {
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeShort(0..Short.MAX_VALUE)
         assertEquals(result, 0.toShort())
+    }
+
+    @Test
+    fun `test consumeInts edge cases`() {
+        val data = byteArrayOf(
+            0x80.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0A.toByte(), // Int.MIN_VALUE + 10
+
+            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(), // -6
+
+            0x7F.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(), // Int.MAX_VALUE - 5
+        )
+        val kFuzzer = KFuzzerImpl(data)
+        val result = kFuzzer.consumeInts(3, (Int.MIN_VALUE + 20)..(Int.MAX_VALUE - 20))
+        assertArrayEquals(result, intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54))
     }
 
     @Test
@@ -96,6 +110,24 @@ class KFuzzerImplTest {
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLong()
         assertEquals(result, 100)
+    }
+
+
+    @Test
+    fun `test consumeLongs edge cases`() {
+        val data = byteArrayOf(
+            0x80.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
+            0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0A.toByte(), // Long.MIN_VALUE + 10
+
+            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
+            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(), // -6
+
+            0x7F.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(),
+            0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(), // Long.MAX_VALUE - 5
+        )
+        val kFuzzer = KFuzzerImpl(data)
+        val result = kFuzzer.consumeLongs(3, (Long.MIN_VALUE + 20)..(Long.MAX_VALUE - 20))
+        assertArrayEquals(result, longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54))
     }
 
     @Test

@@ -3,7 +3,6 @@ package kotlinx.fuzz
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
-import kotlin.math.roundToLong
 
 class KFuzzerImpl(data: ByteArray) : KFuzzer {
     private class Reader(data: ByteArray) {
@@ -62,7 +61,6 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             MathContext.DECIMAL128
         )
     }
-
 
     override fun consumeBoolean() = iterator.readBoolean()
 
@@ -207,7 +205,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
                 }
                 return result
             } else {
-                return (range.first - Long.MIN_VALUE) + (result - range.last)
+                return range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
             }
         } else {
             val rangeSize = range.last - range.first + 1
@@ -358,7 +356,6 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
 
         return String(byteBuffer.toByteArray(), charset).take(length)
     }
-
 
     override fun consumeStringOrNull(maxLength: Int, charset: Charset): String? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
