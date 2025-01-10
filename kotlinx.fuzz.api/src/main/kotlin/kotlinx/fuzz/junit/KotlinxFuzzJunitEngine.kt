@@ -12,19 +12,19 @@ import org.junit.platform.engine.support.descriptor.EngineDescriptor
 import java.net.URI
 
 
-internal class KFuzzJunitEngine : TestEngine {
+internal class KotlinxFuzzJunitEngine : TestEngine {
     val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
         AnnotationSupport.isAnnotated(klass, KFuzzTest::class.java)
     }
 
-    override fun getId(): String = "kotlinx.fuzz-test"
+    override fun getId(): String = "kotlinx.fuzz"
 
     override fun discover(
         discoveryRequest: EngineDiscoveryRequest,
         uniqueId: UniqueId
     ): TestDescriptor? {
         println("discovering...")
-        val engineDescriptor = EngineDescriptor(uniqueId, "kotlinx.fuzz-test")
+        val engineDescriptor = EngineDescriptor(uniqueId, "kotlinx.fuzz")
         discoveryRequest.getSelectorsByType(ClasspathRootSelector::class.java).forEach { selector ->
             appendTestsInClasspathRoot(selector.classpathRoot, engineDescriptor)
         }
