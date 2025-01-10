@@ -8,7 +8,11 @@ import org.gradle.kotlin.dsl.register
 
 abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.tasks.register<FuzzTask>("fuzz")
+        project.tasks.register<FuzzTask>("fuzz") {
+            useJUnitPlatform {
+                includeEngines("kotlinx.fuzz-test")
+            }
+        }
     }
 }
 
