@@ -1,9 +1,11 @@
 package kotlinx.fuzz
 
+import com.github.curiousoddman.rgxgen.RgxGen
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
-import kotlin.math.roundToLong
+import java.util.*
+
 
 class KFuzzerImpl(data: ByteArray) : KFuzzer {
     private class Reader(data: ByteArray) {
@@ -30,6 +32,14 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
 
         fun readDouble() = Double.fromBits(readLong())
     }
+
+    private class MyRandom(private val kFuzzer: KFuzzer) : Random() {
+        override fun nextInt(bound: Int): Int {
+            return kFuzzer.consumeInt(0 until bound)
+        }
+    }
+
+    private val rnd = MyRandom(this)
 
     private val iterator = Reader(data)
 
@@ -62,7 +72,6 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             MathContext.DECIMAL128
         )
     }
-
 
     override fun consumeBoolean() = iterator.readBoolean()
 
@@ -359,7 +368,6 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         return String(byteBuffer.toByteArray(), charset).take(length)
     }
 
-
     override fun consumeStringOrNull(maxLength: Int, charset: Charset): String? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
@@ -435,5 +443,12 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             }
         }
     }
+
+    override fun consumeRegexString(regex: Regex): String {
+        val rgxGen = RgxGen.parse(regex.pattern)
+        return rgxGen.generate(rnd)
+    }
+
+    override fun consumeRegexStringOrNull(regex: Regex) = if (consumeBoolean()) null else consumeRegexString(regex)
 
 }
