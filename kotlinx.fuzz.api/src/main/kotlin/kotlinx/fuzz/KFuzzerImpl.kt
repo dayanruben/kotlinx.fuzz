@@ -11,7 +11,7 @@ import java.nio.charset.Charset
 import java.util.*
 
 
-class KFuzzerImpl(data: ByteArray) : KFuzzer {
+class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private class Reader(data: ByteArray) {
         private val iterator = data.iterator()
 
@@ -36,14 +36,6 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
 
         fun readDouble() = Double.fromBits(readLong())
     }
-
-    private class KFuzzerRandom(private val kFuzzer: KFuzzer) : Random() {
-        override fun nextInt(bound: Int) = kFuzzer.consumeInt(0 until bound)
-        override fun nextInt() = kFuzzer.consumeInt()
-        override fun nextBoolean() = kFuzzer.consumeBoolean()
-    }
-
-    private val rnd = KFuzzerRandom(this)
 
     private val iterator = Reader(data)
 
@@ -76,6 +68,12 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             MathContext.DECIMAL128
         )
     }
+
+    override fun nextInt(bound: Int) = consumeInt(0 until bound)
+
+    override fun nextInt() = consumeInt()
+
+    override fun nextBoolean() = consumeBoolean()
 
     override fun consumeBoolean() = iterator.readBoolean()
 
@@ -459,7 +457,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             }
         }
         val rgxGen = RgxGen.parse(properties, regex.pattern)
-        return rgxGen.generate(rnd)
+        return rgxGen.generate(this)
     }
 
     override fun consumeRegexStringOrNull(regex: Regex, options: Map<String, Any>) =
