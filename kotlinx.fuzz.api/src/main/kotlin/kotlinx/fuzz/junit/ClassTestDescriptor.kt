@@ -17,7 +17,7 @@ internal class ClassTestDescriptor(private val testClass: Class<*>, parent: Test
     ) {
     init {
         setParent(parent)
-//        addAllChildren()
+        addAllChildren()
     }
 
 

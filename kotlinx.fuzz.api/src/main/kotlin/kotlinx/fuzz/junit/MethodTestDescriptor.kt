@@ -2,6 +2,7 @@ package kotlinx.fuzz.junit
 
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
+import org.junit.platform.engine.support.descriptor.MethodSource
 import java.lang.reflect.Method
 
 internal class MethodTestDescriptor(val testMethod: Method, parent: ClassTestDescriptor) :

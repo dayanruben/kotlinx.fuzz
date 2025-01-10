@@ -49,8 +49,6 @@ class KFuzzJunitEngine : TestEngine {
             appendTestsInClass(selector!!.getJavaClass(), engineDescriptor)
         }
 
-        discoveryRequest.getSelectorsByType(MethodSelector::class.java)
-
         discoveryRequest.getSelectorsByType(MethodSelector::class.java).filter { methodSelector ->
             AnnotationSupport.isAnnotated(methodSelector.javaMethod, KFuzzTest::class.java)
         }
@@ -75,15 +73,13 @@ class KFuzzJunitEngine : TestEngine {
     private fun appendTestsInPackage(packageName: String?, engineDescriptor: TestDescriptor) {
         ReflectionSupport.findAllClassesInPackage(
             packageName, isKFuzzTestContainer
-        ) { true } //
-            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor) }  //
+        ) { true }
+            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor) }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
 
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
-        engineDescriptor.addChild(
-            ClassTestDescriptor(javaClass, engineDescriptor).also { it.addAllChildren() }
-        )
+        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor))
     }
 
     override fun execute(request: ExecutionRequest) {
