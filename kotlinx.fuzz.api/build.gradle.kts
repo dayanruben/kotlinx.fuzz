@@ -7,13 +7,16 @@ dependencies {
     implementation("org.junit.platform:junit-platform-engine:$junitPlatformVersion")
 
     val jazzerVersion = "0.22.1"
-//    val jazzerVersion = "0.23.0"
     implementation("com.code-intelligence:jazzer:$jazzerVersion")
+    implementation(kotlin("reflect"))
+
     testImplementation("com.code-intelligence:jazzer-api:$jazzerVersion")
-    implementation(kotlin("reflect")) // FIXME: remove after being able to run tests with jazzer
+    testImplementation("org.junit.platform:junit-platform-testkit:$junitPlatformVersion")
 }
 
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeEngines("kotlinx.fuzz-test")
+    }
 }

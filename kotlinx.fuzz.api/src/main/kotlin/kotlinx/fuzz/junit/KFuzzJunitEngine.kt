@@ -139,36 +139,47 @@ internal class KFuzzJunitEngine : TestEngine {
         return atomicFinding.get()
     }
 
-    private fun configureJazzer() {
-        Log.fixOutErr(System.out, System.err)
+    companion object {
+        private var jazzerConfigured = false
+            set(value) {
+                check(value != false)
+                field = true
+            }
 
-        Opt.hooks.setIfDefault(false)
-        Opt.instrument.setIfDefault(listOf("kotlinx.fuzz.test.**"))
-        Opt.customHookExcludes.setIfDefault(
-            listOf(
-                "com.google.testing.junit.**",
-                "com.intellij.**",
-                "org.jetbrains.**",
-                "io.github.classgraph.**",
-                "junit.framework.**",
-                "net.bytebuddy.**",
-                "org.apiguardian.**",
-                "org.assertj.core.**",
-                "org.hamcrest.**",
-                "org.junit.**",
-                "org.opentest4j.**",
-                "org.mockito.**",
-                "org.apache.maven.**",
-                "org.gradle.**"
+        private fun configureJazzer() {
+            if (jazzerConfigured) return
+            jazzerConfigured = true
+
+            Log.fixOutErr(System.out, System.err)
+
+            Opt.hooks.setIfDefault(false)
+            Opt.instrument.setIfDefault(listOf("kotlinx.fuzz.test.**"))
+            Opt.customHookExcludes.setIfDefault(
+                listOf(
+                    "com.google.testing.junit.**",
+                    "com.intellij.**",
+                    "org.jetbrains.**",
+                    "io.github.classgraph.**",
+                    "junit.framework.**",
+                    "net.bytebuddy.**",
+                    "org.apiguardian.**",
+                    "org.assertj.core.**",
+                    "org.hamcrest.**",
+                    "org.junit.**",
+                    "org.opentest4j.**",
+                    "org.mockito.**",
+                    "org.apache.maven.**",
+                    "org.gradle.**"
+                )
             )
-        )
 
-        AgentInstaller.install(Opt.hooks.get())
+            AgentInstaller.install(Opt.hooks.get())
 
-        FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
-            JazzerTarget::fuzzTargetOne.javaMethod!!,
-            LifecycleMethodsInvoker.noop(JazzerTarget)
-        )
+            FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
+                JazzerTarget::fuzzTargetOne.javaMethod!!,
+                LifecycleMethodsInvoker.noop(JazzerTarget)
+            )
+        }
     }
 }
 

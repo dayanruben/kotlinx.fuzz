@@ -8,7 +8,7 @@ import org.gradle.kotlin.dsl.register
 
 abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        val fuzzTask = project.tasks.register<FuzzTask>("fuzz")
+        project.tasks.register<FuzzTask>("fuzz")
     }
 }
 
