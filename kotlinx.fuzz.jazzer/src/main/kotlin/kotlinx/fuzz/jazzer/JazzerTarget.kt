@@ -1,6 +1,6 @@
 package kotlinx.fuzz.jazzer
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import kotlinx.fuzz.KFuzzerImpl
 import java.lang.invoke.MethodHandle
 import java.util.concurrent.atomic.AtomicReference
 
@@ -13,7 +13,7 @@ internal object JazzerTarget {
         this.instance.set(instance)
     }
 
-    fun fuzzTargetOne(data: FuzzedDataProvider) {
-        target.get()(instance.get(), data)
+    fun fuzzTargetOne(data: ByteArray) {
+        target.get()(instance.get(), KFuzzerImpl(data))
     }
 }

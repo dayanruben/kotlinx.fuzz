@@ -1,7 +1,7 @@
 package kotlinx.fuzz.test
 
-import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
@@ -20,14 +20,14 @@ object EngineTest {
 
     object SimpleFuzzTest {
         @KFuzzTest
-        fun `failure test`(data: FuzzedDataProvider) {
+        fun `failure test`(data: KFuzzer) {
             if (data.consumeBoolean()) {
                 error("Expected failure")
             }
         }
 
         @KFuzzTest
-        fun `success test`(data: FuzzedDataProvider) {
+        fun `success test`(data: KFuzzer) {
         }
     }
 }

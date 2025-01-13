@@ -1,6 +1,7 @@
 package kotlinx.fuzz.gradle.junit
 
 import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.jazzer.configureJazzer
 import kotlinx.fuzz.jazzer.jazzerDoFuzzing
 import org.junit.platform.commons.support.AnnotationSupport
@@ -20,7 +21,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     companion object {
         private fun Method.isFuzzTarget(): Boolean {
             return AnnotationSupport.isAnnotated(this, KFuzzTest::class.java)
-                    && parameters.size == 1 // TODO && parameters[0].type == KFuzzer::class.java
+                    && parameters.size == 1  && parameters[0].type == KFuzzer::class.java
         }
 
         val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
