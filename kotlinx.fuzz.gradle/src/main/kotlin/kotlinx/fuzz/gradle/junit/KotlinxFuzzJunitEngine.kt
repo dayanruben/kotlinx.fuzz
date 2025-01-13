@@ -4,6 +4,7 @@ import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.jazzer.configureJazzer
 import kotlinx.fuzz.jazzer.jazzerDoFuzzing
 import org.junit.platform.commons.support.AnnotationSupport
+import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
 import org.junit.platform.engine.*
 import org.junit.platform.engine.discovery.ClassSelector
@@ -11,12 +12,24 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import java.lang.reflect.Method
 import java.net.URI
 
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
-        AnnotationSupport.isAnnotated(klass, KFuzzTest::class.java)
+    companion object {
+        private fun Method.isFuzzTarget(): Boolean {
+            return AnnotationSupport.isAnnotated(this, KFuzzTest::class.java)
+                    && parameters.size == 1 // TODO && parameters[0].type == KFuzzer::class.java
+        }
+
+        val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
+            ReflectionSupport.findMethods(
+                klass,
+                { method: Method -> method.isFuzzTarget() },
+                HierarchyTraversalMode.TOP_DOWN
+            ).isNotEmpty()
+        }
     }
 
     override fun getId(): String = "kotlinx.fuzz"
@@ -24,7 +37,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     override fun discover(
         discoveryRequest: EngineDiscoveryRequest,
         uniqueId: UniqueId
-    ): TestDescriptor? {
+    ): TestDescriptor {
         val engineDescriptor = EngineDescriptor(uniqueId, "kotlinx.fuzz")
         discoveryRequest.getSelectorsByType(ClasspathRootSelector::class.java).forEach { selector ->
             appendTestsInClasspathRoot(selector.classpathRoot, engineDescriptor)
@@ -38,19 +51,18 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             appendTestsInClass(selector!!.getJavaClass(), engineDescriptor)
         }
 
-        discoveryRequest.getSelectorsByType(MethodSelector::class.java).filter { methodSelector ->
-            AnnotationSupport.isAnnotated(methodSelector.javaMethod, KFuzzTest::class.java)
+        discoveryRequest.getSelectorsByType(MethodSelector::class.java).forEach { methodSelector ->
+            appendTestsInMethod(methodSelector.javaMethod!!, engineDescriptor)
         }
-            .groupBy({ it.javaClass }) { it.javaMethod }
-            .forEach { (javaClass, methods) ->
-                val classDescriptor = ClassTestDescriptor(javaClass, engineDescriptor)
-                engineDescriptor.addChild(classDescriptor)
-                methods.forEach { method ->
-                    classDescriptor.addChild(MethodTestDescriptor(method, classDescriptor))
-                }
-            }
 
         return engineDescriptor
+    }
+
+    private fun appendTestsInMethod(method: Method, engineDescriptor: EngineDescriptor) {
+        if (!method.isFuzzTarget()) {
+            return
+        }
+        engineDescriptor.addChild(MethodTestDescriptor(method, engineDescriptor))
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
@@ -59,10 +71,8 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
-    private fun appendTestsInPackage(packageName: String?, engineDescriptor: TestDescriptor) {
-        ReflectionSupport.findAllClassesInPackage(
-            packageName, isKFuzzTestContainer
-        ) { true }
+    private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
+        ReflectionSupport.findAllClassesInPackage(packageName, isKFuzzTestContainer) { true }
             .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor) }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }

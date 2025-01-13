@@ -6,8 +6,6 @@ import org.junit.platform.commons.util.ReflectionUtils
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
-import java.lang.reflect.Method
-import java.util.function.Predicate
 
 internal class ClassTestDescriptor(private val testClass: Class<*>, parent: TestDescriptor) :
     AbstractTestDescriptor(
@@ -21,18 +19,10 @@ internal class ClassTestDescriptor(private val testClass: Class<*>, parent: Test
     }
 
 
-    internal fun addAllChildren() {
-        val isTestMethod =
-            Predicate { method: Method ->
-                AnnotationUtils.isAnnotated(
-                    method,
-                    KFuzzTest::class.java
-                )
-            }
-
+    private fun addAllChildren() {
         ReflectionUtils.findMethods(
             testClass,
-            isTestMethod,
+            { method -> AnnotationUtils.isAnnotated(method, KFuzzTest::class.java) },
             ReflectionUtils.HierarchyTraversalMode.TOP_DOWN
         )
             .map { method -> MethodTestDescriptor(method, this) }
