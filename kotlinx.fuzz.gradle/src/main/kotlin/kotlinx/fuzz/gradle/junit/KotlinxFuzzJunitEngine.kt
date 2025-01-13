@@ -25,7 +25,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         discoveryRequest: EngineDiscoveryRequest,
         uniqueId: UniqueId
     ): TestDescriptor? {
-        println("discovering...")
         val engineDescriptor = EngineDescriptor(uniqueId, "kotlinx.fuzz")
         discoveryRequest.getSelectorsByType(ClasspathRootSelector::class.java).forEach { selector ->
             appendTestsInClasspathRoot(selector.classpathRoot, engineDescriptor)

@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation("org.junit.platform:junit-platform-engine:$junitPlatformVersion")
+    implementation("org.junit.platform:junit-platform-engine:$JUNIT_PLATFORM_VERSION")
 }
 
 tasks.test {

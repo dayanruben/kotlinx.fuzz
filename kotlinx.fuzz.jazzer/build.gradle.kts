@@ -3,6 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation("com.code-intelligence:jazzer:$jazzerVersion")
+    implementation("com.code-intelligence:jazzer:$JAZZER_VERSION")
     implementation(kotlin("reflect"))
 }
