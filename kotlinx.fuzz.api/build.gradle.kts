@@ -5,3 +5,7 @@ plugins {
 dependencies {
     implementation("org.junit.platform:junit-platform-engine:$junitPlatformVersion")
 }
+
+tasks.test {
+    useJUnitPlatform()
+}
