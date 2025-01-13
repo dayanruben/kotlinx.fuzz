@@ -22,5 +22,7 @@ gradlePlugin.plugins.create("kotlinx.fuzz") {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        excludeEngines("kotlinx.fuzz")
+    }
 }
