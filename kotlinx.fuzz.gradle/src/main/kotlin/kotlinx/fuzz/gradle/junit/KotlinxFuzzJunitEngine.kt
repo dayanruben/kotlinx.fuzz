@@ -1,6 +1,8 @@
-package kotlinx.fuzz.junit
+package kotlinx.fuzz.gradle.junit
 
 import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.jazzer.configureJazzer
+import kotlinx.fuzz.jazzer.jazzerDoFuzzing
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.ReflectionSupport
 import org.junit.platform.engine.*

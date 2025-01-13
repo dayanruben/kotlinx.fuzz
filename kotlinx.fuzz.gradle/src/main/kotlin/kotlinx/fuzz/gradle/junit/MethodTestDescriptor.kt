@@ -1,4 +1,4 @@
-package kotlinx.fuzz.junit
+package kotlinx.fuzz.gradle.junit
 
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor

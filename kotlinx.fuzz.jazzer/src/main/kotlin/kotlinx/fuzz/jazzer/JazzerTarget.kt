@@ -1,4 +1,4 @@
-package kotlinx.fuzz.junit
+package kotlinx.fuzz.jazzer
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import java.lang.invoke.MethodHandle

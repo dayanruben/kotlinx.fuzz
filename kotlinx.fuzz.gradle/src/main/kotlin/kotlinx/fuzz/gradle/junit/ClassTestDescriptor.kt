@@ -1,4 +1,4 @@
-package kotlinx.fuzz.junit
+package kotlinx.fuzz.gradle.junit
 
 import kotlinx.fuzz.KFuzzTest
 import org.junit.platform.commons.util.AnnotationUtils

@@ -2,14 +2,14 @@ package kotlinx.fuzz.test
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
+import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
 
 object EngineTest {
     @Test
-    fun test() {
+    fun `one pass one fail`() {
         EngineTestKit
             .engine(KotlinxFuzzJunitEngine())
             .selectors(selectClass(SimpleFuzzTest::class.java))

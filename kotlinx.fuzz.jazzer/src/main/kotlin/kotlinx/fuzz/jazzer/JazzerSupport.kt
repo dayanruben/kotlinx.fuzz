@@ -1,4 +1,4 @@
-package kotlinx.fuzz.junit
+package kotlinx.fuzz.jazzer
 
 import com.code_intelligence.jazzer.agent.AgentInstaller
 import com.code_intelligence.jazzer.driver.FuzzTargetHolder
@@ -10,14 +10,15 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.createTempDirectory
 import kotlin.io.path.deleteRecursively
 import kotlin.reflect.jvm.javaMethod
 
 @OptIn(ExperimentalPathApi::class)
-internal fun jazzerDoFuzzing(instance: Any, method: Method): Throwable? {
+fun jazzerDoFuzzing(instance: Any, method: Method): Throwable? {
 
     val libFuzzerArgs = mutableListOf<String>("fake_argv0")
-    val corpusDir = kotlin.io.path.createTempDirectory("jazzer-corpus")
+    val corpusDir = createTempDirectory("jazzer-corpus")
 
     libFuzzerArgs += corpusDir.toString()
     libFuzzerArgs += "-max_total_time=10" // TODO: remove hardcoded args
@@ -44,7 +45,7 @@ private var jazzerConfigured: Boolean = false
         field = true
     }
 
-internal fun configureJazzer() {
+fun configureJazzer() {
     if (jazzerConfigured) return
     jazzerConfigured = true
 
