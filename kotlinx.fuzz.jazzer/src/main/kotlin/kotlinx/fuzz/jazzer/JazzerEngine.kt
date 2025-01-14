@@ -41,7 +41,7 @@ class JazzerEngine(private val config: FuzzConfig): KFuzzEngine {
         val corpusDir = createTempDirectory("jazzer-corpus")
 
         libFuzzerArgs += corpusDir.toString()
-        libFuzzerArgs += "-max_total_time=${config.maxTotalTime}"
+        libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime}"
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
 
         val atomicFinding = AtomicReference<Throwable>()
