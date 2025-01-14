@@ -21,7 +21,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     private val config = FuzzConfig.fromSystemProperties()
 
     private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
-        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor().newInstance() as KFuzzEngine
+        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor(FuzzConfig::class.java).newInstance(config) as KFuzzEngine
         else -> throw AssertionError("Unsupported fuzzer engine!")
     }
 
