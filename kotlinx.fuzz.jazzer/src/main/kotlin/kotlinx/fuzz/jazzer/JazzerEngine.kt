@@ -6,7 +6,6 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
-import kotlinx.fuzz.Config
 import kotlinx.fuzz.KFuzzEngine
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -18,21 +17,14 @@ import kotlin.reflect.jvm.javaMethod
 
 
 class JazzerEngine: KFuzzEngine {
-    private var jazzerConfig: JazzerConfig? = null
-        set(value) {
-            check(field == null)
-            field = value
-        }
+    private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
-    override fun initialise(config: Config) {
-        if (jazzerConfig != null) return
-        jazzerConfig = config.jazzerConfig
-
+    override fun initialise() {
         Log.fixOutErr(System.out, System.err)
 
-        Opt.hooks.setIfDefault(jazzerConfig!!.hooks)
-        Opt.instrument.setIfDefault(jazzerConfig!!.instrument)
-        Opt.customHookExcludes.setIfDefault(jazzerConfig!!.customHookExcludes)
+        Opt.hooks.setIfDefault(jazzerConfig.hooks)
+        Opt.instrument.setIfDefault(jazzerConfig.instrument)
+        Opt.customHookExcludes.setIfDefault(jazzerConfig.customHookExcludes)
 
         AgentInstaller.install(Opt.hooks.get())
 
@@ -48,12 +40,11 @@ class JazzerEngine: KFuzzEngine {
         val corpusDir = createTempDirectory("jazzer-corpus")
 
         libFuzzerArgs += corpusDir.toString()
-        libFuzzerArgs += "-max_total_time=${jazzerConfig!!.libFuzzerMaxTotalTime}"
-        libFuzzerArgs += "-rss_limit_mb=${jazzerConfig!!.libFuzzerRssLimit}"
+        libFuzzerArgs += "-max_total_time=${jazzerConfig.libFuzzerMaxTotalTime}"
+        libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
-            println("fatal finding handler invoked")
             atomicFinding.set(finding)
         }
 

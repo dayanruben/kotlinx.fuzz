@@ -1,6 +1,6 @@
 package kotlinx.fuzz.gradle.junit
 
-import kotlinx.fuzz.Config
+import kotlinx.fuzz.FuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -18,7 +18,7 @@ import java.net.URI
 
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val config = Config.fromSystemProperties()
+    private val config = FuzzConfig.fromSystemProperties()
 
     private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
         "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor().newInstance() as KFuzzEngine
@@ -91,7 +91,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
-        fuzzEngine.initialise(config)
+        fuzzEngine.initialise()
         root.children.forEach { child -> executeImpl(request, child) }
     }
 

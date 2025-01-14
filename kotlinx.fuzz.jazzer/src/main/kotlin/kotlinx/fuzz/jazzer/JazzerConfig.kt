@@ -10,13 +10,13 @@ data class JazzerConfig(
     companion object {
         fun fromSystemProperties(): JazzerConfig {
             return JazzerConfig(
-                hooks = System.getProperty("jazzer.hooks")?.toBoolean() ?: false,
-                instrument = System.getProperty("jazzer.instrument")
+                hooks = System.getProperty("kotlinx.fuzz.jazzer.hooks")?.toBoolean() ?: false,
+                instrument = System.getProperty("kotlinx.fuzz.jazzer.instrument")
                     ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList(),
-                customHookExcludes = System.getProperty("jazzer.customHookExcludes")
+                customHookExcludes = System.getProperty("kotlinx.fuzz.jazzer.customHookExcludes")
                     ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList(),
-                libFuzzerMaxTotalTime = System.getProperty("jazzer.libFuzzerArgs.max_total_time", "10").toInt(),
-                libFuzzerRssLimit = System.getProperty("jazzer.libFuzzerArgs.rss_limit_mb", "0").toInt()
+                libFuzzerMaxTotalTime = System.getProperty("kotlinx.fuzz.jazzer.libFuzzerArgs.max_total_time", "10").toInt(),
+                libFuzzerRssLimit = System.getProperty("kotlinx.fuzz.jazzer.libFuzzerArgs.rss_limit_mb", "0").toInt()
             )
         }
     }
