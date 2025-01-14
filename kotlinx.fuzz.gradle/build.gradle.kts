@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
-    implementation(project(":kotlinx.fuzz.jazzer"))
 
     gradleApi()
     implementation(kotlin("reflect"))
@@ -14,6 +13,7 @@ dependencies {
     testImplementation("org.junit.platform:junit-platform-testkit:$JUNIT_PLATFORM_VERSION")
     testImplementation("org.junit.jupiter:junit-jupiter:$JUNIT_JUPITER_VERSION")
     testImplementation("com.code-intelligence:jazzer-api:$JAZZER_VERSION")
+    testRuntimeOnly(project(":kotlinx.fuzz.jazzer"))
 }
 
 gradlePlugin.plugins.create("kotlinx.fuzz") {

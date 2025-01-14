@@ -6,6 +6,7 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
+import kotlinx.fuzz.Config
 import kotlinx.fuzz.KFuzzEngine
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -17,26 +18,26 @@ import kotlin.reflect.jvm.javaMethod
 
 
 class JazzerEngine: KFuzzEngine {
-    private var jazzerConfigured = false
+    private var jazzerConfig: JazzerConfig? = null
         set(value) {
-            check(value)
-            field = true
+            check(field == null)
+            field = value
         }
 
-    override fun initialise() {
-        if (jazzerConfigured) return
-        jazzerConfigured = true
+    override fun initialise(config: Config) {
+        if (jazzerConfig != null) return
+        jazzerConfig = config.jazzerConfig
 
         Log.fixOutErr(System.out, System.err)
 
-        Opt.hooks.setIfDefault(System.getProperty("jazzer.hooks").toBoolean())
-        Opt.instrument.setIfDefault(System.getProperty("jazzer.instrument").split(',').map(String::trim).filter(String::isNotEmpty))
-        Opt.customHookExcludes.setIfDefault(System.getProperty("jazzer.instrument").split(',').map(String::trim).filter(String::isNotEmpty)) // TODO: Other settings
+        Opt.hooks.setIfDefault(jazzerConfig!!.hooks)
+        Opt.instrument.setIfDefault(jazzerConfig!!.instrument)
+        Opt.customHookExcludes.setIfDefault(jazzerConfig!!.customHookExcludes)
 
         AgentInstaller.install(Opt.hooks.get())
 
         FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
-            JazzerTarget::fuzzTargetOne.javaMethod!!,
+            JazzerTarget::fuzzTargetOne.javaMethod,
             LifecycleMethodsInvoker.noop(JazzerTarget)
         )
     }
@@ -47,8 +48,8 @@ class JazzerEngine: KFuzzEngine {
         val corpusDir = createTempDirectory("jazzer-corpus")
 
         libFuzzerArgs += corpusDir.toString()
-        libFuzzerArgs += "-max_total_time=${System.getProperty("jazzer.libFuzzerArgs.max_total_time")}"
-        libFuzzerArgs += "-rss_limit_mb=${System.getProperty("jazzer.libFuzzerArgs.rss_limit_mb")}" // TODO: Other settings
+        libFuzzerArgs += "-max_total_time=${jazzerConfig!!.libFuzzerMaxTotalTime}"
+        libFuzzerArgs += "-rss_limit_mb=${jazzerConfig!!.libFuzzerRssLimit}"
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->

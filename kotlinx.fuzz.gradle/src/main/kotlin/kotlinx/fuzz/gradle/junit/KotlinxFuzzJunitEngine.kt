@@ -1,9 +1,9 @@
 package kotlinx.fuzz.gradle.junit
 
+import kotlinx.fuzz.Config
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.jazzer.JazzerEngine
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -18,8 +18,10 @@ import java.net.URI
 
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val fuzzEngine: KFuzzEngine = when (System.getProperty("kotlinx.fuzz.engine")) { // TODO: Where should it come from?
-        "jazzer" -> JazzerEngine()
+    private val config = Config.fromSystemProperties()
+
+    private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
+        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor().newInstance() as KFuzzEngine
         else -> throw AssertionError("Unsupported fuzzer engine!")
     }
 
@@ -89,7 +91,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
-        fuzzEngine.initialise()
+        fuzzEngine.initialise(config)
         root.children.forEach { child -> executeImpl(request, child) }
     }
 
