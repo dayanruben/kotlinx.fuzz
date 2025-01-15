@@ -1,6 +1,9 @@
 package kotlinx.fuzz
 
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertArrayEquals
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
@@ -9,7 +12,7 @@ class KFuzzerImplTest {
     fun `test consumeBoolean`() {
         val data = byteArrayOf(0)
         val kFuzzer = KFuzzerImpl(data)
-        Assertions.assertFalse(kFuzzer.consumeBoolean())
+        assertFalse(kFuzzer.consumeBoolean())
     }
 
     @Test
@@ -17,14 +20,14 @@ class KFuzzerImplTest {
         val data = byteArrayOf(1, 0, 1)
         val kFuzzer = KFuzzerImpl(data)
         val booleans = kFuzzer.consumeBooleans(3)
-        Assertions.assertArrayEquals(booleanArrayOf(true, false, true), booleans)
+        assertArrayEquals(booleanArrayOf(true, false, true), booleans)
     }
 
     @Test
     fun `test consumeBooleansOrNull`() {
         val data = byteArrayOf(1)
         val kFuzzer = KFuzzerImpl(data)
-        Assertions.assertNull(kFuzzer.consumeBooleansOrNull(5))
+        assertNull(kFuzzer.consumeBooleansOrNull(5))
     }
 
     @Test
@@ -32,14 +35,14 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x7F.toByte())
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeByte(50..100)
-        Assertions.assertEquals(result, 50.toByte())
+        assertEquals(result, 50.toByte())
     }
 
     @Test
     fun `test consumeByteOrNull`() {
         val data = byteArrayOf(0, 100)
         val kFuzzer = KFuzzerImpl(data)
-        Assertions.assertEquals(kFuzzer.consumeByteOrNull(), 100.toByte())
+        assertEquals(kFuzzer.consumeByteOrNull(), 100.toByte())
     }
 
     @Test
@@ -58,7 +61,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(10, 20, 30)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeRemainingAsByteArray()
-        Assertions.assertArrayEquals(byteArrayOf(10, 20, 30), result)
+        assertArrayEquals(byteArrayOf(10, 20, 30), result)
     }
 
     @Test
@@ -66,7 +69,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0, 0)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeShort(0..Short.MAX_VALUE)
-        Assertions.assertEquals(result, 0.toShort())
+        assertEquals(result, 0.toShort())
     }
 
     @Test
@@ -80,7 +83,7 @@ class KFuzzerImplTest {
         )
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeInts(3, (Int.MIN_VALUE + 20)..(Int.MAX_VALUE - 20))
-        Assertions.assertArrayEquals(result, intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54))
+        assertArrayEquals(result, intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54))
     }
 
     @Test
@@ -88,7 +91,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x80.toByte(), 0x00, 0x00, 0x03, 97, 98, 99)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeString(10, Charsets.UTF_8)
-        Assertions.assertEquals("abc", result)
+        assertEquals("abc", result)
     }
 
     @Test
@@ -96,7 +99,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x9A.toByte())
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLetter()
-        Assertions.assertEquals('A', result)
+        assertEquals('A', result)
     }
 
     @Test
@@ -104,7 +107,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x80.toByte(), 0x00, 0x00, 0x03, 0x97.toByte(), 0x98.toByte(), 0x99.toByte())
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLetterString(10)
-        Assertions.assertEquals("xyz", result)
+        assertEquals("xyz", result)
     }
 
     @Test
@@ -112,7 +115,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 100)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLong()
-        Assertions.assertEquals(result, 100)
+        assertEquals(result, 100)
     }
 
     @Test
@@ -129,7 +132,7 @@ class KFuzzerImplTest {
         )
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLongs(3, (Long.MIN_VALUE + 20)..(Long.MAX_VALUE - 20))
-        Assertions.assertArrayEquals(result, longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54))
+        assertArrayEquals(result, longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54))
     }
 
     @Test
@@ -137,6 +140,6 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x80.toByte(), 0)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeChar('A'..'Z')
-        Assertions.assertEquals('A', result)
+        assertEquals('A', result)
     }
 }
