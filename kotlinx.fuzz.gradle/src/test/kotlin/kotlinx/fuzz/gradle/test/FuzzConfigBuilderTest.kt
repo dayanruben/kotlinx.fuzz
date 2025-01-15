@@ -12,7 +12,7 @@ object FuzzConfigBuilderTest {
     }
 
     @Test
-    fun `all set`(){
+    fun `enough set`(){
         assertDoesNotThrow {
             FuzzConfigBuilder.build {
                 instrument = listOf("1", "2")
@@ -21,4 +21,17 @@ object FuzzConfigBuilderTest {
         }
     }
 
+    @Test
+    fun `all set`(){
+        assertDoesNotThrow {
+            FuzzConfigBuilder.build {
+                fuzzEngine = "engine"
+                hooks = true
+                keepGoing = 339
+                instrument = listOf()
+                customHookExcludes = listOf("exclude")
+                maxSingleTargetFuzzTime = 1000
+            }
+        }
+    }
 }

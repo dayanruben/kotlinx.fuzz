@@ -38,6 +38,7 @@ abstract class FuzzTask : Test() {
 class FuzzConfigBuilder private constructor() {
     var fuzzEngine: String = FuzzConfig.FUZZ_ENGINE_DEFAULT
     var hooks: Boolean = FuzzConfig.HOOKS_DEFAULT
+    var keepGoing: Int = FuzzConfig.KEEP_GOING_DEFAULT
     lateinit var instrument: List<String>
     var customHookExcludes: List<String> = FuzzConfig.CUSTOM_HOOK_EXCLUDES_DEFAULT
     var maxSingleTargetFuzzTime: Int by Delegates.notNull<Int>()
@@ -45,6 +46,7 @@ class FuzzConfigBuilder private constructor() {
     fun build(): FuzzConfig = FuzzConfig(
         fuzzEngine = fuzzEngine,
         hooks = hooks,
+        keepGoing = keepGoing,
         instrument = instrument,
         customHookExcludes = customHookExcludes,
         maxSingleTargetFuzzTime = maxSingleTargetFuzzTime
