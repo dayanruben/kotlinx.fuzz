@@ -15,7 +15,6 @@ object FuzzConfigBuilderTest {
     fun `all set`(){
         assertDoesNotThrow {
             FuzzConfigBuilder.build {
-                fuzzEngine = "asdf"
                 instrument = listOf("1", "2")
                 maxSingleTargetFuzzTime = 30
             }

@@ -36,10 +36,10 @@ abstract class FuzzTask : Test() {
 }
 
 class FuzzConfigBuilder private constructor() {
-    lateinit var fuzzEngine: String
-    var hooks: Boolean = false
+    var fuzzEngine: String = FuzzConfig.FUZZ_ENGINE_DEFAULT
+    var hooks: Boolean = FuzzConfig.HOOKS_DEFAULT
     lateinit var instrument: List<String>
-    var customHookExcludes: List<String> = emptyList()
+    var customHookExcludes: List<String> = FuzzConfig.CUSTOM_HOOK_EXCLUDES_DEFAULT
     var maxSingleTargetFuzzTime: Int by Delegates.notNull<Int>()
 
     fun build(): FuzzConfig = FuzzConfig(
@@ -53,5 +53,11 @@ class FuzzConfigBuilder private constructor() {
     companion object {
         internal fun build(block: FuzzConfigBuilder.() -> Unit): FuzzConfig =
             FuzzConfigBuilder().apply(block).build()
+
+        internal fun writeToSystemProperties(block: FuzzConfigBuilder.() -> Unit) {
+            build(block).toPropertiesMap().forEach { (key, value) ->
+                System.setProperty(key, value)
+            }
+        }
     }
 }

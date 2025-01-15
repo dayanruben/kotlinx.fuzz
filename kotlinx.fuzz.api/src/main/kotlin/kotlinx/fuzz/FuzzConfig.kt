@@ -10,22 +10,31 @@ package kotlinx.fuzz
  * @param maxSingleTargetFuzzTime - max time to fuzz single target in seconds
  */
 data class FuzzConfig(
-    val fuzzEngine: String,
-    val hooks: Boolean,
+    val fuzzEngine: String = FUZZ_ENGINE_DEFAULT,
+    val hooks: Boolean = HOOKS_DEFAULT,
     val instrument: List<String>,
-    val customHookExcludes: List<String>,
+    val customHookExcludes: List<String> = CUSTOM_HOOK_EXCLUDES_DEFAULT,
     val maxSingleTargetFuzzTime: Int,
 ) {
     companion object {
+        const val FUZZ_ENGINE_DEFAULT = "jazzer"
+        const val HOOKS_DEFAULT = false
+        val CUSTOM_HOOK_EXCLUDES_DEFAULT: List<String> = emptyList()
+
         fun fromSystemProperties(): FuzzConfig {
             return FuzzConfig(
-                fuzzEngine = System.getProperty("kotlinx.fuzz.engine", "jazzer"),
-                hooks = System.getProperty("kotlinx.fuzz.hooks")?.toBoolean() ?: false,
+                fuzzEngine = System.getProperty("kotlinx.fuzz.engine") ?: FUZZ_ENGINE_DEFAULT,
+                hooks = System.getProperty("kotlinx.fuzz.hooks")?.toBoolean() ?: HOOKS_DEFAULT,
                 instrument = System.getProperty("kotlinx.fuzz.instrument")
-                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList(),
+                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
+                    ?: error("'kotlinx.fuzz.instrument' property is not set"),
+
                 customHookExcludes = System.getProperty("kotlinx.fuzz.customHookExcludes")
-                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty) ?: emptyList(),
-                maxSingleTargetFuzzTime = System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime", "10").toInt()
+                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
+                    ?: CUSTOM_HOOK_EXCLUDES_DEFAULT,
+
+                maxSingleTargetFuzzTime =
+                    System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime")!!.toInt()
             )
         }
 
