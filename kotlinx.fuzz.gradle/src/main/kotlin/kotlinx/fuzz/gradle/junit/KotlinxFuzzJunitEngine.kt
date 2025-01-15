@@ -18,8 +18,8 @@ import java.net.URI
 
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time.
-    // To prevent failure due to lack of necessary properties, config is read lazily
+    // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
+    // To prevent failures due to lack of necessary properties, config is read lazily
     private val config: FuzzConfig by lazy {
         FuzzConfig.fromSystemProperties()
     }

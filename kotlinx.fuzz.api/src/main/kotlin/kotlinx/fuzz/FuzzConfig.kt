@@ -3,11 +3,13 @@ package kotlinx.fuzz
 /**
  * Class that stores generals fuzzing configuration
  *
- * @param fuzzEngine - name of engine to be used
+ * @param fuzzEngine - name of engine to be used. Default: "jazzer"
  * @param hooks - apply fuzzing instrumentation
- * @param keepGoing - how many bugs to discover before finishing fuzzing
+ * @param keepGoing - how many bugs to discover before finishing fuzzing. Default: 1
  * @param instrument - glob patterns matching names of classes that should be instrumented for fuzzing
- * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks (custom and built-in)
+ * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
+ * (custom and built-in).
+ * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
  */
 data class FuzzConfig(
