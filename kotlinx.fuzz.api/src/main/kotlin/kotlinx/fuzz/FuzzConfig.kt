@@ -18,6 +18,11 @@ data class FuzzConfig(
     val customHookExcludes: List<String> = CUSTOM_HOOK_EXCLUDES_DEFAULT,
     val maxSingleTargetFuzzTime: Int,
 ) {
+    init {
+        require(keepGoing >= 0) { "'keepGoing' must be non-negative" }
+        require(maxSingleTargetFuzzTime > 0) { "'maxSingleTargetFuzzTime' must be positive" }
+    }
+
     companion object {
         const val FUZZ_ENGINE_DEFAULT = "jazzer"
         const val HOOKS_DEFAULT = false

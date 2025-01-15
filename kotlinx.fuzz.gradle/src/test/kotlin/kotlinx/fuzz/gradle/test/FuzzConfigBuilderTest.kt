@@ -12,7 +12,17 @@ object FuzzConfigBuilderTest {
     }
 
     @Test
-    fun `enough set`(){
+    fun `0 maxSingleTargetFuzzTime fails`() {
+        assertThrows<IllegalArgumentException> {
+            FuzzConfigBuilder.build {
+                maxSingleTargetFuzzTime = 0
+                instrument = emptyList()
+            }
+        }
+    }
+
+    @Test
+    fun `enough set`() {
         assertDoesNotThrow {
             FuzzConfigBuilder.build {
                 instrument = listOf("1", "2")
@@ -22,7 +32,7 @@ object FuzzConfigBuilderTest {
     }
 
     @Test
-    fun `all set`(){
+    fun `all set`() {
         assertDoesNotThrow {
             FuzzConfigBuilder.build {
                 fuzzEngine = "engine"
