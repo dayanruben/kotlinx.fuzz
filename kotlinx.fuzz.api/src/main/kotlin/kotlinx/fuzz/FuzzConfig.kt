@@ -28,5 +28,13 @@ data class FuzzConfig(
                 maxSingleTargetFuzzTime = System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime", "10").toInt()
             )
         }
+
+        fun FuzzConfig.toPropertiesMap(): Map<String, String> = mapOf(
+            "kotlinx.fuzz.engine" to fuzzEngine,
+            "kotlinx.fuzz.hooks" to hooks.toString(),
+            "kotlinx.fuzz.instrument" to instrument.joinToString<String>(","),
+            "kotlinx.fuzz.customHookExcludes" to customHookExcludes.joinToString<String>(","),
+            "kotlinx.fuzz.maxSingleTargetFuzzTime" to maxSingleTargetFuzzTime.toString(),
+        )
     }
 }
