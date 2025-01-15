@@ -57,7 +57,7 @@
   enabled: true
   ignoreAnnotated: [KFuzzTest]
   configuration:
-    styleEmptyBlockWithNewline: true
+    styleEmptyBlockWithNewline: false
     allowEmptyBlocks: false
 - name: LONG_LINE
   enabled: true
@@ -124,11 +124,10 @@
 # disabled due to a huge number of documentation that should be added
 - name: HEADER_MISSING_IN_NON_SINGLE_CLASS_FILE
   enabled: false
-# in this project a lot of identifiers has legacy C-style prefixes as kType, kName, etc.
+# in this project a lot of identifiers has prefixes as kType, kName, etc.
 # In Java world such single-symbol prefixes are not a good practice
 - name: VARIABLE_HAS_PREFIX
   enabled: false
-# In this project everything is built using dummy utility objects. Their refactoring should be done in a separate PR
 # These Utility classes are completely useless and make code heavier, as Kotlin supports top-level extension methods in files
 - name: AVOID_USING_UTILITY_CLASS
   enabled: false
@@ -147,7 +146,6 @@
 # disabled due to: https://github.com/diktat-static-analysis/diKTat/issues/1091
 - name: COMMENTED_OUT_CODE
   enabled: false
-# disabled because IDEA already tracks imports well
 - name: KDOC_WITHOUT_RETURN_TAG
   enabled: false
 - name: EXTENSION_FUNCTION_WITH_CLASS
