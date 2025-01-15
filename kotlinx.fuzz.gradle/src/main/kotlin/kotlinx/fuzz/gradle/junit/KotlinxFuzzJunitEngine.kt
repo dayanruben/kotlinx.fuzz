@@ -1,9 +1,9 @@
 package kotlinx.fuzz.gradle.junit
 
+import kotlinx.fuzz.FuzzConfig
+import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.jazzer.configureJazzer
-import kotlinx.fuzz.jazzer.jazzerDoFuzzing
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -18,6 +18,13 @@ import java.net.URI
 
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
+    private val config = FuzzConfig.fromSystemProperties()
+
+    private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
+        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor(FuzzConfig::class.java).newInstance(config) as KFuzzEngine
+        else -> throw AssertionError("Unsupported fuzzer engine!")
+    }
+
     companion object {
         private fun Method.isFuzzTarget(): Boolean {
             return AnnotationSupport.isAnnotated(this, KFuzzTest::class.java)
@@ -49,7 +56,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         }
 
         discoveryRequest.getSelectorsByType(ClassSelector::class.java).forEach { selector ->
-            appendTestsInClass(selector!!.getJavaClass(), engineDescriptor)
+            appendTestsInClass(selector!!.javaClass, engineDescriptor)
         }
 
         discoveryRequest.getSelectorsByType(MethodSelector::class.java).forEach { methodSelector ->
@@ -84,7 +91,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
-        configureJazzer()
+        fuzzEngine.initialise()
         root.children.forEach { child -> executeImpl(request, child) }
     }
 
@@ -104,7 +111,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.objectInstance!!
 
-                val finding = jazzerDoFuzzing(instance, method)
+                val finding = fuzzEngine.runTarget(instance, method)
                 val result = if (finding == null) {
                     TestExecutionResult.successful()
                 } else {
