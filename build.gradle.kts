@@ -14,7 +14,17 @@ allprojects {
     apply<DiktatGradlePlugin>()
     configure<DiktatExtension> {
         diktatConfigFile = rootProject.file("diktat-analysis.yml")
-        inputs { include("src/**/*.kt") }
+        reporters {
+            plain()
+            sarif()
+        }
+        inputs {
+            exclude {
+                val examplesDir = project(":kotlinx.fuzz.examples").projectDir.toPath().normalize()
+                it.file.toPath().startsWith(examplesDir)
+            }
+            include("src/**/*.kt")
+        }
         debug = true
     }
 }
