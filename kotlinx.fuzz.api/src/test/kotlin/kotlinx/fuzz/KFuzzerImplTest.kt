@@ -25,7 +25,7 @@ class KFuzzerImplTest {
 
     @Test
     fun `test consumeBooleansOrNull`() {
-        val data = byteArrayOf(1)
+        val data = byteArrayOf(0)
         val kFuzzer = KFuzzerImpl(data)
         assertNull(kFuzzer.consumeBooleansOrNull(5))
     }
@@ -35,14 +35,14 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0x7F.toByte())
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeByte(50..100)
-        assertEquals(result, 50.toByte())
+        assertEquals(50.toByte(), result)
     }
 
     @Test
     fun `test consumeByteOrNull`() {
-        val data = byteArrayOf(0, 100)
+        val data = byteArrayOf(1, 100)
         val kFuzzer = KFuzzerImpl(data)
-        assertEquals(kFuzzer.consumeByteOrNull(), 100.toByte())
+        assertEquals(100.toByte(), kFuzzer.consumeByteOrNull())
     }
 
     @Test
@@ -69,7 +69,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0, 0)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeShort(0..Short.MAX_VALUE)
-        assertEquals(result, 0.toShort())
+        assertEquals(0.toShort(), result)
     }
 
     @Test
@@ -83,7 +83,7 @@ class KFuzzerImplTest {
         )
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeInts(3, (Int.MIN_VALUE + 20)..(Int.MAX_VALUE - 20))
-        assertArrayEquals(result, intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54))
+        assertArrayEquals(intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54), result)
     }
 
     @Test
@@ -115,7 +115,7 @@ class KFuzzerImplTest {
         val data = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 100)
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLong()
-        assertEquals(result, 100)
+        assertEquals(100, result)
     }
 
     @Test
@@ -132,7 +132,7 @@ class KFuzzerImplTest {
         )
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLongs(3, (Long.MIN_VALUE + 20)..(Long.MAX_VALUE - 20))
-        assertArrayEquals(result, longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54))
+        assertArrayEquals(longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54), result)
     }
 
     @Test

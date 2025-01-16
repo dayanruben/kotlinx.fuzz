@@ -10,12 +10,12 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
     private operator fun IntRange.contains(other: IntRange): Boolean =
         other.first >= this.first && other.last <= this.last
 
-    private inline fun <reified T> fitIntoIntRange(n: T, range: IntRange): T {
+    private inline fun <reified T : Number> fitIntoIntRange(n: T, range: IntRange): T {
         val rangeSize = range.last.toLong() - range.first + 1
         return when (T::class) {
-            Byte::class -> (((n as Byte).toLong() - Byte.MIN_VALUE) % rangeSize + range.first).toByte() as T
-            Short::class -> (((n as Short).toLong() - Short.MIN_VALUE) % rangeSize + range.first).toShort() as T
-            Int::class -> (((n as Int).toLong() - Int.MIN_VALUE) % rangeSize + range.first).toInt() as T
+            Byte::class -> ((n.toLong() - Byte.MIN_VALUE) % rangeSize + range.first).toByte() as T
+            Short::class -> ((n.toLong() - Short.MIN_VALUE) % rangeSize + range.first).toShort() as T
+            Int::class -> ((n.toLong() - Int.MIN_VALUE) % rangeSize + range.first).toInt() as T
             else -> error("Not integer type")
         }
     }
@@ -36,14 +36,12 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         )
     }
 
-    override fun consumeBoolean() = iterator.readBoolean()
+    override fun consumeBoolean(): Boolean = iterator.readBoolean()
 
-    override fun consumeBooleanOrNull() =
-        if (iterator.readBoolean()) {
-            iterator.readBoolean()
-        } else {
-            null
-        }
+    override fun consumeBooleanOrNull(): Boolean? = when {
+        iterator.readBoolean() -> iterator.readBoolean()
+        else -> null
+    }
 
     override fun consumeBooleans(maxLength: Int): BooleanArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
@@ -59,8 +57,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeBooleans(maxLength)
+            consumeBoolean() -> consumeBooleans(maxLength)
+            else -> null
         }
     }
 
@@ -76,8 +74,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range in Byte.MIN_VALUE..Byte.MAX_VALUE) { "range should be a subset of [Byte.MIN_VALUE..Byte.MAX_VALUE] but was $range" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeByte(range)
+            consumeBoolean() -> consumeByte(range)
+            else -> null
         }
     }
 
@@ -95,8 +93,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeBytes(maxLength, range)
+            consumeBoolean() -> consumeBytes(maxLength, range)
+            else -> null
         }
     }
 
@@ -120,8 +118,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range in Short.MIN_VALUE..Short.MAX_VALUE) { "range should be a subset of [Short.MIN_VALUE..Short.MAX_VALUE] but was $range" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeShort(range)
+            consumeBoolean() -> consumeShort(range)
+            else -> null
         }
     }
 
@@ -139,8 +137,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeShorts(maxLength, range)
+            consumeBoolean() -> consumeShorts(maxLength, range)
+            else -> null
         }
     }
 
@@ -154,8 +152,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeInt(range)
+            consumeBoolean() -> consumeInt(range)
+            else -> null
         }
     }
 
@@ -173,44 +171,47 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeInts(maxLength, range)
+            consumeBoolean() -> consumeInts(maxLength, range)
+            else -> null
+        }
+    }
+
+    private fun fitIntoIntRange(result: Long, range: LongRange): Long = when {
+        range.first < 0 && range.last > 0 && range.last - Long.MAX_VALUE > range.first -> when {
+            result < range.first -> result - Long.MIN_VALUE + range.first
+
+            result <= range.last -> {
+                val normalized = result + (range.first - Long.MIN_VALUE)
+                when {
+                    normalized > range.last -> range.first + (normalized - range.last)
+                    else -> normalized
+                }
+            }
+
+            else -> range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
+        }
+
+        else -> {
+            val rangeSize = range.last - range.first + 1
+            var normalized = result % rangeSize - Long.MIN_VALUE % rangeSize + range.first
+            while (result < range.first) {
+                normalized += rangeSize
+            }
+            normalized
         }
     }
 
     override fun consumeLong(range: LongRange): Long {
         require(range.isNotEmpty()) { "range is empty" }
-
-        var result = iterator.readLong()
-
-        if (range.first < 0 && range.last > 0 && range.last - Long.MAX_VALUE > range.first) {
-            if (result < range.first) {
-                return result - Long.MIN_VALUE + range.first
-            } else if (result <= range.last) {
-                result += (range.first - Long.MIN_VALUE)
-                if (result > range.last) {
-                    return range.first + (result - range.last)
-                }
-                return result
-            } else {
-                return range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
-            }
-        } else {
-            val rangeSize = range.last - range.first + 1
-            result = result % rangeSize - Long.MIN_VALUE % rangeSize + range.first
-            while (result < range.first) {
-                result += rangeSize
-            }
-            return result
-        }
+        return fitIntoIntRange(iterator.readLong(), range)
     }
 
     override fun consumeLongOrNull(range: LongRange): Long? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeLong(range)
+            consumeBoolean() -> consumeLong(range)
+            else -> null
         }
     }
 
@@ -228,8 +229,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeLongs(maxLength, range)
+            consumeBoolean() -> consumeLongs(maxLength, range)
+            else -> null
         }
     }
 
@@ -249,8 +250,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeFloat(range)
+            consumeBoolean() -> consumeFloat(range)
+            else -> null
         }
     }
 
@@ -268,8 +269,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeFloats(maxLength, range)
+            consumeBoolean() -> consumeFloats(maxLength, range)
+            else -> null
         }
     }
 
@@ -289,8 +290,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeDouble(range)
+            consumeBoolean() -> consumeDouble(range)
+            else -> null
         }
     }
 
@@ -308,8 +309,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeDoubles(maxLength, range)
+            consumeBoolean() -> consumeDoubles(maxLength, range)
+            else -> null
         }
     }
 
@@ -323,8 +324,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            iterator.readBoolean() -> null
-            else -> consumeChar(range)
+            consumeBoolean() -> consumeChar(range)
+            else -> null
         }
     }
 
@@ -342,8 +343,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeChars(maxLength, range)
+            consumeBoolean() -> consumeChars(maxLength, range)
+            else -> null
         }
     }
 
@@ -367,8 +368,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeString(maxLength, charset)
+            consumeBoolean() -> consumeString(maxLength, charset)
+            else -> null
         }
     }
 
@@ -380,23 +381,25 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         return String(bytes.toByteArray(), charset)
     }
 
-    override fun consumeAsciiString(maxLength: Int) = consumeString(maxLength, Charsets.US_ASCII)
+    override fun consumeAsciiString(maxLength: Int): String = consumeString(maxLength, Charsets.US_ASCII)
 
-    override fun consumeAsciiStringOrNull(maxLength: Int) = consumeStringOrNull(maxLength, Charsets.US_ASCII)
+    override fun consumeAsciiStringOrNull(maxLength: Int): String? = consumeStringOrNull(maxLength, Charsets.US_ASCII)
 
-    override fun consumeRemainingAsAsciiString() = consumeRemainingAsString(Charsets.US_ASCII)
+    override fun consumeRemainingAsAsciiString(): String = consumeRemainingAsString(Charsets.US_ASCII)
 
     override fun consumeLetter(): Char {
         val alphabetSize = ('z' - 'a' + 1) * 2
         val index = consumeByte(0 until alphabetSize)
-        return if (index < alphabetSize / 2) {
-            'a' + index.toInt()
-        } else {
-            'A' + index.toInt() - (alphabetSize / 2)
+        return when {
+            index < alphabetSize / 2 -> 'a' + index.toInt()
+            else -> 'A' + index.toInt() - (alphabetSize / 2)
         }
     }
 
-    override fun consumeLetterOrNull(): Char? = if (consumeBoolean()) null else consumeLetter()
+    override fun consumeLetterOrNull(): Char? = when {
+        consumeBoolean() -> consumeLetter()
+        else -> null
+    }
 
     override fun consumeLetters(maxLength: Int): CharArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
@@ -433,8 +436,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> null
-            else -> consumeLetterString(maxLength)
+            consumeBoolean() -> consumeLetterString(maxLength)
+            else -> null
         }
     }
 
@@ -451,10 +454,9 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
 
         fun readBoolean(): Boolean = readByte() != 0.toByte()
 
-        fun readByte(): Byte = if (iterator.hasNext()) {
-            iterator.next()
-        } else {
-            0
+        fun readByte(): Byte = when {
+            iterator.hasNext() -> iterator.next()
+            else -> 0
         }
 
         fun readShort(): Short = (readByte().toInt() shl 8 or (readByte().toInt() and 0xFF)).toShort()
