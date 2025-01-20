@@ -29,5 +29,3 @@ abstract class FuzzTask : Test() {
     @TaskAction
     fun action(): Unit = Unit
 }
-
-

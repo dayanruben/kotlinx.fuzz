@@ -34,22 +34,20 @@ data class KFuzzConfig(
         const val KEEP_GOING_DEFAULT = 1
         val CUSTOM_HOOK_EXCLUDES_DEFAULT: List<String> = emptyList()
 
-        fun fromSystemProperties(): KFuzzConfig {
-            return KFuzzConfig(
-                fuzzEngine = System.getProperty("kotlinx.fuzz.engine") ?: FUZZ_ENGINE_DEFAULT,
-                hooks = System.getProperty("kotlinx.fuzz.hooks")?.toBoolean() ?: HOOKS_DEFAULT,
-                instrument = System.getProperty("kotlinx.fuzz.instrument")
-                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
-                    ?: error("'kotlinx.fuzz.instrument' property is not set"),
+        fun fromSystemProperties(): KFuzzConfig = KFuzzConfig(
+            fuzzEngine = System.getProperty("kotlinx.fuzz.engine") ?: FUZZ_ENGINE_DEFAULT,
+            hooks = System.getProperty("kotlinx.fuzz.hooks")?.toBoolean() ?: HOOKS_DEFAULT,
+            instrument = System.getProperty("kotlinx.fuzz.instrument")?.split(',')
+                ?.map(String::trim)?.filter(String::isNotEmpty)
+                ?: error("'kotlinx.fuzz.instrument' property is not set"),
 
-                customHookExcludes = System.getProperty("kotlinx.fuzz.customHookExcludes")
-                    ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
-                    ?: CUSTOM_HOOK_EXCLUDES_DEFAULT,
+            customHookExcludes = System.getProperty("kotlinx.fuzz.customHookExcludes")
+                ?.split(',')?.map(String::trim)?.filter(String::isNotEmpty)
+                ?: CUSTOM_HOOK_EXCLUDES_DEFAULT,
 
-                maxSingleTargetFuzzTime =
-                    System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime")!!.toInt().seconds
-            )
-        }
+            maxSingleTargetFuzzTime = System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime")!!
+                .toInt().seconds,
+        )
 
         fun KFuzzConfig.toPropertiesMap(): Map<String, String> = mapOf(
             "kotlinx.fuzz.engine" to fuzzEngine,

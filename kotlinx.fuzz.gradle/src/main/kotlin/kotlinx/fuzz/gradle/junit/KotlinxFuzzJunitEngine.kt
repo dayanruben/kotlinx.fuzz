@@ -1,8 +1,8 @@
 package kotlinx.fuzz.gradle.junit
 
-import kotlinx.fuzz.KFuzzConfig
 import java.lang.reflect.Method
 import java.net.URI
+import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -22,28 +22,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     private val config: KFuzzConfig by lazy {
         KFuzzConfig.fromSystemProperties()
     }
-
     private val fuzzEngine: KFuzzEngine by lazy {
         when (config.fuzzEngine) {
             "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
                 .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
 
             else -> throw AssertionError("Unsupported fuzzer engine!")
-        }
-    }
-
-    companion object {
-        private fun Method.isFuzzTarget(): Boolean {
-            return AnnotationSupport.isAnnotated(this, KFuzzTest::class.java)
-                    && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
-        }
-
-        val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
-            ReflectionSupport.findMethods(
-                klass,
-                { method: Method -> method.isFuzzTarget() },
-                HierarchyTraversalMode.TOP_DOWN
-            ).isNotEmpty()
         }
     }
 
@@ -127,5 +111,15 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
         engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor))
     }
-}
 
+    companion object {
+        val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
+            ReflectionSupport.findMethods(
+                klass,
+                { method: Method -> method.isFuzzTarget() },
+                HierarchyTraversalMode.TOP_DOWN,
+            ).isNotEmpty()
+        }
+        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+    }
+}
