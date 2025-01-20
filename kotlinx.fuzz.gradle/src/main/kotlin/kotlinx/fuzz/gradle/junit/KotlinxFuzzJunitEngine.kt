@@ -1,6 +1,8 @@
 package kotlinx.fuzz.gradle.junit
 
-import kotlinx.fuzz.FuzzConfig
+import kotlinx.fuzz.KFuzzConfig
+import java.lang.reflect.Method
+import java.net.URI
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -13,21 +15,18 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
-import java.lang.reflect.Method
-import java.net.URI
-
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
-    private val config: FuzzConfig by lazy {
-        FuzzConfig.fromSystemProperties()
+    private val config: KFuzzConfig by lazy {
+        KFuzzConfig.fromSystemProperties()
     }
 
     private val fuzzEngine: KFuzzEngine by lazy {
         when (config.fuzzEngine) {
             "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
-                .getConstructor(FuzzConfig::class.java).newInstance(config) as KFuzzEngine
+                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
 
             else -> throw AssertionError("Unsupported fuzzer engine!")
         }
@@ -52,7 +51,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     override fun discover(
         discoveryRequest: EngineDiscoveryRequest,
-        uniqueId: UniqueId
+        uniqueId: UniqueId,
     ): TestDescriptor {
         val engineDescriptor = EngineDescriptor(uniqueId, "kotlinx.fuzz")
         discoveryRequest.getSelectorsByType(ClasspathRootSelector::class.java).forEach { selector ->
@@ -72,6 +71,38 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         }
 
         return engineDescriptor
+    }
+
+    override fun execute(request: ExecutionRequest) {
+        val root = request.rootTestDescriptor
+        fuzzEngine.initialise()
+        root.children.forEach { child -> executeImpl(request, child) }
+    }
+
+    private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
+        when (descriptor) {
+            is ClassTestDescriptor -> {
+                request.engineExecutionListener.executionStarted(descriptor)
+                descriptor.children.forEach { child -> executeImpl(request, child) }
+                request.engineExecutionListener.executionFinished(
+                    descriptor,
+                    TestExecutionResult.successful(),
+                )
+            }
+
+            is MethodTestDescriptor -> {
+                request.engineExecutionListener.executionStarted(descriptor)
+                val method = descriptor.testMethod
+                val instance = method.declaringClass.kotlin.objectInstance!!
+
+                val finding = fuzzEngine.runTarget(instance, method)
+                val result = when (finding) {
+                    null -> TestExecutionResult.successful()
+                    else -> TestExecutionResult.failed(finding)
+                }
+                request.engineExecutionListener.executionFinished(descriptor, result)
+            }
+        }
     }
 
     private fun appendTestsInMethod(method: Method, engineDescriptor: EngineDescriptor) {
@@ -95,39 +126,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
         engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor))
-    }
-
-    override fun execute(request: ExecutionRequest) {
-        val root = request.rootTestDescriptor
-        fuzzEngine.initialise()
-        root.children.forEach { child -> executeImpl(request, child) }
-    }
-
-    private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
-        when (descriptor) {
-            is ClassTestDescriptor -> {
-                request.engineExecutionListener.executionStarted(descriptor)
-                descriptor.children.forEach { child -> executeImpl(request, child) }
-                request.engineExecutionListener.executionFinished(
-                    descriptor,
-                    TestExecutionResult.successful()
-                )
-            }
-
-            is MethodTestDescriptor -> {
-                request.engineExecutionListener.executionStarted(descriptor)
-                val method = descriptor.testMethod
-                val instance = method.declaringClass.kotlin.objectInstance!!
-
-                val finding = fuzzEngine.runTarget(instance, method)
-                val result = if (finding == null) {
-                    TestExecutionResult.successful()
-                } else {
-                    TestExecutionResult.failed(finding)
-                }
-                request.engineExecutionListener.executionFinished(descriptor, result)
-            }
-        }
     }
 }
 

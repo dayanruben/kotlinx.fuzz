@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation("org.junit.platform:junit-platform-engine:$JUNIT_PLATFORM_VERSION")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter:$JUNIT_JUPITER_VERSION")
 }
 
 tasks.test {

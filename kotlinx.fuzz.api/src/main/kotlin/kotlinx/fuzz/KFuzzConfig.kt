@@ -1,5 +1,8 @@
 package kotlinx.fuzz
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
 /**
  * Class that stores generals fuzzing configuration
  *
@@ -12,17 +15,17 @@ package kotlinx.fuzz
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
  */
-data class FuzzConfig(
+data class KFuzzConfig(
     val fuzzEngine: String = FUZZ_ENGINE_DEFAULT,
     val hooks: Boolean = HOOKS_DEFAULT,
     val keepGoing: Int = KEEP_GOING_DEFAULT,
     val instrument: List<String>,
     val customHookExcludes: List<String> = CUSTOM_HOOK_EXCLUDES_DEFAULT,
-    val maxSingleTargetFuzzTime: Int,
+    val maxSingleTargetFuzzTime: Duration,
 ) {
     init {
         require(keepGoing >= 0) { "'keepGoing' must be non-negative" }
-        require(maxSingleTargetFuzzTime > 0) { "'maxSingleTargetFuzzTime' must be positive" }
+        require(maxSingleTargetFuzzTime.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" }
     }
 
     companion object {
@@ -31,8 +34,8 @@ data class FuzzConfig(
         const val KEEP_GOING_DEFAULT = 1
         val CUSTOM_HOOK_EXCLUDES_DEFAULT: List<String> = emptyList()
 
-        fun fromSystemProperties(): FuzzConfig {
-            return FuzzConfig(
+        fun fromSystemProperties(): KFuzzConfig {
+            return KFuzzConfig(
                 fuzzEngine = System.getProperty("kotlinx.fuzz.engine") ?: FUZZ_ENGINE_DEFAULT,
                 hooks = System.getProperty("kotlinx.fuzz.hooks")?.toBoolean() ?: HOOKS_DEFAULT,
                 instrument = System.getProperty("kotlinx.fuzz.instrument")
@@ -44,16 +47,16 @@ data class FuzzConfig(
                     ?: CUSTOM_HOOK_EXCLUDES_DEFAULT,
 
                 maxSingleTargetFuzzTime =
-                    System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime")!!.toInt()
+                    System.getProperty("kotlinx.fuzz.maxSingleTargetFuzzTime")!!.toInt().seconds
             )
         }
 
-        fun FuzzConfig.toPropertiesMap(): Map<String, String> = mapOf(
+        fun KFuzzConfig.toPropertiesMap(): Map<String, String> = mapOf(
             "kotlinx.fuzz.engine" to fuzzEngine,
             "kotlinx.fuzz.hooks" to hooks.toString(),
             "kotlinx.fuzz.instrument" to instrument.joinToString<String>(","),
             "kotlinx.fuzz.customHookExcludes" to customHookExcludes.joinToString<String>(","),
-            "kotlinx.fuzz.maxSingleTargetFuzzTime" to maxSingleTargetFuzzTime.toString(),
+            "kotlinx.fuzz.maxSingleTargetFuzzTime" to maxSingleTargetFuzzTime.inWholeSeconds.toString(),
         )
     }
 }
