@@ -42,9 +42,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         )
     }
 
-    override fun nextInt(bound: Int) = consumeInt(0 until bound)
-
-    override fun nextInt() = consumeInt()
+    override fun next(bits: Int): Int = consumeInt()
 
     override fun consumeBoolean(): Boolean = iterator.readBoolean()
 
@@ -460,11 +458,23 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     override fun consumeRegexString(regex: Regex, options: Map<String, Any>): String {
         val properties = RgxGenProperties()
         for ((key, value) in options.entries) {
+            @Suppress("UNCHECKED_CAST")
             when (key) {
-                "INFINITE_PATTERN_REPETITION" -> RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(properties, value as Int)
+                "INFINITE_PATTERN_REPETITION" -> RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(
+                    properties,
+                    value as Int,
+                )
+
                 "CASE_INSENSITIVE" -> RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, value as Boolean)
-                "DOT_MATCHES_ONLY" -> RgxGenOption.DOT_MATCHES_ONLY.setInProperties(properties, value as RgxGenCharsDefinition)
-                "WHITESPACE_DEFINITION" -> RgxGenOption.WHITESPACE_DEFINITION.setInProperties(properties, value as List<WhitespaceChar>)
+                "DOT_MATCHES_ONLY" -> RgxGenOption.DOT_MATCHES_ONLY.setInProperties(
+                    properties,
+                    value as RgxGenCharsDefinition,
+                )
+
+                "WHITESPACE_DEFINITION" -> RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
+                    properties,
+                    value as List<WhitespaceChar>,
+                )
             }
         }
         val rgxGen = RgxGen.parse(properties, regex.pattern)
@@ -490,7 +500,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
         fun readInt(): Int =
             (readByte().toInt() shl 24) or ((readByte().toInt() and 0xFF) shl 16) or
-                    ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
+                ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
 
         fun readLong(): Long = (readInt().toLong() shl 32) or (readInt().toLong() and 0xFF_FF_FF_FFL)
 

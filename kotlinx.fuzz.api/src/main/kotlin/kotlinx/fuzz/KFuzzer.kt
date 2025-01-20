@@ -451,7 +451,6 @@ interface KFuzzer {
      *
      * @param regex regular expression that will be used as a template for string
      * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
-     *
      * @return string that matches given regex
      */
     fun consumeRegexString(regex: Regex, options: Map<String, Any> = emptyMap()): String
@@ -461,11 +460,9 @@ interface KFuzzer {
      *
      * @param regex regular expression that will be used as a template for string
      * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
-     *
      * @return nullable string that matches given regex
      * */
     fun consumeRegexStringOrNull(regex: Regex, options: Map<String, Any> = emptyMap()): String?
-
 
     /**
      * Picks an element from collection based on the fuzzer input.
