@@ -4,8 +4,6 @@ plugins {
     id("com.gradle.plugin-publish") version "1.2.1"
 }
 
-group = "org.plan.research" // TODO: org.jetbrains.research(.plan) ?
-
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
 
