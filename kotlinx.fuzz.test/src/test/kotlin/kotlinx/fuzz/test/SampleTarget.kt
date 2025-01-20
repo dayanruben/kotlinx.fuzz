@@ -16,5 +16,4 @@ class SampleTarget {
         val kfuzzer: KFuzzer = KFuzzerImpl(byteArrayOf(1))
         assertEquals(1, kfuzzer.consumeByte())
     }
-
 }
