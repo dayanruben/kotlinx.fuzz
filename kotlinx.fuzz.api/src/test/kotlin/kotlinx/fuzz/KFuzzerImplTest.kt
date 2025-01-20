@@ -163,9 +163,9 @@ class KFuzzerImplTest {
             val caseInsensitiveReg = Regex("[aA]+")
             val result = kFuzzer.consumeRegexString(
                 reg,
-                mapOf(
-                    "INFINITE_PATTERN_REPETITION" to 10,
-                    "CASE_INSENSITIVE" to true,
+                KFuzzer.RegexConfiguration(
+                    maxInfinitePatternLength = 10,
+                    caseInsensitive = true,
                 ),
             )
             assertFalse(result.matches(reg))
@@ -178,9 +178,9 @@ class KFuzzerImplTest {
             val chars = setOf('a', 'b', '0', 'y')
             val result = kFuzzer.consumeRegexString(
                 reg,
-                mapOf(
-                    "INFINITE_PATTERN_REPETITION" to 20,
-                    "DOT_MATCHES_ONLY" to RgxGenCharsDefinition.of(*chars.toCharArray()),
+                KFuzzer.RegexConfiguration(
+                    maxInfinitePatternLength = 10,
+                    allowedCharacters = RgxGenCharsDefinition.of(*chars.toCharArray()),
                 ),
             )
             assertTrue(result.matches(reg))

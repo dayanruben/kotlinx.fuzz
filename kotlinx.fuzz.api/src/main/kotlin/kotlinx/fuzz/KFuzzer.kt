@@ -1,5 +1,9 @@
 package kotlinx.fuzz
 
+import com.github.curiousoddman.rgxgen.config.RgxGenOption
+import com.github.curiousoddman.rgxgen.config.RgxGenProperties
+import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
+import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import java.nio.charset.Charset
 import kotlin.text.Charsets
 
@@ -450,19 +454,19 @@ interface KFuzzer {
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param regex regular expression that will be used as a template for string
-     * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
+     * @param configuration configuration of the generation parameters
      * @return string that matches given regex
      */
-    fun consumeRegexString(regex: Regex, options: Map<String, Any> = emptyMap()): String
+    fun consumeRegexString(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String
 
     /**
      * Consumes a nullable string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
      *
      * @param regex regular expression that will be used as a template for string
-     * @param options map that matches options to their values (for now [RgxGen](https://github.com/curious-odd-man/RgxGen/) library is used, therefore their options are expected)
+     * @param configuration configuration of the generation parameters
      * @return nullable string that matches given regex
      * */
-    fun consumeRegexStringOrNull(regex: Regex, options: Map<String, Any> = emptyMap()): String?
+    fun consumeRegexStringOrNull(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String?
 
     /**
      * Picks an element from collection based on the fuzzer input.
@@ -572,5 +576,44 @@ interface KFuzzer {
     fun pickValue(array: CharArray): Char {
         require(array.isNotEmpty()) { "array is empty" }
         return array[consumeInt(array.indices)]
+    }
+
+    /**
+     * Class that allows t =o configure parameters of regex string generation
+     *
+     * @param maxInfinitePatternLength limit of repetitions for infinite patterns, such as a+, a* and a{n,} (default value `100`)
+     * @param caseInsensitive flag to use case-insensitive matching (defalut value `false`)
+     * @param allowedCharacters characters that are allowed to appear in the resulting string (default value `null` -> all characters are allowed)
+     * @param allowedWhitespaces characters that are allowed to appear in \s pattern (default value `listOf(SPACE, TAB)`)
+     */
+    data class RegexConfiguration(
+        val maxInfinitePatternLength: Int = 100,
+        val caseInsensitive: Boolean = false,
+        val allowedCharacters: RgxGenCharsDefinition? = null,
+        val allowedWhitespaces: List<WhitespaceChar> = listOf(WhitespaceChar.SPACE, WhitespaceChar.TAB),
+    ) {
+        internal fun asRegexProperties(): RgxGenProperties {
+            val properties = RgxGenProperties()
+            RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(
+                properties,
+                this.maxInfinitePatternLength,
+            )
+            RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, caseInsensitive)
+            allowedCharacters?.let {
+                RgxGenOption.DOT_MATCHES_ONLY.setInProperties(
+                    properties,
+                    allowedCharacters,
+                )
+            }
+            RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
+                properties,
+                allowedWhitespaces,
+            )
+            return properties
+        }
+
+        companion object {
+            val DEFAULT = RegexConfiguration()
+        }
     }
 }
