@@ -1,5 +1,6 @@
 package kotlinx.fuzz
 
+import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -146,10 +147,45 @@ class KFuzzerImplTest {
 
     @Test
     fun `test consumeRegexString`() {
-        val data = byteArrayOf()
+        val data = buildList {
+            repeat(10_000) { add(((it * 31) % 512).toByte()) }
+        }.toByteArray()
         val kFuzzer = KFuzzerImpl(data)
-        val reg = Regex("[a-z]+(abc){3,}[a-z]{1,2}q")
-        val result = kFuzzer.consumeRegexString(reg)
-        assertTrue(result.matches(reg))
+
+        repeat(10) {
+            val reg = Regex("[a-z]+(abc){3,}[a-z]{1,2}q")
+            val result = kFuzzer.consumeRegexString(reg)
+            assertTrue(result.matches(reg))
+        }
+
+        repeat(10) {
+            val reg = Regex("a+")
+            val caseInsensitiveReg = Regex("[aA]+")
+            val result = kFuzzer.consumeRegexString(
+                reg,
+                mapOf(
+                    "INFINITE_PATTERN_REPETITION" to 10,
+                    "CASE_INSENSITIVE" to true,
+                ),
+            )
+            assertFalse(result.matches(reg))
+            assertTrue(result.matches(caseInsensitiveReg))
+            assertTrue(result.length <= 10)
+        }
+
+        repeat(10) {
+            val reg = Regex(".*")
+            val chars = setOf('a', 'b', '0', 'y')
+            val result = kFuzzer.consumeRegexString(
+                reg,
+                mapOf(
+                    "INFINITE_PATTERN_REPETITION" to 20,
+                    "DOT_MATCHES_ONLY" to RgxGenCharsDefinition.of(*chars.toCharArray()),
+                ),
+            )
+            assertTrue(result.matches(reg))
+            assertTrue(result.all { it in chars })
+            assertTrue(result.length <= 20)
+        }
     }
 }

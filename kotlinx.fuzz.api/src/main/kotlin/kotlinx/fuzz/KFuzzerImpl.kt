@@ -8,7 +8,7 @@ import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
-import java.util.Random
+import java.util.*
 
 class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private val iterator = Reader(data)
@@ -42,7 +42,10 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         )
     }
 
-    override fun next(bits: Int): Int = consumeInt()
+    /**
+     * Implementation taken from #Random.next
+     */
+    override fun next(bits: Int): Int = (consumeInt() ushr (48 - bits)).toInt()
 
     override fun consumeBoolean(): Boolean = iterator.readBoolean()
 
