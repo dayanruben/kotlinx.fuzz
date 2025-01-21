@@ -23,9 +23,10 @@ object EngineTest {
         fun `success test`(@Suppress("UNUSED_PARAMETER") data: KFuzzer) {
         }
     }
+
     @BeforeEach
     fun setup() {
-        KFuzzConfigBuilder.writeToSystemProperties {
+        writeToSystemProperties {
             maxSingleTargetFuzzTime = 10.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
         }
@@ -40,4 +41,9 @@ object EngineTest {
             .testEvents()
             .assertStatistics { it.started(2).succeeded(1).failed(1) }
     }
+}
+
+private fun writeToSystemProperties(block: KFuzzConfigBuilder.() -> Unit) {
+    KFuzzConfigBuilder.build(block).toPropertiesMap()
+        .forEach { (key, value) -> System.setProperty(key, value) }
 }
