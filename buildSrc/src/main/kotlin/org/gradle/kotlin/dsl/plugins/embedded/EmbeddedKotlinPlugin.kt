@@ -16,6 +16,8 @@
 
 // Disable 'Unsupported Kotlin plugin version' warning
 // Workaround for https://github.com/gradle/gradle/issues/13020
+@file:Suppress("unused")
+
 package org.gradle.kotlin.dsl.plugins.embedded
 
 import org.gradle.api.Plugin

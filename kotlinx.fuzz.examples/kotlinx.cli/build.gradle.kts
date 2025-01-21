@@ -3,7 +3,9 @@ plugins {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-cli:0.3.6")
-    implementation("commons-cli:commons-cli:1.9.0")
     implementation(kotlin("reflect"))
+    implementation(libs.jazzer.api)
+    implementation(libs.jazzer.junit)
+    implementation(libs.kotlinx.cli)
+    implementation(libs.commons.cli)
 }

@@ -1,0 +1,49 @@
+[versions]
+kotlin = "2.0.21"
+diktat = "2.0.0"
+jazzer = "0.22.1"
+
+junit-platform = "1.11.4"
+junit-jupiter = "5.11.4"
+
+reflections = "0.10.2"
+kotlinx-cli = "0.3.6"
+kotlinx-collections-immutable = "0.3.8"
+kotlinx-datetime = "0.6.1"
+kotlinx-html = "0.11.0"
+kotlinx-io = "0.6.0"
+kotlinx-serialization = "1.7.3"
+commons-cli = "1.9.0"
+jsoup = "1.18.1"
+
+rgxgen = "2.0"
+
+[libraries]
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
+
+jazzer = { module = "com.code-intelligence:jazzer", version.ref = "jazzer" }
+jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
+jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
+
+reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
+
+kotlinx-cli = { module = "org.jetbrains.kotlinx:kotlinx-cli", version.ref = "kotlinx-cli" }
+kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinx-collections-immutable" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinx-datetime" }
+kotlinx-html = { module = "org.jetbrains.kotlinx:kotlinx-html", version.ref = "kotlinx-html" }
+kotlinx-html-jvm = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinx-html" }
+kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-properties = { module = "org.jetbrains.kotlinx:kotlinx-serialization-properties", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
+
+junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform" }
+junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit", version.ref = "junit-platform" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter"}
+rgxgen = { module = "com.github.curious-odd-man:rgxgen", version.ref = "rgxgen" }
+
+[plugins]
