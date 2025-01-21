@@ -1,3 +1,7 @@
+import kotlinx.fuzz.booleanProperty
+import kotlinx.fuzz.task.target.CheckTargetsExist
+import kotlinx.fuzz.task.target.PrintTargetNames
+
 plugins {
     kotlin("jvm")
 }
@@ -44,13 +48,7 @@ tasks.create<CheckTargetsExist>("checkTargetsExist") {
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
 }
 
-
-tasks.getByName("test").dependsOn("copyDependencies")
-
-val enableTests: Boolean = if (project.hasProperty("enableTests")) {
-    project.property("enableTests").toString().toBoolean()
-} else {
-    false
+tasks.getByName("test").let {
+    it.enabled = project.booleanProperty("enableTests") == true
+    it.dependsOn("copyDependencies")
 }
-
-tasks.getByName("test").enabled = enableTests

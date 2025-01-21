@@ -1,5 +1,5 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-example")
+    id("kotlinx.fuzz.example-module")
 }
 
 dependencies {
