@@ -1,5 +1,5 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
     id("com.gradle.plugin-publish") version "1.2.1"
 }

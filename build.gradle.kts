@@ -2,7 +2,7 @@ import com.saveourtool.diktat.plugin.gradle.DiktatExtension
 import com.saveourtool.diktat.plugin.gradle.DiktatGradlePlugin
 
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
     id("com.saveourtool.diktat") version "2.0.0" apply false
 }
 
