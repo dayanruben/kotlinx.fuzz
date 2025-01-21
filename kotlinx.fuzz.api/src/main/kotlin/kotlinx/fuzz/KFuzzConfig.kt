@@ -78,6 +78,10 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         configProperties().forEach { it.assertIsSet() }
     }
 
+    private fun getAll() {
+        configProperties().forEach { it.get() }
+    }
+
     private fun validate() {
         require(maxSingleTargetFuzzTime.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" }
         require(keepGoing > 0) { "'keepGoing' must be positive" }
@@ -91,6 +95,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         }
 
         internal fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl().apply {
+            getAll()
             validate()
         }
     }
@@ -112,7 +117,7 @@ internal class KFuzzConfigProperty<T : Any>(
         }
 
         cachedValue = System.getProperty(systemProperty)?.let(fromString) ?: defaultValue
-            ?: error("No value for property '$systemProperty'")
+                ?: error("No value for property '$systemProperty'")
 
         return cachedValue!!
     }
