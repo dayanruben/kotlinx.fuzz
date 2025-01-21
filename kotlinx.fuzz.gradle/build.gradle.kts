@@ -9,11 +9,10 @@ dependencies {
 
     gradleApi()
     implementation(kotlin("reflect"))
-    implementation("org.junit.platform:junit-platform-engine:$JUNIT_PLATFORM_VERSION")
-
-    testImplementation("org.junit.platform:junit-platform-testkit:$JUNIT_PLATFORM_VERSION")
-    testImplementation("org.junit.jupiter:junit-jupiter:$JUNIT_JUPITER_VERSION")
-    testImplementation("com.code-intelligence:jazzer-api:$JAZZER_VERSION")
+    implementation(libs.junit.platform.engine)
+    implementation(libs.junit.platform.testkit)
+    implementation(libs.junit.jupiter)
+    implementation(libs.jazzer.api)
     testRuntimeOnly(project(":kotlinx.fuzz.jazzer"))
 }
 

@@ -3,8 +3,9 @@ plugins {
 }
 
 dependencies {
-    testImplementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
-
     implementation(kotlin("reflect"))
-    implementation("org.reflections:reflections:0.10.2")
+    implementation(libs.jazzer.api)
+    implementation(libs.jazzer.junit)
+    implementation(libs.reflections)
+    testImplementation(libs.kotlinx.datetime)
 }

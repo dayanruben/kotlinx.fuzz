@@ -4,7 +4,8 @@ plugins {
 
 dependencies {
     testImplementation(kotlin("reflect"))
-    implementation("org.reflections:reflections:0.10.2")
-
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
+    implementation(libs.jazzer.api)
+    implementation(libs.jazzer.junit)
+    implementation(libs.reflections)
+    implementation(libs.kotlinx.collections.immutable)
 }
