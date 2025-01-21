@@ -117,7 +117,7 @@ internal class KFuzzConfigProperty<T : Any>(
         }
 
         cachedValue = System.getProperty(systemProperty)?.let(fromString) ?: defaultValue
-                ?: error("No value for property '$systemProperty'")
+            ?: error("No value for property '$systemProperty'")
 
         return cachedValue!!
     }
