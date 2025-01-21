@@ -16,13 +16,19 @@ import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
-class KotlinxFuzzJunitEngine : TestEngine {
-    private val config = KFuzzConfig.fromSystemProperties()
-    private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
-        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor(KFuzzConfig::class.java)
-            .newInstance(config) as KFuzzEngine
+internal class KotlinxFuzzJunitEngine : TestEngine {
+    // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
+    // To prevent failures due to lack of necessary properties, config is read lazily
+    private val config: KFuzzConfig by lazy {
+        KFuzzConfig.fromSystemProperties()
+    }
+    private val fuzzEngine: KFuzzEngine by lazy {
+        when (config.fuzzEngine) {
+            "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
 
-        else -> throw AssertionError("Unsupported fuzzer engine!")
+            else -> throw AssertionError("Unsupported fuzzer engine!")
+        }
     }
 
     override fun getId(): String = "kotlinx.fuzz"
@@ -114,8 +120,6 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
         }
-
-        private fun Method.isFuzzTarget(): Boolean =
-            AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
     }
 }
