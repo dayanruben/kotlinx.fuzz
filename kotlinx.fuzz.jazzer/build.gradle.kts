@@ -3,7 +3,7 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":kotlinx.fuzz.api"))
+    implementation(project(":kotlinx.fuzz.api")) // TODO: api
     implementation("com.code-intelligence:jazzer:$JAZZER_VERSION")
     implementation(kotlin("reflect"))
 }

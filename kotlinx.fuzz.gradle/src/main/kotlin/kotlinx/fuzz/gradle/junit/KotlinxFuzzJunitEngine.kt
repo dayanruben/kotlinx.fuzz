@@ -16,7 +16,7 @@ import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
-internal class KotlinxFuzzJunitEngine : TestEngine {
+class KotlinxFuzzJunitEngine : TestEngine {
     private val config = KFuzzConfig.fromSystemProperties()
     private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
         "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor(KFuzzConfig::class.java)

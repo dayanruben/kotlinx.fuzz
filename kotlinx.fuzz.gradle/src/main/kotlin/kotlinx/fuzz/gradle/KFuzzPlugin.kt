@@ -4,6 +4,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.register
 
 abstract class KFuzzPlugin : Plugin<Project> {
@@ -17,8 +18,24 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 includeEngines("kotlinx.fuzz-test")
             }
         }
+        project.dependencies.add(
+            "testImplementation",
+            "org.plan.research:kotlinx.fuzz.gradle",
+        )
+        project.dependencies.add(
+            "testRuntimeOnly",
+            "org.plan.research:kotlinx.fuzz.jazzer",
+        )
+
+        project.extensions.create<KonfTest>("konfTest")
     }
 }
+
+abstract class KonfTest() {
+    abstract var a: Int
+    abstract var b: String
+}
+
 
 abstract class FuzzTask : Test() {
     @TaskAction
