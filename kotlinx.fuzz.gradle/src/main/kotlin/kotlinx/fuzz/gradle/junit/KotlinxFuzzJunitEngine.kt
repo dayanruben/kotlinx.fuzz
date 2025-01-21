@@ -15,6 +15,7 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import kotlin.reflect.KClass
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
@@ -77,7 +78,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             is MethodTestDescriptor -> {
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
-                val instance = method.declaringClass.kotlin.objectInstance!!
+                val instance = method.declaringClass.kotlin.testInstance()
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = when (finding) {
@@ -121,5 +122,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             ).isNotEmpty()
         }
         private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+        private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
