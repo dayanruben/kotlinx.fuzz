@@ -7,6 +7,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.*
 
 abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
@@ -32,6 +33,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
+            }
+        }
+
+        project.tasks.named<Test>("test") {
+            useJUnitPlatform {
+                excludeEngines("kotlinx.fuzz")
             }
         }
     }
