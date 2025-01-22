@@ -1,5 +1,6 @@
 package kotlinx.fuzz.gradle
 
+import kotlinx.fuzz.KFuzzConfig
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
@@ -13,11 +14,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
             "testImplementation",
             "kotlinx.fuzz:kotlinx.fuzz.api",
         )
-        project.tasks.register<FuzzTask>("fuzz") {
-            useJUnitPlatform {
-                includeEngines("kotlinx.fuzz-test")
-            }
-        }
         project.dependencies.add(
             "testImplementation",
             "kotlinx.fuzz:kotlinx.fuzz.gradle",
@@ -27,15 +23,28 @@ abstract class KFuzzPlugin : Plugin<Project> {
             "kotlinx.fuzz:kotlinx.fuzz.jazzer",
         )
 
-        project.extensions.create<KonfTest>("konfTest")
+        val extension = project.extensions.create<KFuzzExtension>("kfuzz")
+
+        project.tasks.register<FuzzTask>("fuzz") {
+            val fuzzConfig = extension.fuzzConfig
+            doFirst {
+                systemProperties(fuzzConfig.toPropertiesMap())
+            }
+            useJUnitPlatform {
+                includeEngines("kotlinx.fuzz")
+            }
+        }
     }
 }
 
-abstract class KonfTest() {
-    abstract var a: Int
-    abstract var b: String
-}
+open class KFuzzExtension {
+    internal lateinit var fuzzConfig: KFuzzConfig
+        private set
 
+    fun config(block: KFuzzConfigBuilder.() -> Unit) {
+        fuzzConfig = KFuzzConfigBuilder.build(block)
+    }
+}
 
 abstract class FuzzTask : Test() {
     @TaskAction

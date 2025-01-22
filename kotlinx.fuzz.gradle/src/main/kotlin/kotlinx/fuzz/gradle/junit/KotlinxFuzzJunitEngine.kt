@@ -2,6 +2,7 @@ package kotlinx.fuzz.gradle.junit
 
 import java.lang.reflect.Method
 import java.net.URI
+import kotlin.reflect.KClass
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
@@ -15,7 +16,6 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
-import kotlin.reflect.KClass
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
