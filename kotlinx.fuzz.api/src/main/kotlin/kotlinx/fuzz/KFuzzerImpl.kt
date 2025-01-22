@@ -13,7 +13,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private operator fun IntRange.contains(other: IntRange): Boolean =
         other.first >= this.first && other.last <= this.last
 
-    private inline fun <reified T : Number> fitIntoIntRange(n: T, range: IntRange): T {
+    private inline fun <reified T : Number> fitIntoRange(n: T, range: IntRange): T {
         val rangeSize = range.last.toLong() - range.first + 1
         return when (n) {
             is Byte -> ((n.toLong() - Byte.MIN_VALUE) % rangeSize + range.first).toByte() as T
@@ -23,7 +23,32 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    private fun fitIntoBigDecimalRange(
+    private fun fitIntoRange(result: Long, range: LongRange): Long = when {
+        range.first < 0 && range.last > 0 && range.last - Long.MAX_VALUE > range.first -> when {
+            result < range.first -> result - Long.MIN_VALUE + range.first
+
+            result <= range.last -> {
+                val normalized = result + (range.first - Long.MIN_VALUE)
+                when {
+                    normalized > range.last -> range.first + (normalized - range.last)
+                    else -> normalized
+                }
+            }
+
+            else -> range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
+        }
+
+        else -> {
+            val rangeSize = range.last - range.first + 1
+            var normalized = result % rangeSize - Long.MIN_VALUE % rangeSize + range.first
+            while (result < range.first) {
+                normalized += rangeSize
+            }
+            normalized
+        }
+    }
+
+    private fun fitIntoRange(
         value: BigDecimal,
         oldMin: BigDecimal,
         oldMax: BigDecimal,
@@ -74,7 +99,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Byte.MIN_VALUE..Byte.MAX_VALUE) { "range should be a subset of [Byte.MIN_VALUE..Byte.MAX_VALUE] but was $range" }
 
-        return fitIntoIntRange(iterator.readByte(), range)
+        return fitIntoRange(iterator.readByte(), range)
     }
 
     override fun consumeByteOrNull(range: IntRange): Byte? {
@@ -118,7 +143,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Short.MIN_VALUE..Short.MAX_VALUE) { "range should be a subset of [Short.MIN_VALUE..Short.MAX_VALUE] but was $range" }
 
-        return fitIntoIntRange(iterator.readShort(), range)
+        return fitIntoRange(iterator.readShort(), range)
     }
 
     override fun consumeShortOrNull(range: IntRange): Short? {
@@ -153,7 +178,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     override fun consumeInt(range: IntRange): Int {
         require(range.isNotEmpty()) { "range is empty" }
 
-        return fitIntoIntRange(iterator.readInt(), range)
+        return fitIntoRange(iterator.readInt(), range)
     }
 
     override fun consumeIntOrNull(range: IntRange): Int? {
@@ -184,34 +209,9 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    private fun fitIntoIntRange(result: Long, range: LongRange): Long = when {
-        range.first < 0 && range.last > 0 && range.last - Long.MAX_VALUE > range.first -> when {
-            result < range.first -> result - Long.MIN_VALUE + range.first
-
-            result <= range.last -> {
-                val normalized = result + (range.first - Long.MIN_VALUE)
-                when {
-                    normalized > range.last -> range.first + (normalized - range.last)
-                    else -> normalized
-                }
-            }
-
-            else -> range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
-        }
-
-        else -> {
-            val rangeSize = range.last - range.first + 1
-            var normalized = result % rangeSize - Long.MIN_VALUE % rangeSize + range.first
-            while (result < range.first) {
-                normalized += rangeSize
-            }
-            normalized
-        }
-    }
-
     override fun consumeLong(range: LongRange): Long {
         require(range.isNotEmpty()) { "range is empty" }
-        return fitIntoIntRange(iterator.readLong(), range)
+        return fitIntoRange(iterator.readLong(), range)
     }
 
     override fun consumeLongOrNull(range: LongRange): Long? {
@@ -245,7 +245,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     override fun consumeFloat(range: FloatRange): Float {
         require(range.isNotEmpty()) { "range is empty" }
 
-        return fitIntoBigDecimalRange(
+        return fitIntoRange(
             iterator.readFloat().toBigDecimal(),
             Float.MIN_VALUE.toBigDecimal(),
             Float.MAX_VALUE.toBigDecimal(),
@@ -285,7 +285,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     override fun consumeDouble(range: DoubleRange): Double {
         require(range.isNotEmpty()) { "range is empty" }
 
-        return fitIntoBigDecimalRange(
+        return fitIntoRange(
             iterator.readDouble().toBigDecimal(),
             Double.MIN_VALUE.toBigDecimal(),
             Double.MAX_VALUE.toBigDecimal(),
