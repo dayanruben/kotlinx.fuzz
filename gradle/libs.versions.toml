@@ -18,6 +18,8 @@ jsoup = "1.18.1"
 
 rgxgen = "2.0"
 
+gradle-publish = "1.2.1"
+
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -47,3 +49,4 @@ junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "jun
 rgxgen = { module = "com.github.curious-odd-man:rgxgen", version.ref = "rgxgen" }
 
 [plugins]
+gradle-publish = { id = "com.gradle.plugin-publish", version.ref = "gradle-publish" }

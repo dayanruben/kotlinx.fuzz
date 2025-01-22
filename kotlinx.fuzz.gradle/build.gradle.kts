@@ -1,7 +1,7 @@
 plugins {
     id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
-    id("com.gradle.plugin-publish") version "1.2.1"
+    libs.plugins.gradle.publish
 }
 
 dependencies {
@@ -10,9 +10,9 @@ dependencies {
     gradleApi()
     implementation(kotlin("reflect"))
     implementation(libs.junit.platform.engine)
-    implementation(libs.junit.platform.testkit)
-    implementation(libs.junit.jupiter)
-    implementation(libs.jazzer.api)
+
+    testImplementation(libs.junit.platform.testkit)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(project(":kotlinx.fuzz.jazzer"))
 }
 
