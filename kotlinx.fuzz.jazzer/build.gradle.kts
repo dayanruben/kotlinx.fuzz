@@ -1,9 +1,9 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
 }
 
 dependencies {
-    implementation(project(":kotlinx.fuzz.api")) // TODO: api
-    implementation("com.code-intelligence:jazzer:$JAZZER_VERSION")
+    implementation(project(":kotlinx.fuzz.api"))
     implementation(kotlin("reflect"))
+    implementation(libs.jazzer)
 }

@@ -11,7 +11,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
         project.dependencies.add(
             "testImplementation",
-            "org.plan.research:kotlinx.fuzz.api",
+            "kotlinx.fuzz:kotlinx.fuzz.api",
         )
         project.tasks.register<FuzzTask>("fuzz") {
             useJUnitPlatform {
@@ -20,11 +20,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
         project.dependencies.add(
             "testImplementation",
-            "org.plan.research:kotlinx.fuzz.gradle",
+            "kotlinx.fuzz:kotlinx.fuzz.gradle",
         )
         project.dependencies.add(
             "testRuntimeOnly",
-            "org.plan.research:kotlinx.fuzz.jazzer",
+            "kotlinx.fuzz:kotlinx.fuzz.jazzer",
         )
 
         project.extensions.create<KonfTest>("konfTest")

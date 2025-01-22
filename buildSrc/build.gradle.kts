@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.konan.properties.loadProperties
-
 plugins {
     `kotlin-dsl`
 }
@@ -9,14 +7,11 @@ repositories {
     mavenCentral()
 }
 
-val properties = loadProperties(rootDir.parentFile.resolve("gradle.properties").absolutePath)
-
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${properties["kotlin.version"]}")
-    implementation("de.undercouch.download:de.undercouch.download.gradle.plugin:5.1.0")
-
+    implementation(libs.kotlin.gradle.plugin)
+    implementation(libs.diktat.gradle.plugin)
     implementation(kotlin("reflect"))
-    implementation("org.reflections:reflections:0.10.2")
+    implementation(libs.reflections)
 }
 
 kotlin {

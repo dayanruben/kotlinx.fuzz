@@ -51,6 +51,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var keepGoing: Int by KFuzzConfigProperty(
         "kotlinx.fuzz.keepGoing",
         defaultValue = 1,
+        validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toInt() },
     )
@@ -67,6 +68,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var maxSingleTargetFuzzTime: Duration by KFuzzConfigProperty(
         "kotlinx.fuzz.maxSingleTargetFuzzTime",
+        validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
     )
@@ -78,13 +80,8 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         configProperties().forEach { it.assertIsSet() }
     }
 
-    private fun getAll() {
-        configProperties().forEach { it.get() }
-    }
-
     private fun validate() {
-        require(maxSingleTargetFuzzTime.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" }
-        require(keepGoing > 0) { "'keepGoing' must be positive" }
+        configProperties().forEach { it.validate() }
     }
 
     companion object {
@@ -95,42 +92,65 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         }
 
         internal fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl().apply {
-            getAll()
+            configProperties().forEach { it.setFromSystemProperty() }
+            assertAllSet()
             validate()
         }
     }
 }
 
-internal class KFuzzConfigProperty<T : Any>(
+/**
+ * A delegate property class that manages a configuration option for KFuzz.
+ *
+ * Can be set only once per instance.
+ * `KFuzzConfigImpl.build` set it from `systemProperty`
+ *
+ * @param systemProperty the system property key associated with this configuration option
+ * @param defaultValue the default value for this configuration, if none is provided
+ * @param validate a function which asserts if the value is correct
+ * @param toString a function that converts the property value to its string representation
+ * @param fromString a function that converts a string value to the property value type
+ */
+internal class KFuzzConfigProperty<T : Any> internal constructor(
     val systemProperty: String,
     val defaultValue: T? = null,
-    val toString: (T) -> String,
-    val fromString: (String) -> T,
+    private val validate: (T) -> Unit = {},
+    private val toString: (T) -> String,
+    private val fromString: (String) -> T,
 ) : ReadWriteProperty<Any, T> {
+    private val name: String = systemProperty.substringAfterLast('.')
     private var cachedValue: T? = null
     val stringValue: String get() = toString(get())
+
     override fun getValue(thisRef: Any, property: KProperty<*>): T = get()
 
+    override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
+        assertCanSet()
+        cachedValue = value
+    }
+
     internal fun get(): T {
-        cachedValue?.let {
-            return cachedValue!!
-        }
-
-        cachedValue = System.getProperty(systemProperty)?.let(fromString) ?: defaultValue
-            ?: error("No value for property '$systemProperty'")
-
+        cachedValue ?: defaultValue?.let { cachedValue = it } ?: error("Option '$name' is not set")
         return cachedValue!!
     }
 
+    internal fun validate(): Unit = validate(get())
+
     internal fun assertIsSet() {
-        require(cachedValue != null || defaultValue != null) { "property '$systemProperty' is not set" }
+        get()
     }
 
-    override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
+    internal fun setFromSystemProperty() {
+        assertCanSet()
+        System.getProperty(systemProperty)?.let {
+            cachedValue = fromString(it)
+        } ?: error("System property '$systemProperty' is not set")
+    }
+
+    private fun assertCanSet() {
         cachedValue?.let {
-            error("Property '${property.name}' is already set")
+            error("Property '$name' is already set")
         }
-        cachedValue = value
     }
 }
 
