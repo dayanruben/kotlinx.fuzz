@@ -11,7 +11,6 @@ typealias FloatRange = ClosedFloatingPointRange<Float>
 typealias DoubleRange = ClosedFloatingPointRange<Double>
 
 interface KFuzzer {
-    // Add regex-based string generation
     // Add DSL-like approach
     // Add random method call
     // Add consuming of an object (related to random method call)
@@ -469,116 +468,6 @@ interface KFuzzer {
     fun consumeRegexStringOrNull(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String?
 
     /**
-     * Picks an element from collection based on the fuzzer input.
-     *
-     * @param collection collection to pick an element from
-     * @return an element from collection chosen based on the fuzzer input
-     */
-    fun <T> KFuzzer.pickValue(collection: Collection<T>): T {
-        require(collection.isNotEmpty()) { "collection is empty" }
-        return collection.elementAt(consumeInt(collection.indices))
-    }
-
-    /**
-     * Picks an element from array based on the fuzzer input.
-     *
-     * @param array array to pick an element from
-     * @return an element from array chosen based on the fuzzer input
-     */
-    fun <T> pickValue(array: Array<T>): T {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from boolean array based on the fuzzer input.
-     *
-     * @param array boolean array to pick an element from
-     * @return an element from boolean array chosen based on the fuzzer input
-     */
-    fun pickValue(array: BooleanArray): Boolean {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from byte array based on the fuzzer input.
-     *
-     * @param array byte array to pick an element from
-     * @return an element from byte array chosen based on the fuzzer input
-     */
-    fun pickValue(array: ByteArray): Byte {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from short array based on the fuzzer input.
-     *
-     * @param array short array to pick an element from
-     * @return an element from short array chosen based on the fuzzer input
-     */
-    fun pickValue(array: ShortArray): Short {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from int array based on the fuzzer input.
-     *
-     * @param array int array to pick an element from
-     * @return an element from int array chosen based on the fuzzer input
-     */
-    fun pickValue(array: IntArray): Int {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from long array based on the fuzzer input.
-     *
-     * @param array long array to pick an element from
-     * @return an element from long array chosen based on the fuzzer input
-     */
-    fun pickValue(array: LongArray): Long {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from double array based on the fuzzer input.
-     *
-     * @param array double array to pick an element from
-     * @return an element from double array chosen based on the fuzzer input
-     */
-    fun pickValue(array: DoubleArray): Double {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from float array based on the fuzzer input.
-     *
-     * @param array float array to pick an element from
-     * @return an element from float array chosen based on the fuzzer input
-     */
-    fun pickValue(array: FloatArray): Float {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
-     * Picks an element from char array based on the fuzzer input.
-     *
-     * @param array char array to pick an element from
-     * @return an element from char array chosen based on the fuzzer input
-     */
-    fun pickValue(array: CharArray): Char {
-        require(array.isNotEmpty()) { "array is empty" }
-        return array[consumeInt(array.indices)]
-    }
-
-    /**
      * Class that allows t =o configure parameters of regex string generation
      *
      * @param maxInfinitePatternLength limit of repetitions for infinite patterns, such as a+, a* and a{n,} (default value `100`)
@@ -616,4 +505,115 @@ interface KFuzzer {
             val DEFAULT = RegexConfiguration()
         }
     }
+}
+
+
+/**
+ * Picks an element from collection based on the fuzzer input.
+ *
+ * @param collection collection to pick an element from
+ * @return an element from collection chosen based on the fuzzer input
+ */
+fun <T> KFuzzer.pickValue(collection: Collection<T>): T {
+    require(collection.isNotEmpty()) { "collection is empty" }
+    return collection.elementAt(consumeInt(collection.indices))
+}
+
+/**
+ * Picks an element from array based on the fuzzer input.
+ *
+ * @param array array to pick an element from
+ * @return an element from array chosen based on the fuzzer input
+ */
+fun <T> KFuzzer.pickValue(array: Array<T>): T {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from boolean array based on the fuzzer input.
+ *
+ * @param array boolean array to pick an element from
+ * @return an element from boolean array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: BooleanArray): Boolean {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from byte array based on the fuzzer input.
+ *
+ * @param array byte array to pick an element from
+ * @return an element from byte array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: ByteArray): Byte {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from short array based on the fuzzer input.
+ *
+ * @param array short array to pick an element from
+ * @return an element from short array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: ShortArray): Short {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from int array based on the fuzzer input.
+ *
+ * @param array int array to pick an element from
+ * @return an element from int array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: IntArray): Int {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from long array based on the fuzzer input.
+ *
+ * @param array long array to pick an element from
+ * @return an element from long array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: LongArray): Long {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from double array based on the fuzzer input.
+ *
+ * @param array double array to pick an element from
+ * @return an element from double array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: DoubleArray): Double {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from float array based on the fuzzer input.
+ *
+ * @param array float array to pick an element from
+ * @return an element from float array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: FloatArray): Float {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
+}
+
+/**
+ * Picks an element from char array based on the fuzzer input.
+ *
+ * @param array char array to pick an element from
+ * @return an element from char array chosen based on the fuzzer input
+ */
+fun KFuzzer.pickValue(array: CharArray): Char {
+    require(array.isNotEmpty()) { "array is empty" }
+    return array[consumeInt(array.indices)]
 }
