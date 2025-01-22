@@ -4,6 +4,7 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 
 abstract class KFuzzPlugin : Plugin<Project> {
@@ -16,6 +17,13 @@ abstract class KFuzzPlugin : Plugin<Project> {
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz-test")
             }
+        }
+    }
+
+    fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
+        val properties = KFuzzConfigBuilder.build(block).toPropertiesMap()
+        tasks.named<FuzzTask>("fuzz") {
+            systemProperties(properties)
         }
     }
 }
