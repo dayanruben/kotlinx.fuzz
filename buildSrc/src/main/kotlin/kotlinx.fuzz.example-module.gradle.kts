@@ -35,13 +35,13 @@ task("copyDependencies", Copy::class) {
     from(configurations.runtimeClasspath).into("${project.layout.buildDirectory.get()}/dependencies")
 }
 
-tasks.create<PrintTargetNames>("printTargetNames") {
+tasks.register<PrintTargetNames>("printTargetNames") {
     dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
     outputFile.set(layout.buildDirectory.file("targets.txt"))
 }
 
-tasks.create<CheckTargetsExist>("checkTargetsExist") {
+tasks.register<CheckTargetsExist>("checkTargetsExist") {
     dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
 }
