@@ -1,6 +1,7 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
+    libs.plugins.gradle.publish
 }
 
 dependencies {
@@ -8,17 +9,26 @@ dependencies {
 
     gradleApi()
     implementation(kotlin("reflect"))
-    implementation("org.junit.platform:junit-platform-engine:$JUNIT_PLATFORM_VERSION")
+    implementation(libs.junit.platform.engine)
 
-    testImplementation("org.junit.platform:junit-platform-testkit:$JUNIT_PLATFORM_VERSION")
-    testImplementation("org.junit.jupiter:junit-jupiter:$JUNIT_JUPITER_VERSION")
-    testImplementation("com.code-intelligence:jazzer-api:$JAZZER_VERSION")
+    testImplementation(libs.junit.platform.testkit)
+    testImplementation(libs.junit.jupiter)
     testRuntimeOnly(project(":kotlinx.fuzz.jazzer"))
 }
 
-gradlePlugin.plugins.create("kotlinx.fuzz") {
-    id = "kotlinx.fuzz.gradle"
-    implementationClass = "kotlinx.fuzz.gradle.KFuzzPlugin"
+gradlePlugin {
+    // TODO
+    website = "https://jetbrains.com/404"
+    vcsUrl = "https://github.com/JetBrains-Research/kotlinx.fuzz.git"
+    plugins {
+        create("kotlinx.fuzz") {
+            id = "kotlinx.fuzz"
+            displayName = "kotlinx.fuzz Gradle plugin"
+            description = "Gradle plugin for using kotlinx.fuzz"
+            tags = listOf("testing", "fuzzing")
+            implementationClass = "kotlinx.fuzz.gradle.KFuzzPlugin"
+        }
+    }
 }
 
 tasks.test {

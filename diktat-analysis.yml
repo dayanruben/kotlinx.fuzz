@@ -55,7 +55,7 @@
     indentationSize: 4
 - name: EMPTY_BLOCK_STRUCTURE_ERROR
   enabled: true
-  ignoreAnnotated: [KFuzzTest]
+  ignoreAnnotated: [ KFuzzTest ]
   configuration:
     styleEmptyBlockWithNewline: false
     allowEmptyBlocks: false
@@ -93,6 +93,7 @@
     typeReferenceLength: 25
 - name: TOO_LONG_FUNCTION
   enabled: true
+  ignoreAnnotated: [ Test ]
   configuration:
     maxFunctionLength: 35 # max length of function
     isIncludeHeader: false # count function's header
@@ -166,4 +167,4 @@
   enabled: false
 - name: BACKTICKS_PROHIBITED
   enabled: true
-  ignoreAnnotated: [KFuzzTest]
+  ignoreAnnotated: [ KFuzzTest ]

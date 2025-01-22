@@ -1,3 +1,7 @@
+import kotlinx.fuzz.booleanProperty
+import kotlinx.fuzz.task.target.CheckTargetsExist
+import kotlinx.fuzz.task.target.PrintTargetNames
+
 plugins {
     kotlin("jvm")
 }
@@ -11,8 +15,6 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test"))
-    testImplementation("com.code-intelligence:jazzer-junit:$JAZZER_VERSION")
-    testImplementation("com.code-intelligence:jazzer-api:$JAZZER_VERSION")
 }
 
 kotlin {
@@ -33,24 +35,18 @@ task("copyDependencies", Copy::class) {
     from(configurations.runtimeClasspath).into("${project.layout.buildDirectory.get()}/dependencies")
 }
 
-tasks.create<PrintTargetNames>("printTargetNames") {
+tasks.register<PrintTargetNames>("printTargetNames") {
     dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
     outputFile.set(layout.buildDirectory.file("targets.txt"))
 }
 
-tasks.create<CheckTargetsExist>("checkTargetsExist") {
+tasks.register<CheckTargetsExist>("checkTargetsExist") {
     dependsOn("compileTestKotlin")
     classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
 }
 
-
-tasks.getByName("test").dependsOn("copyDependencies")
-
-val enableTests: Boolean = if (project.hasProperty("enableTests")) {
-    project.property("enableTests").toString().toBoolean()
-} else {
-    false
+tasks.getByName("test").let {
+    it.enabled = project.booleanProperty("enableTests") == true
+    it.dependsOn("copyDependencies")
 }
-
-tasks.getByName("test").enabled = enableTests

@@ -1,3 +1,3 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
 }

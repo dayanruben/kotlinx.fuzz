@@ -1,4 +1,5 @@
-import org.gradle.api.DefaultTask
+package kotlinx.fuzz.task.target
+
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputDirectory
@@ -6,7 +7,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 
-abstract class CheckTargetsExist : DefaultTask() {
+abstract class CheckTargetsExist : TargetTask() {
 
     @get:InputDirectory
     abstract val classpathDir: DirectoryProperty

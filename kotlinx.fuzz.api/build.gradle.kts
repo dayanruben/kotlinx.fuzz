@@ -1,11 +1,13 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
 }
 
 dependencies {
-    implementation("org.junit.platform:junit-platform-engine:$JUNIT_PLATFORM_VERSION")
+    implementation(libs.rgxgen)
+    implementation(libs.junit.platform.engine)
     implementation(kotlin("reflect"))
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter:$JUNIT_JUPITER_VERSION")
+
+    testRuntimeOnly(libs.junit.jupiter)
 }
 
 tasks.test {

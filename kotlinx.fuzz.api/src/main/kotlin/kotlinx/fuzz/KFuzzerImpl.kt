@@ -1,10 +1,13 @@
 package kotlinx.fuzz
 
+import com.github.curiousoddman.rgxgen.RgxGen
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
+import java.util.*
+import kotlinx.fuzz.KFuzzer.RegexConfiguration
 
-class KFuzzerImpl(data: ByteArray) : KFuzzer {
+class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private val iterator = Reader(data)
 
     private operator fun IntRange.contains(other: IntRange): Boolean =
@@ -35,6 +38,11 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             MathContext.DECIMAL128,
         )
     }
+
+    /**
+     * Implementation taken from #Random.next
+     */
+    override fun next(bits: Int): Int = (consumeInt() ushr (48 - bits)).toInt()
 
     override fun consumeBoolean(): Boolean = iterator.readBoolean()
 
@@ -446,6 +454,14 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer {
             append(consumeLetter())
         }
     }
+
+    override fun consumeRegexString(regex: Regex, configuration: RegexConfiguration): String {
+        val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
+        return rgxGen.generate(this)
+    }
+
+    override fun consumeRegexStringOrNull(regex: Regex, configuration: RegexConfiguration) =
+        if (consumeBoolean()) null else consumeRegexString(regex, configuration)
 
     private class Reader(data: ByteArray) {
         private val iterator = data.iterator()

@@ -13,10 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:Suppress("PackageDirectoryMismatch")
 
 // Disable 'Unsupported Kotlin plugin version' warning
 // Workaround for https://github.com/gradle/gradle/issues/13020
+@file:Suppress("unused")
+
 package org.gradle.kotlin.dsl.plugins.embedded
 
 import org.gradle.api.Plugin
@@ -25,7 +26,6 @@ import org.gradle.api.internal.tasks.JvmConstants
 import org.gradle.api.logging.Logger
 
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
-import org.jetbrains.kotlin.gradle.plugin.getKotlinPluginVersion
 
 import org.gradle.kotlin.dsl.embeddedKotlinVersion
 import org.gradle.kotlin.dsl.support.EmbeddedKotlinProvider
