@@ -15,10 +15,10 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
     private inline fun <reified T : Number> fitIntoIntRange(n: T, range: IntRange): T {
         val rangeSize = range.last.toLong() - range.first + 1
-        return when (T::class) {
-            Byte::class -> ((n.toLong() - Byte.MIN_VALUE) % rangeSize + range.first).toByte() as T
-            Short::class -> ((n.toLong() - Short.MIN_VALUE) % rangeSize + range.first).toShort() as T
-            Int::class -> ((n.toLong() - Int.MIN_VALUE) % rangeSize + range.first).toInt() as T
+        return when (n) {
+            is Byte -> ((n.toLong() - Byte.MIN_VALUE) % rangeSize + range.first).toByte() as T
+            is Short -> ((n.toLong() - Short.MIN_VALUE) % rangeSize + range.first).toShort() as T
+            is Int -> ((n.toLong() - Int.MIN_VALUE) % rangeSize + range.first).toInt() as T
             else -> error("Not integer type")
         }
     }
