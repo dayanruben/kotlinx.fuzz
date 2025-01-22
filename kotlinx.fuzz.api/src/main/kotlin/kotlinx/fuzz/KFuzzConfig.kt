@@ -109,11 +109,11 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
  * @param toString a function that converts the property value to its string representation
  * @param fromString a function that converts a string value to the property value type
  */
-internal class KFuzzConfigProperty<T : Any>(
+internal class KFuzzConfigProperty<T : Any> internal constructor(
     val systemProperty: String,
     val defaultValue: T? = null,
-    val toString: (T) -> String,
-    val fromString: (String) -> T,
+    private val toString: (T) -> String,
+    private val fromString: (String) -> T,
 ) : ReadWriteProperty<Any, T> {
     private val name: String = systemProperty.substringAfterLast('.')
     private var cachedValue: T? = null
