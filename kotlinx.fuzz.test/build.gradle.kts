@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
     testRuntimeOnly("kotlinx.fuzz:kotlinx.fuzz.jazzer")
 }
 
