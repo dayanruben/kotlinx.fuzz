@@ -14,7 +14,7 @@ object EngineTest {
     object SimpleFuzzTest {
         @KFuzzTest
         fun `failure test`(data: KFuzzer) {
-            if (data.consumeBoolean()) {
+            if (data.boolean()) {
                 error("Expected failure")
             }
         }

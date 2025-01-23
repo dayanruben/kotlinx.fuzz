@@ -167,4 +167,7 @@
   enabled: false
 - name: BACKTICKS_PROHIBITED
   enabled: true
-  ignoreAnnotated: [ KFuzzTest ]
+  ignoreAnnotated: [ KFuzzTest, Test ]
+- name: SAY_NO_TO_VAR
+  enabled: true
+  ignoreAnnotated: [ KFuzzTest, Test ]
