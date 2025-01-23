@@ -43,71 +43,71 @@ class KFuzzerImplTest {
     }
 
     @Test
-    fun `test consumeBoolean`() {
+    fun `test boolean`() {
         val data = byteArrayOf(0)
         val kFuzzer = KFuzzerImpl(data)
-        assertFalse(kFuzzer.consumeBoolean())
+        assertFalse(kFuzzer.boolean())
     }
 
     @Test
-    fun `test consumeBooleans`() {
+    fun `test booleans`() {
         val data = byteArrayOf(1, 0, 1)
         val kFuzzer = KFuzzerImpl(data)
-        val booleans = kFuzzer.consumeBooleans(3)
+        val booleans = kFuzzer.booleans(3)
         assertArrayEquals(booleanArrayOf(true, false, true), booleans)
     }
 
     @Test
-    fun `test consumeBooleansOrNull`() {
+    fun `test booleansOrNull`() {
         val data = byteArrayOf(0)
         val kFuzzer = KFuzzerImpl(data)
-        assertNull(kFuzzer.consumeBooleansOrNull(5))
+        assertNull(kFuzzer.booleansOrNull(5))
     }
 
     @Test
-    fun `test consumeByte`() {
+    fun `test byte`() {
         val data = byteArrayOf(0x7F.toByte())
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeByte(50..100)
+        val result = kFuzzer.byte(50..100)
         assertEquals(50.toByte(), result)
     }
 
     @Test
-    fun `test consumeByteOrNull`() {
+    fun `test byteOrNull`() {
         val data = byteArrayOf(1, 100)
         val kFuzzer = KFuzzerImpl(data)
-        assertEquals(100.toByte(), kFuzzer.consumeByteOrNull())
+        assertEquals(100.toByte(), kFuzzer.byteOrNull())
     }
 
     @Test
-    fun `test consumeBytes`() {
+    fun `test bytes`() {
         val data = byteArrayOf(1, 2, 3)
         val kFuzzer = KFuzzerImpl(data)
         assertThrows<IllegalArgumentException>(
             "range should be a subset of [Byte.MIN_VALUE..Byte.MAX_VALUE] but was 0..255",
         ) {
-            kFuzzer.consumeBytes(3, 0..255)
+            kFuzzer.bytes(3, 0..255)
         }
     }
 
     @Test
-    fun `test consumeRemainingAsByteArray`() {
+    fun `test remainingAsByteArray`() {
         val data = byteArrayOf(10, 20, 30)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeRemainingAsByteArray()
+        val result = kFuzzer.remainingAsByteArray()
         assertArrayEquals(byteArrayOf(10, 20, 30), result)
     }
 
     @Test
-    fun `test consumeShort`() {
+    fun `test short`() {
         val data = byteArrayOf(0, 0)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeShort(0..Short.MAX_VALUE)
+        val result = kFuzzer.short(0..Short.MAX_VALUE)
         assertEquals(0.toShort(), result)
     }
 
     @Test
-    fun `test consumeInts edge cases`() {
+    fun `test ints edge cases`() {
         val data = byteArrayOf(
             0x80.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0A.toByte(),  // Int.MIN_VALUE + 10
 
@@ -116,12 +116,12 @@ class KFuzzerImplTest {
             0x7F.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(),  // Int.MAX_VALUE - 5
         )
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeInts(3, (Int.MIN_VALUE + 20)..(Int.MAX_VALUE - 20))
+        val result = kFuzzer.ints(3, (Int.MIN_VALUE + 20)..(Int.MAX_VALUE - 20))
         assertArrayEquals(intArrayOf(Int.MIN_VALUE + 30, 14, Int.MIN_VALUE + 54), result)
     }
 
     @Test
-    fun `test consumeInt range distribution`() {
+    fun `test int range distribution`() {
         val range = 0..50
         val multiplier = 5
         val limit = range.count() * multiplier
@@ -136,7 +136,7 @@ class KFuzzerImplTest {
         val kFuzzer = KFuzzerImpl(data)
         val distribution = buildMap<Int, Int> {
             repeat(limit) {
-                val result = kFuzzer.consumeInt(range)
+                val result = kFuzzer.int(range)
                 this[result] = this.getOrDefault(result, 0) + 1
             }
         }
@@ -145,34 +145,34 @@ class KFuzzerImplTest {
     }
 
     @Test
-    fun `test consumeString`() {
+    fun `test string`() {
         val data = byteArrayOf(97, 98, 99)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeString(3, Charsets.UTF_8)
+        val result = kFuzzer.string(3, Charsets.UTF_8)
         assertEquals("abc", result)
     }
 
     @Test
-    fun `test consumeLetter`() {
+    fun `test letter`() {
         val letterRange = 0 until CharacterSet.US_LETTERS.size
         val data = byteArrayOf(
             *int(26, letterRange),  // ('a'..'z').count()
         )
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeLetter()
+        val result = kFuzzer.letter()
         assertEquals('A', result)
     }
 
     @Test
-    fun `test consumeAsciiString`() {
+    fun `test asciiString`() {
         val data = byteArrayOf(120, 121, 122)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeAsciiString(3)
+        val result = kFuzzer.asciiString(3)
         assertEquals("xyz", result)
     }
 
     @Test
-    fun `test consumeLetterString`() {
+    fun `test letterString`() {
         val letterRange = 0 until CharacterSet.US_LETTERS.size
         val data = byteArrayOf(
             *int('a' - 'a', letterRange),
@@ -180,20 +180,20 @@ class KFuzzerImplTest {
             *int('c' - 'a', letterRange),
         )
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeLetterString(3)
+        val result = kFuzzer.letterString(3)
         assertEquals("abc", result)
     }
 
     @Test
-    fun `test consumeLong`() {
+    fun `test long`() {
         val data = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 100)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeLong()
+        val result = kFuzzer.long()
         assertEquals(100, result)
     }
 
     @Test
-    fun `test consumeLongs edge cases`() {
+    fun `test longs edge cases`() {
         val data = byteArrayOf(
             0x80.toByte(), 0x00.toByte(), 0x00.toByte(), 0x00.toByte(),
             0x00.toByte(), 0x00.toByte(), 0x00.toByte(), 0x0A.toByte(),  // Long.MIN_VALUE + 10
@@ -205,20 +205,20 @@ class KFuzzerImplTest {
             0xFF.toByte(), 0xFF.toByte(), 0xFF.toByte(), 0xFA.toByte(),  // Long.MAX_VALUE - 5
         )
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeLongs(3, (Long.MIN_VALUE + 20)..(Long.MAX_VALUE - 20))
+        val result = kFuzzer.longs(3, (Long.MIN_VALUE + 20)..(Long.MAX_VALUE - 20))
         assertArrayEquals(longArrayOf(Long.MIN_VALUE + 30, 14, Long.MIN_VALUE + 54), result)
     }
 
     @Test
-    fun `test consumeChar`() {
+    fun `test char`() {
         val data = byteArrayOf(0x80.toByte(), 0)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeChar('A'..'Z')
+        val result = kFuzzer.char('A'..'Z')
         assertEquals('A', result)
     }
 
     @Test
-    fun `test consumeRegexString`() {
+    fun `test regexString`() {
         val data = buildList {
             repeat(10_000) { add(((it * 31) % 512).toByte()) }
         }.toByteArray()
@@ -226,14 +226,14 @@ class KFuzzerImplTest {
 
         repeat(10) {
             val reg = Regex("[a-z]+(abc){3,}[a-z]{1,2}q")
-            val result = kFuzzer.consumeString(reg)
+            val result = kFuzzer.string(reg)
             assertTrue(result.matches(reg))
         }
 
         repeat(10) {
             val reg = Regex("a+")
             val caseInsensitiveReg = Regex("[aA]+")
-            val result = kFuzzer.consumeString(
+            val result = kFuzzer.string(
                 reg,
                 KFuzzer.RegexConfiguration(
                     maxInfinitePatternLength = 10,
@@ -248,7 +248,7 @@ class KFuzzerImplTest {
         repeat(10) {
             val reg = Regex(".*")
             val chars = setOf('a', 'b', '0', 'y')
-            val result = kFuzzer.consumeString(
+            val result = kFuzzer.string(
                 reg,
                 KFuzzer.RegexConfiguration(
                     maxInfinitePatternLength = 10,

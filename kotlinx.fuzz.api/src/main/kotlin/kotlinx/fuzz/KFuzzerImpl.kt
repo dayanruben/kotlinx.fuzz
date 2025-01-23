@@ -81,182 +81,182 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     /**
      * Implementation taken from #Random.next
      */
-    override fun next(bits: Int): Int = (consumeInt() ushr (48 - bits)).toInt()
+    override fun next(bits: Int): Int = (int() ushr (48 - bits)).toInt()
 
-    override fun consumeBoolean(): Boolean = iterator.readBoolean()
+    override fun boolean(): Boolean = iterator.readBoolean()
 
-    override fun consumeBooleanOrNull(): Boolean? = when {
+    override fun booleanOrNull(): Boolean? = when {
         iterator.readBoolean() -> iterator.readBoolean()
         else -> null
     }
 
-    override fun consumeBooleans(maxLength: Int): BooleanArray {
+    override fun booleans(maxLength: Int): BooleanArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Boolean>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeBoolean())
+            list.add(boolean())
         }
         return list.toBooleanArray()
     }
 
-    override fun consumeBooleansOrNull(maxLength: Int): BooleanArray? {
+    override fun booleansOrNull(maxLength: Int): BooleanArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeBooleans(maxLength)
+            boolean() -> booleans(maxLength)
             else -> null
         }
     }
 
-    override fun consumeByte(range: IntRange): Byte {
+    override fun byte(range: IntRange): Byte {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Byte.MIN_VALUE..Byte.MAX_VALUE) { "range should be a subset of [Byte.MIN_VALUE..Byte.MAX_VALUE] but was $range" }
 
         return fitIntoRange(iterator.readByte(), range)
     }
 
-    override fun consumeByteOrNull(range: IntRange): Byte? {
+    override fun byteOrNull(range: IntRange): Byte? {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Byte.MIN_VALUE..Byte.MAX_VALUE) { "range should be a subset of [Byte.MIN_VALUE..Byte.MAX_VALUE] but was $range" }
 
         return when {
-            consumeBoolean() -> consumeByte(range)
+            boolean() -> byte(range)
             else -> null
         }
     }
 
-    override fun consumeBytes(maxLength: Int, range: IntRange): ByteArray {
+    override fun bytes(maxLength: Int, range: IntRange): ByteArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Byte>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeByte(range))
+            list.add(byte(range))
         }
         return list.toByteArray()
     }
 
-    override fun consumeBytesOrNull(maxLength: Int, range: IntRange): ByteArray? {
+    override fun bytesOrNull(maxLength: Int, range: IntRange): ByteArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeBytes(maxLength, range)
+            boolean() -> bytes(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeRemainingAsByteArray(): ByteArray {
+    override fun remainingAsByteArray(): ByteArray {
         val list = mutableListOf<Byte>()
         while (!iterator.isInputFinished()) {
-            list.add(consumeByte())
+            list.add(byte())
         }
         return list.toByteArray()
     }
 
-    override fun consumeShort(range: IntRange): Short {
+    override fun short(range: IntRange): Short {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Short.MIN_VALUE..Short.MAX_VALUE) { "range should be a subset of [Short.MIN_VALUE..Short.MAX_VALUE] but was $range" }
 
         return fitIntoRange(iterator.readShort(), range)
     }
 
-    override fun consumeShortOrNull(range: IntRange): Short? {
+    override fun shortOrNull(range: IntRange): Short? {
         require(range.isNotEmpty()) { "range is empty" }
         require(range in Short.MIN_VALUE..Short.MAX_VALUE) { "range should be a subset of [Short.MIN_VALUE..Short.MAX_VALUE] but was $range" }
 
         return when {
-            consumeBoolean() -> consumeShort(range)
+            boolean() -> short(range)
             else -> null
         }
     }
 
-    override fun consumeShorts(maxLength: Int, range: IntRange): ShortArray {
+    override fun shorts(maxLength: Int, range: IntRange): ShortArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Short>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeShort(range))
+            list.add(short(range))
         }
         return list.toShortArray()
     }
 
-    override fun consumeShortsOrNull(maxLength: Int, range: IntRange): ShortArray? {
+    override fun shortsOrNull(maxLength: Int, range: IntRange): ShortArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeShorts(maxLength, range)
+            boolean() -> shorts(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeInt(range: IntRange): Int {
+    override fun int(range: IntRange): Int {
         require(range.isNotEmpty()) { "range is empty" }
 
         return fitIntoRange(iterator.readInt(), range)
     }
 
-    override fun consumeIntOrNull(range: IntRange): Int? {
+    override fun intOrNull(range: IntRange): Int? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            consumeBoolean() -> consumeInt(range)
+            boolean() -> int(range)
             else -> null
         }
     }
 
-    override fun consumeInts(maxLength: Int, range: IntRange): IntArray {
+    override fun ints(maxLength: Int, range: IntRange): IntArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Int>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeInt(range))
+            list.add(int(range))
         }
         return list.toIntArray()
     }
 
-    override fun consumeIntsOrNull(maxLength: Int, range: IntRange): IntArray? {
+    override fun intsOrNull(maxLength: Int, range: IntRange): IntArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeInts(maxLength, range)
+            boolean() -> ints(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeLong(range: LongRange): Long {
+    override fun long(range: LongRange): Long {
         require(range.isNotEmpty()) { "range is empty" }
         return fitIntoRange(iterator.readLong(), range)
     }
 
-    override fun consumeLongOrNull(range: LongRange): Long? {
+    override fun longOrNull(range: LongRange): Long? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            consumeBoolean() -> consumeLong(range)
+            boolean() -> long(range)
             else -> null
         }
     }
 
-    override fun consumeLongs(maxLength: Int, range: LongRange): LongArray {
+    override fun longs(maxLength: Int, range: LongRange): LongArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Long>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeLong(range))
+            list.add(long(range))
         }
         return list.toLongArray()
     }
 
-    override fun consumeLongsOrNull(maxLength: Int, range: LongRange): LongArray? {
+    override fun longsOrNull(maxLength: Int, range: LongRange): LongArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeLongs(maxLength, range)
+            boolean() -> longs(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeFloat(range: FloatRange): Float {
+    override fun float(range: FloatRange): Float {
         require(range.isNotEmpty()) { "range is empty" }
 
         return fitIntoRange(
@@ -268,35 +268,35 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         ).toFloat()
     }
 
-    override fun consumeFloatOrNull(range: FloatRange): Float? {
+    override fun floatOrNull(range: FloatRange): Float? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            consumeBoolean() -> consumeFloat(range)
+            boolean() -> float(range)
             else -> null
         }
     }
 
-    override fun consumeFloats(maxLength: Int, range: FloatRange): FloatArray {
+    override fun floats(maxLength: Int, range: FloatRange): FloatArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Float>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeFloat(range))
+            list.add(float(range))
         }
         return list.toFloatArray()
     }
 
-    override fun consumeFloatsOrNull(maxLength: Int, range: FloatRange): FloatArray? {
+    override fun floatsOrNull(maxLength: Int, range: FloatRange): FloatArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeFloats(maxLength, range)
+            boolean() -> floats(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeDouble(range: DoubleRange): Double {
+    override fun double(range: DoubleRange): Double {
         require(range.isNotEmpty()) { "range is empty" }
 
         return fitIntoRange(
@@ -308,66 +308,66 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         ).toDouble()
     }
 
-    override fun consumeDoubleOrNull(range: DoubleRange): Double? {
+    override fun doubleOrNull(range: DoubleRange): Double? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            consumeBoolean() -> consumeDouble(range)
+            boolean() -> double(range)
             else -> null
         }
     }
 
-    override fun consumeDoubles(maxLength: Int, range: DoubleRange): DoubleArray {
+    override fun doubles(maxLength: Int, range: DoubleRange): DoubleArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Double>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeDouble(range))
+            list.add(double(range))
         }
         return list.toDoubleArray()
     }
 
-    override fun consumeDoublesOrNull(maxLength: Int, range: DoubleRange): DoubleArray? {
+    override fun doublesOrNull(maxLength: Int, range: DoubleRange): DoubleArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeDoubles(maxLength, range)
+            boolean() -> doubles(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeChar(range: CharRange): Char {
+    override fun char(range: CharRange): Char {
         require(range.isNotEmpty()) { "range is empty" }
 
-        return (consumeShort((range.first.code + Short.MIN_VALUE)..(range.last.code + Short.MIN_VALUE)) - Short.MIN_VALUE).toChar()
+        return (short((range.first.code + Short.MIN_VALUE)..(range.last.code + Short.MIN_VALUE)) - Short.MIN_VALUE).toChar()
     }
 
-    override fun consumeCharOrNull(range: CharRange): Char? {
+    override fun charOrNull(range: CharRange): Char? {
         require(range.isNotEmpty()) { "range is empty" }
 
         return when {
-            consumeBoolean() -> consumeChar(range)
+            boolean() -> char(range)
             else -> null
         }
     }
 
-    override fun consumeChar(charset: Charset): Char {
+    override fun char(charset: Charset): Char {
         val bytes = mutableListOf<Byte>()
         var str = ""
         while (str.isEmpty()) {
-            bytes.add(consumeByte())
+            bytes.add(byte())
             str = String(bytes.toByteArray(), charset)
         }
         return str.first()
     }
 
-    override fun consumeCharOrNull(charset: Charset): Char? = when {
-        consumeBoolean() -> consumeChar(charset)
+    override fun charOrNull(charset: Charset): Char? = when {
+        boolean() -> char(charset)
         else -> null
     }
 
-    override fun consumeChar(charset: CharacterSet): Char {
-        val index = consumeInt(0 until charset.size)
+    override fun char(charset: CharacterSet): Char {
+        val index = int(0 until charset.size)
         var current = 0
         for (range in charset.ranges) {
             val rangeSize = range.last - range.first + 1
@@ -379,69 +379,69 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         return charset.symbols.take(index - current + 1).last()
     }
 
-    override fun consumeCharOrNull(charset: CharacterSet): Char? = when {
-        consumeBoolean() -> consumeChar(charset)
+    override fun charOrNull(charset: CharacterSet): Char? = when {
+        boolean() -> char(charset)
         else -> null
     }
 
-    override fun consumeChars(maxLength: Int, range: CharRange): CharArray {
+    override fun chars(maxLength: Int, range: CharRange): CharArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Char>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeChar(range))
+            list.add(char(range))
         }
         return list.toCharArray()
     }
 
-    override fun consumeCharsOrNull(maxLength: Int, range: CharRange): CharArray? {
+    override fun charsOrNull(maxLength: Int, range: CharRange): CharArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeChars(maxLength, range)
+            boolean() -> chars(maxLength, range)
             else -> null
         }
     }
 
-    override fun consumeChars(maxLength: Int, charset: Charset): CharArray {
+    override fun chars(maxLength: Int, charset: Charset): CharArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Char>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeChar(charset))
+            list.add(char(charset))
         }
         return list.toCharArray()
     }
 
-    override fun consumeCharsOrNull(maxLength: Int, charset: Charset): CharArray? {
+    override fun charsOrNull(maxLength: Int, charset: Charset): CharArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeChars(maxLength, charset)
+            boolean() -> chars(maxLength, charset)
             else -> null
         }
     }
 
-    override fun consumeChars(maxLength: Int, charset: CharacterSet): CharArray {
+    override fun chars(maxLength: Int, charset: CharacterSet): CharArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val list = mutableListOf<Char>()
         while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeChar(charset))
+            list.add(char(charset))
         }
         return list.toCharArray()
     }
 
-    override fun consumeCharsOrNull(maxLength: Int, charset: CharacterSet): CharArray? {
+    override fun charsOrNull(maxLength: Int, charset: CharacterSet): CharArray? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeChars(maxLength, charset)
+            boolean() -> chars(maxLength, charset)
             else -> null
         }
     }
 
-    override fun consumeString(maxLength: Int, charset: Charset): String {
+    override fun string(maxLength: Int, charset: Charset): String {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         val byteBuffer = mutableListOf<Byte>()
@@ -455,16 +455,16 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         return String(byteBuffer.toByteArray(), charset).take(maxLength)
     }
 
-    override fun consumeStringOrNull(maxLength: Int, charset: Charset): String? {
+    override fun stringOrNull(maxLength: Int, charset: Charset): String? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeString(maxLength, charset)
+            boolean() -> string(maxLength, charset)
             else -> null
         }
     }
 
-    override fun consumeRemainingAsString(charset: Charset): String {
+    override fun remainingAsString(charset: Charset): String {
         val bytes = mutableListOf<Byte>()
         while (!iterator.isInputFinished()) {
             bytes.add(iterator.readByte())
@@ -472,33 +472,33 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         return String(bytes.toByteArray(), charset)
     }
 
-    override fun consumeString(maxLength: Int, charset: CharacterSet): String {
+    override fun string(maxLength: Int, charset: CharacterSet): String {
         require(maxLength > 0) { "maxLength must be greater than 0" }
-        return String(consumeChars(maxLength, charset))
+        return String(chars(maxLength, charset))
     }
 
-    override fun consumeStringOrNull(maxLength: Int, charset: CharacterSet): String? {
+    override fun stringOrNull(maxLength: Int, charset: CharacterSet): String? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeString(maxLength, charset)
+            boolean() -> string(maxLength, charset)
             else -> null
         }
     }
 
-    override fun consumeRemainingAsString(charset: CharacterSet): String = buildString {
+    override fun remainingAsString(charset: CharacterSet): String = buildString {
         while (!iterator.isInputFinished()) {
-            append(consumeChar(charset))
+            append(char(charset))
         }
     }
 
-    override fun consumeString(regex: Regex, configuration: RegexConfiguration): String {
+    override fun string(regex: Regex, configuration: RegexConfiguration): String {
         val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
         return rgxGen.generate(this)
     }
 
-    override fun consumeStringOrNull(regex: Regex, configuration: RegexConfiguration) = when {
-        consumeBoolean() -> consumeString(regex, configuration)
+    override fun stringOrNull(regex: Regex, configuration: RegexConfiguration) = when {
+        boolean() -> string(regex, configuration)
         else -> null
     }
 
