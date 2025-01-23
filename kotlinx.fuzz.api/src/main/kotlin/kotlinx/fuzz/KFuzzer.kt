@@ -514,7 +514,8 @@ interface KFuzzer {
             RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
                 properties,
                 allowedWhitespaces.map {
-                    rgxGenWhiteSpaces[it] ?: error("$it is not a valid whitespace character")
+                    rgxGenWhiteSpaces[it]
+                        ?: error("$it is not a valid whitespace character, valid characters are: ${WhitespaceChar.entries.map { it.get() }}")
                 },
             )
             return properties
