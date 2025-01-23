@@ -27,7 +27,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
 
         project.tasks.register<FuzzTask>("fuzz") {
-            outputs.upToDateWhen { false } // so the task will run on every invocation
+            outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }

@@ -16,6 +16,7 @@ import kotlin.reflect.jvm.javaMethod
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 
+@Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
@@ -23,7 +24,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.hooks)
-        Opt.instrument.setIfDefault(config.instrument)
+        Opt.instrumentationIncludes.setIfDefault(config.instrument)
+        Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
 
         AgentInstaller.install(Opt.hooks.get())
