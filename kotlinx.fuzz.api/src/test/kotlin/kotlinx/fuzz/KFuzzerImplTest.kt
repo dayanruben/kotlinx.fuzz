@@ -23,6 +23,9 @@ class KFuzzerImplTest {
         error("Could not find a correct number")
     }
 
+    /**
+     * Reverts the KFuzzerImpl::fitIntoRange functionality
+     */
     private fun int(expected: Int, range: IntRange): ByteArray {
         val result = byteArrayOf(0, 0, 0, 0)
         val rangeSize = range.last.toLong() - range.first + 1
@@ -36,7 +39,7 @@ class KFuzzerImplTest {
                 return result
             }
         }
-        error("Could not find a correct number")
+        error("Could not find a correct mapping for number $expected in range $range")
     }
 
     @Test
