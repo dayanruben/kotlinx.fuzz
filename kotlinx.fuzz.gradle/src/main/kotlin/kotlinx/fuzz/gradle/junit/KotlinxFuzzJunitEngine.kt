@@ -55,6 +55,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
         root.children.forEach { child -> executeImpl(request, child) }
+        fuzzEngine.finishExecution()
     }
 
     private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {

@@ -1,0 +1,3 @@
+[submodule "jazzer"]
+	path = jazzer
+	url = git@github.com:FerrumBrain/jazzer.git
