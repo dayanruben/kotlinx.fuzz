@@ -1,3 +1,4 @@
+import kotlinx.fuzz.gradle.fuzzConfig
 import kotlin.time.Duration.Companion.seconds
 
 plugins {
@@ -13,7 +14,7 @@ dependencies {
     testRuntimeOnly("kotlinx.fuzz:kotlinx.fuzz.jazzer")
 }
 
-kfuzz.config {
+fuzzConfig {
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds
 }
