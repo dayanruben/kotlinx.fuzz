@@ -16,18 +16,22 @@ abstract class KFuzzPlugin : Plugin<Project> {
             add("testRuntimeOnly", "kotlinx.fuzz:kotlinx.fuzz.gradle")
         }
 
+        project.tasks.withType<Test>().configureEach {
+            if (this is FuzzTask) {
+                return@configureEach
+            }
+
+            useJUnitPlatform {
+                excludeEngines("kotlinx.fuzz")
+            }
+        }
+
         project.tasks.register<FuzzTask>("fuzz") {
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
-            }
-        }
-
-        project.tasks.named<Test>("test") {
-            useJUnitPlatform {
-                excludeEngines("kotlinx.fuzz")
             }
         }
     }
