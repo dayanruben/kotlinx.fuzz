@@ -1,6 +1,5 @@
 package kotlinx.fuzz
 
-import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
 import org.junit.jupiter.api.Assertions.assertArrayEquals
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -10,6 +9,36 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 
 class KFuzzerImplTest {
+    /**
+     * Reverts the KFuzzerImpl::fitIntoRange functionality
+     */
+    private fun byte(expected: Int, range: IntRange): Byte {
+        val rangeSize = range.last.toLong() - range.first + 1
+        for (n in range) {
+            val fitted = (n.toLong() - Byte.MIN_VALUE) % rangeSize + range.first
+            if (fitted.toInt() == expected) {
+                return n.toByte()
+            }
+        }
+        error("Could not find a correct number")
+    }
+
+    private fun int(expected: Int, range: IntRange): ByteArray {
+        val result = byteArrayOf(0, 0, 0, 0)
+        val rangeSize = range.last.toLong() - range.first + 1
+        for (n in range) {
+            val fitted = (n.toLong() - Int.MIN_VALUE) % rangeSize + range.first
+            if (fitted.toInt() == expected) {
+                result[0] = (n ushr 24).toByte()
+                result[1] = (n ushr 16).toByte()
+                result[2] = (n ushr 8).toByte()
+                result[3] = n.toByte()
+                return result
+            }
+        }
+        error("Could not find a correct number")
+    }
+
     @Test
     fun `test consumeBoolean`() {
         val data = byteArrayOf(0)
@@ -89,27 +118,67 @@ class KFuzzerImplTest {
     }
 
     @Test
-    fun `test consumeString`() {
-        val data = byteArrayOf(0x80.toByte(), 0x00, 0x00, 0x03, 97, 98, 99)
+    fun `test consumeInt range distribution`() {
+        val range = 0..50
+        val multiplier = 5
+        val limit = range.count() * multiplier
+        val data = buildList {
+            repeat(limit) {
+                add(0x00.toByte())
+                add(0x00.toByte())
+                add(0x00.toByte())
+                add(it.toByte())
+            }
+        }.toByteArray()
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeString(10, Charsets.UTF_8)
+        val distribution = buildMap<Int, Int> {
+            repeat(limit) {
+                val result = kFuzzer.consumeInt(range)
+                this[result] = this.getOrDefault(result, 0) + 1
+            }
+        }
+        assertEquals(range.count(), distribution.size)
+        assertTrue { distribution.values.all { it == multiplier } }
+    }
+
+    @Test
+    fun `test consumeString`() {
+        val data = byteArrayOf(97, 98, 99)
+        val kFuzzer = KFuzzerImpl(data)
+        val result = kFuzzer.consumeString(3, Charsets.UTF_8)
         assertEquals("abc", result)
     }
 
     @Test
     fun `test consumeLetter`() {
-        val data = byteArrayOf(0x9A.toByte())
+        val letterRange = 0 until CharacterSet.US_LETTERS.size
+        val data = byteArrayOf(
+            *int(26, letterRange),  // ('a'..'z').count()
+        )
         val kFuzzer = KFuzzerImpl(data)
         val result = kFuzzer.consumeLetter()
         assertEquals('A', result)
     }
 
     @Test
-    fun `test consumeLetterString`() {
-        val data = byteArrayOf(0x80.toByte(), 0x00, 0x00, 0x03, 0x97.toByte(), 0x98.toByte(), 0x99.toByte())
+    fun `test consumeAsciiString`() {
+        val data = byteArrayOf(120, 121, 122)
         val kFuzzer = KFuzzerImpl(data)
-        val result = kFuzzer.consumeLetterString(10)
+        val result = kFuzzer.consumeAsciiString(3)
         assertEquals("xyz", result)
+    }
+
+    @Test
+    fun `test consumeLetterString`() {
+        val letterRange = 0 until CharacterSet.US_LETTERS.size
+        val data = byteArrayOf(
+            *int('a' - 'a', letterRange),
+            *int('b' - 'a', letterRange),
+            *int('c' - 'a', letterRange),
+        )
+        val kFuzzer = KFuzzerImpl(data)
+        val result = kFuzzer.consumeLetterString(3)
+        assertEquals("abc", result)
     }
 
     @Test
@@ -154,14 +223,14 @@ class KFuzzerImplTest {
 
         repeat(10) {
             val reg = Regex("[a-z]+(abc){3,}[a-z]{1,2}q")
-            val result = kFuzzer.consumeRegexString(reg)
+            val result = kFuzzer.consumeString(reg)
             assertTrue(result.matches(reg))
         }
 
         repeat(10) {
             val reg = Regex("a+")
             val caseInsensitiveReg = Regex("[aA]+")
-            val result = kFuzzer.consumeRegexString(
+            val result = kFuzzer.consumeString(
                 reg,
                 KFuzzer.RegexConfiguration(
                     maxInfinitePatternLength = 10,
@@ -176,11 +245,11 @@ class KFuzzerImplTest {
         repeat(10) {
             val reg = Regex(".*")
             val chars = setOf('a', 'b', '0', 'y')
-            val result = kFuzzer.consumeRegexString(
+            val result = kFuzzer.consumeString(
                 reg,
                 KFuzzer.RegexConfiguration(
                     maxInfinitePatternLength = 10,
-                    allowedCharacters = RgxGenCharsDefinition.of(*chars.toCharArray()),
+                    allowedCharacters = CharacterSet(chars),
                 ),
             )
             assertTrue(result.matches(reg))

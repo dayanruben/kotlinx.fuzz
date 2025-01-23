@@ -13,6 +13,13 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private operator fun IntRange.contains(other: IntRange): Boolean =
         other.first >= this.first && other.last <= this.last
 
+    /**
+     * Fits a number into a range. Always returns the distance from the number to T.MIN_VALUE modulo size of the range
+     *
+     * @param n a number
+     * @param range target range
+     * @return a number that fits into the given range
+     */
     private inline fun <reified T : Number> fitIntoRange(n: T, range: IntRange): T {
         val rangeSize = range.last.toLong() - range.first + 1
         return when (n) {
@@ -23,25 +30,32 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    private fun fitIntoRange(result: Long, range: LongRange): Long = when {
+    /**
+     * Fits a number into a range. Always returns the distance from the number to Long.MIN_VALUE modulo size of the range
+     *
+     * @param n a number
+     * @param range target range
+     * @return a number that fits into the given range
+     */
+    private fun fitIntoRange(n: Long, range: LongRange): Long = when {
         range.first < 0 && range.last > 0 && range.last - Long.MAX_VALUE > range.first -> when {
-            result < range.first -> result - Long.MIN_VALUE + range.first
+            n < range.first -> n - Long.MIN_VALUE + range.first
 
-            result <= range.last -> {
-                val normalized = result + (range.first - Long.MIN_VALUE)
+            n <= range.last -> {
+                val normalized = n + (range.first - Long.MIN_VALUE)
                 when {
                     normalized > range.last -> range.first + (normalized - range.last)
                     else -> normalized
                 }
             }
 
-            else -> range.first + (range.first - Long.MIN_VALUE) + (result - range.last) - 1L
+            else -> range.first + (range.first - Long.MIN_VALUE) + (n - range.last) - 1L
         }
 
         else -> {
             val rangeSize = range.last - range.first + 1
-            var normalized = result % rangeSize - Long.MIN_VALUE % rangeSize + range.first
-            while (result < range.first) {
+            var normalized = n % rangeSize - Long.MIN_VALUE % rangeSize + range.first
+            while (n < range.first) {
                 normalized += rangeSize
             }
             normalized
@@ -337,6 +351,39 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
+    override fun consumeChar(charset: Charset): Char {
+        val bytes = mutableListOf<Byte>()
+        var str = ""
+        while (str.isEmpty()) {
+            bytes.add(consumeByte())
+            str = String(bytes.toByteArray(), charset)
+        }
+        return str.first()
+    }
+
+    override fun consumeCharOrNull(charset: Charset): Char? = when {
+        consumeBoolean() -> consumeChar(charset)
+        else -> null
+    }
+
+    override fun consumeChar(charset: CharacterSet): Char {
+        val index = consumeInt(0 until charset.size)
+        var current = 0
+        for (range in charset.ranges) {
+            val rangeSize = range.last - range.first + 1
+            when {
+                current + rangeSize > index -> return range.first + (index - current)
+                else -> current += rangeSize
+            }
+        }
+        return charset.symbols.take(index - current + 1).last()
+    }
+
+    override fun consumeCharOrNull(charset: CharacterSet): Char? = when {
+        consumeBoolean() -> consumeChar(charset)
+        else -> null
+    }
+
     override fun consumeChars(maxLength: Int, range: CharRange): CharArray {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
@@ -356,20 +403,56 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
+    override fun consumeChars(maxLength: Int, charset: Charset): CharArray {
+        require(maxLength > 0) { "maxLength must be greater than 0" }
+
+        val list = mutableListOf<Char>()
+        while (list.size < maxLength && !iterator.isInputFinished()) {
+            list.add(consumeChar(charset))
+        }
+        return list.toCharArray()
+    }
+
+    override fun consumeCharsOrNull(maxLength: Int, charset: Charset): CharArray? {
+        require(maxLength > 0) { "maxLength must be greater than 0" }
+
+        return when {
+            consumeBoolean() -> consumeChars(maxLength, charset)
+            else -> null
+        }
+    }
+
+    override fun consumeChars(maxLength: Int, charset: CharacterSet): CharArray {
+        require(maxLength > 0) { "maxLength must be greater than 0" }
+
+        val list = mutableListOf<Char>()
+        while (list.size < maxLength && !iterator.isInputFinished()) {
+            list.add(consumeChar(charset))
+        }
+        return list.toCharArray()
+    }
+
+    override fun consumeCharsOrNull(maxLength: Int, charset: CharacterSet): CharArray? {
+        require(maxLength > 0) { "maxLength must be greater than 0" }
+
+        return when {
+            consumeBoolean() -> consumeChars(maxLength, charset)
+            else -> null
+        }
+    }
+
     override fun consumeString(maxLength: Int, charset: Charset): String {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
-        val length = consumeInt(0..maxLength)
         val byteBuffer = mutableListOf<Byte>()
-
         while (true) {
             byteBuffer.add(iterator.readByte())
-            if (String(byteBuffer.toByteArray(), charset).length >= length) {
+            if (String(byteBuffer.toByteArray(), charset).length >= maxLength) {
                 break
             }
         }
 
-        return String(byteBuffer.toByteArray(), charset).take(length)
+        return String(byteBuffer.toByteArray(), charset).take(maxLength)
     }
 
     override fun consumeStringOrNull(maxLength: Int, charset: Charset): String? {
@@ -389,79 +472,35 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         return String(bytes.toByteArray(), charset)
     }
 
-    override fun consumeAsciiString(maxLength: Int): String = consumeString(maxLength, Charsets.US_ASCII)
-
-    override fun consumeAsciiStringOrNull(maxLength: Int): String? = consumeStringOrNull(maxLength, Charsets.US_ASCII)
-
-    override fun consumeRemainingAsAsciiString(): String = consumeRemainingAsString(Charsets.US_ASCII)
-
-    override fun consumeLetter(): Char {
-        val alphabetSize = ('z' - 'a' + 1) * 2
-        val index = consumeByte(0 until alphabetSize)
-        return when {
-            index < alphabetSize / 2 -> 'a' + index.toInt()
-            else -> 'A' + index.toInt() - (alphabetSize / 2)
-        }
-    }
-
-    override fun consumeLetterOrNull(): Char? = when {
-        consumeBoolean() -> consumeLetter()
-        else -> null
-    }
-
-    override fun consumeLetters(maxLength: Int): CharArray {
+    override fun consumeString(maxLength: Int, charset: CharacterSet): String {
         require(maxLength > 0) { "maxLength must be greater than 0" }
-
-        val list = mutableListOf<Char>()
-        while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeLetter())
-        }
-        return list.toCharArray()
+        return String(consumeChars(maxLength, charset))
     }
 
-    override fun consumeLettersOrNull(maxLength: Int): CharArray? {
-        require(maxLength > 0) { "maxLength must be greater than 0" }
-
-        if (consumeBoolean()) {
-            return null
-        }
-
-        val list = mutableListOf<Char>()
-        while (list.size < maxLength && !iterator.isInputFinished()) {
-            list.add(consumeLetter())
-        }
-        return list.toCharArray()
-    }
-
-    override fun consumeLetterString(maxLength: Int): String {
-        require(maxLength > 0) { "maxLength must be greater than 0" }
-
-        val length = consumeInt(0..maxLength)
-        return String(consumeLetters(length))
-    }
-
-    override fun consumeLetterStringOrNull(maxLength: Int): String? {
+    override fun consumeStringOrNull(maxLength: Int, charset: CharacterSet): String? {
         require(maxLength > 0) { "maxLength must be greater than 0" }
 
         return when {
-            consumeBoolean() -> consumeLetterString(maxLength)
+            consumeBoolean() -> consumeString(maxLength, charset)
             else -> null
         }
     }
 
-    override fun consumeRemainingAsLetterString(): String = buildString {
+    override fun consumeRemainingAsString(charset: CharacterSet): String = buildString {
         while (!iterator.isInputFinished()) {
-            append(consumeLetter())
+            append(consumeChar(charset))
         }
     }
 
-    override fun consumeRegexString(regex: Regex, configuration: RegexConfiguration): String {
+    override fun consumeString(regex: Regex, configuration: RegexConfiguration): String {
         val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
         return rgxGen.generate(this)
     }
 
-    override fun consumeRegexStringOrNull(regex: Regex, configuration: RegexConfiguration) =
-        if (consumeBoolean()) null else consumeRegexString(regex, configuration)
+    override fun consumeStringOrNull(regex: Regex, configuration: RegexConfiguration) = when {
+        consumeBoolean() -> consumeString(regex, configuration)
+        else -> null
+    }
 
     private class Reader(data: ByteArray) {
         private val iterator = data.iterator()

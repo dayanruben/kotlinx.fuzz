@@ -2,7 +2,6 @@ package kotlinx.fuzz
 
 import com.github.curiousoddman.rgxgen.config.RgxGenOption
 import com.github.curiousoddman.rgxgen.config.RgxGenProperties
-import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
 import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import java.nio.charset.Charset
 import kotlin.text.Charsets
@@ -315,12 +314,43 @@ interface KFuzzer {
     fun consumeCharOrNull(range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): Char?
 
     /**
+     * Consumes a not null char from the fuzzer input.
+     *
+     * @param charset denotes desired set of valid characters
+     * @return char that has value in the given range
+     */
+    fun consumeChar(charset: Charset): Char
+
+    /**
+     * Consumes a nullable char from the fuzzer input.
+     *
+     * @param charset denotes desired set of valid characters
+     * @return nullable char that has value in the given range
+     */
+    fun consumeCharOrNull(charset: Charset): Char?
+
+    /**
+     * Consumes a not null char from the fuzzer input.
+     *
+     * @param charset denotes desired set of valid characters
+     * @return char that has value in the given range
+     */
+    fun consumeChar(charset: CharacterSet): Char
+
+    /**
+     * Consumes a nullable char from the fuzzer input.
+     *
+     * @param charset denotes desired set of valid characters
+     * @return nullable char that has value in the given range
+     */
+    fun consumeCharOrNull(charset: CharacterSet): Char?
+
+    /**
      * Consumes a not null char array from the fuzzer input. It will have size of maxLength unless fuzzer input is
      * insufficiently long. In this case it will be shorter.
      *
      * @param maxLength the maximum length of the array
-     * @param range denotes desired range for each value. Should be a subset of [Char.MIN_VALUE, Char.MAX_VALUE].
-     * [Char.MIN_VALUE, Char.MAX_VALUE] by default.
+     * @param range denotes desired set of valid characters
      * @return char array that has each value in given range
      */
     fun consumeChars(maxLength: Int, range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): CharArray
@@ -330,43 +360,50 @@ interface KFuzzer {
      * insufficiently long. In this case it will be shorter.
      *
      * @param maxLength the maximum length of the array
-     * @param range denotes desired range for each value. Should be a subset of [Char.MIN_VALUE, Char.MAX_VALUE].
-     * [Char.MIN_VALUE, Char.MAX_VALUE] by default.
+     * @param range denotes desired set of valid characters
      * @return nullable char array that has each value in given range
      */
     fun consumeCharsOrNull(maxLength: Int, range: CharRange = Char.MIN_VALUE..Char.MAX_VALUE): CharArray?
 
     /**
-     * Consumes a not null letter ([a-zA-Z]) from the fuzzer input.
-     *
-     * @return char that has value in the given range
-     */
-    fun consumeLetter(): Char
-
-    /**
-     * Consumes a nullable letter ([a-zA-Z]) from the fuzzer input.
-     *
-     * @return nullable char that has value in the given range
-     */
-    fun consumeLetterOrNull(): Char?
-
-    /**
-     * Consumes a not null letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer
-     * input is insufficiently long. In this case it will be shorter.
+     * Consumes a not null char array from the fuzzer input. It will have size of maxLength unless fuzzer input is
+     * insufficiently long. In this case it will be shorter.
      *
      * @param maxLength the maximum length of the array
+     * @param charset denotes desired set of valid characters
      * @return char array that has each value in given range
      */
-    fun consumeLetters(maxLength: Int): CharArray
+    fun consumeChars(maxLength: Int, charset: Charset): CharArray
 
     /**
-     * Consumes a nullable letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer
-     * input is insufficiently long. In this case it will be shorter.
+     * Consumes a nullable char array from the fuzzer input. It will have size of maxLength unless fuzzer input is
+     * insufficiently long. In this case it will be shorter.
      *
      * @param maxLength the maximum length of the array
+     * @param charset denotes desired set of valid characters
      * @return nullable char array that has each value in given range
      */
-    fun consumeLettersOrNull(maxLength: Int): CharArray?
+    fun consumeCharsOrNull(maxLength: Int, charset: Charset): CharArray?
+
+    /**
+     * Consumes a not null char array from the fuzzer input. It will have size of maxLength unless fuzzer input is
+     * insufficiently long. In this case it will be shorter.
+     *
+     * @param maxLength the maximum length of the array
+     * @param charset denotes desired set of valid characters
+     * @return char array that has each value in given range
+     */
+    fun consumeChars(maxLength: Int, charset: CharacterSet): CharArray
+
+    /**
+     * Consumes a nullable char array from the fuzzer input. It will have size of maxLength unless fuzzer input is
+     * insufficiently long. In this case it will be shorter.
+     *
+     * @param maxLength the maximum length of the array
+     * @param charset denotes desired set of valid characters
+     * @return nullable char array that has each value in given range
+     */
+    fun consumeCharsOrNull(maxLength: Int, charset: CharacterSet): CharArray?
 
     /**
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength,
@@ -398,56 +435,33 @@ interface KFuzzer {
     fun consumeRemainingAsString(charset: Charset = Charsets.UTF_8): String
 
     /**
-     * Consumes a not null ascii string from the fuzzer input. The returned string may be of any length between 0 and
-     * maxLength, even if there is more fuzzer input available.
+     * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength,
+     * even if there is more fuzzer input available.
      *
      * @param maxLength the maximum length of the string
-     * @return ascii string of length between 0 and maxLength (inclusive)
+     * @param charset denotes desired set of valid characters
+     * @return string of length between 0 and maxLength (inclusive) in given charset
      */
-    fun consumeAsciiString(maxLength: Int): String
+    fun consumeString(maxLength: Int, charset: CharacterSet): String
 
     /**
-     * Consumes a nullable ascii string from the fuzzer input. The returned string may be of any length between 0 and
-     * maxLength, even if there is more fuzzer input available.
+     * Consumes a nullable string from the fuzzer input. The returned string may be of any length between 0 and maxLength,
+     * even if there is more fuzzer input available.
      *
      * @param maxLength the maximum length of the string
-     * @return nullable ascii string of length between 0 and maxLength (inclusive)
+     * @param charset denotes desired set of valid characters
+     * @return nullable string of length between 0 and maxLength (inclusive) in given charset
      */
-    fun consumeAsciiStringOrNull(maxLength: Int): String?
+    fun consumeStringOrNull(maxLength: Int, charset: CharacterSet): String?
 
     /**
-     * Consumes remaining fuzzing input as not null ascii string. After calling this method, further calls to methods of
-     * this interface will return fixed values only.
+     * Consumes remaining fuzzing input as not null string. After calling this method, further calls to methods of this
+     * interface will return fixed values only.
      *
-     * @return ascii string
+     * @param charset denotes desired set of valid characters
+     * @return string in given charset
      */
-    fun consumeRemainingAsAsciiString(): String
-
-    /**
-     * Consumes a not null string consisting of letters of latin alphabet from the fuzzer input. The returned string may
-     * be of any length between 0 and maxLength, even if there is more fuzzer input available.
-     *
-     * @param maxLength the maximum length of the string
-     * @return string consisting of letters of latin alphabet of length between 0 and maxLength (inclusive)
-     */
-    fun consumeLetterString(maxLength: Int): String
-
-    /**
-     * Consumes a nullable string consisting of letters of latin alphabet from the fuzzer input. The returned string may
-     * be of any length between 0 and maxLength, even if there is more fuzzer input available.
-     *
-     * @param maxLength the maximum length of the string
-     * @return nullable string consisting of letters of latin alphabet of length between 0 and maxLength (inclusive)
-     */
-    fun consumeLetterStringOrNull(maxLength: Int): String?
-
-    /**
-     * Consumes remaining fuzzing input as not null string consisting of letters of latin alphabet. After calling this
-     * method, further calls to methods of this interface will return fixed values only.
-     *
-     * @return string consisting of letters of latin alphabet
-     */
-    fun consumeRemainingAsLetterString(): String
+    fun consumeRemainingAsString(charset: CharacterSet): String
 
     /**
      * Consumes a not null string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
@@ -456,7 +470,7 @@ interface KFuzzer {
      * @param configuration configuration of the generation parameters
      * @return string that matches given regex
      */
-    fun consumeRegexString(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String
+    fun consumeString(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String
 
     /**
      * Consumes a nullable string from the fuzzer input. The returned string may be of any length between 0 and maxLength, even if there is more fuzzer input available.
@@ -465,10 +479,10 @@ interface KFuzzer {
      * @param configuration configuration of the generation parameters
      * @return nullable string that matches given regex
      * */
-    fun consumeRegexStringOrNull(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String?
+    fun consumeStringOrNull(regex: Regex, configuration: RegexConfiguration = RegexConfiguration.DEFAULT): String?
 
     /**
-     * Class that allows t =o configure parameters of regex string generation
+     * Class that allows to configure parameters of regex string generation
      *
      * @param maxInfinitePatternLength limit of repetitions for infinite patterns, such as a+, a* and a{n,} (default value `100`)
      * @param caseInsensitive flag to use case-insensitive matching (defalut value `false`)
@@ -478,8 +492,8 @@ interface KFuzzer {
     data class RegexConfiguration(
         val maxInfinitePatternLength: Int = 100,
         val caseInsensitive: Boolean = false,
-        val allowedCharacters: RgxGenCharsDefinition? = null,
-        val allowedWhitespaces: List<WhitespaceChar> = listOf(WhitespaceChar.SPACE, WhitespaceChar.TAB),
+        val allowedCharacters: CharacterSet? = null,
+        val allowedWhitespaces: CharacterSet = CharacterSet.WHITESPACES,
     ) {
         internal fun asRegexProperties(): RgxGenProperties {
             val properties = RgxGenProperties()
@@ -487,16 +501,21 @@ interface KFuzzer {
                 properties,
                 this.maxInfinitePatternLength,
             )
+
             RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, caseInsensitive)
             allowedCharacters?.let {
                 RgxGenOption.DOT_MATCHES_ONLY.setInProperties(
                     properties,
-                    allowedCharacters,
+                    allowedCharacters.toRgxGenProperties(),
                 )
             }
+
+            val rgxGenWhiteSpaces = WhitespaceChar.entries.associateBy { it.get() }
             RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
                 properties,
-                allowedWhitespaces,
+                allowedWhitespaces.map {
+                    rgxGenWhiteSpaces[it] ?: error("$it is not a valid whitespace character")
+                },
             )
             return properties
         }
@@ -507,6 +526,109 @@ interface KFuzzer {
     }
 }
 
+/**
+ * Consumes a not null letter ([a-zA-Z]) from the fuzzer input.
+ *
+ * @return char that has value in the given range
+ */
+fun KFuzzer.consumeLetter(): Char = consumeChar(CharacterSet.US_LETTERS)
+
+/**
+ * Consumes a nullable letter ([a-zA-Z]) from the fuzzer input.
+ *
+ * @return nullable char that has value in the given range
+ */
+fun KFuzzer.consumeLetterOrNull(): Char? = when {
+    consumeBoolean() -> consumeLetter()
+    else -> null
+}
+
+/**
+ * Consumes a not null letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer
+ * input is insufficiently long. In this case it will be shorter.
+ *
+ * @param maxLength the maximum length of the array
+ * @return char array that has each value in given range
+ */
+fun KFuzzer.consumeLetters(maxLength: Int): CharArray {
+    require(maxLength > 0) { "maxLength must be greater than 0" }
+
+    val list = mutableListOf<Char>()
+    while (list.size < maxLength) {
+        list.add(consumeLetter())
+    }
+    return list.toCharArray()
+}
+
+/**
+ * Consumes a nullable letter ([a-zA-Z]) array from the fuzzer input. It will have size of maxLength unless fuzzer
+ * input is insufficiently long. In this case it will be shorter.
+ *
+ * @param maxLength the maximum length of the array
+ * @return nullable char array that has each value in given range
+ */
+fun KFuzzer.consumeLettersOrNull(maxLength: Int): CharArray? = when {
+    consumeBoolean() -> consumeLetters(maxLength)
+    else -> null
+}
+
+/**
+ * Consumes a not null ascii string from the fuzzer input. The returned string may be of any length between 0 and
+ * maxLength, even if there is more fuzzer input available.
+ *
+ * @param maxLength the maximum length of the string
+ * @return ascii string of length between 0 and maxLength (inclusive)
+ */
+fun KFuzzer.consumeAsciiString(maxLength: Int): String = consumeString(maxLength, charset = Charsets.US_ASCII)
+
+/**
+ * Consumes a nullable ascii string from the fuzzer input. The returned string may be of any length between 0 and
+ * maxLength, even if there is more fuzzer input available.
+ *
+ * @param maxLength the maximum length of the string
+ * @return nullable ascii string of length between 0 and maxLength (inclusive)
+ */
+fun KFuzzer.consumeAsciiStringOrNull(maxLength: Int): String? = when {
+    consumeBoolean() -> consumeAsciiString(maxLength)
+    else -> null
+}
+
+/**
+ * Consumes remaining fuzzing input as not null ascii string. After calling this method, further calls to methods of
+ * this interface will return fixed values only.
+ *
+ * @return ascii string
+ */
+fun KFuzzer.consumeRemainingAsAsciiString(): String = consumeRemainingAsString(charset = Charsets.US_ASCII)
+
+/**
+ * Consumes a not null string consisting of letters of latin alphabet from the fuzzer input. The returned string may
+ * be of any length between 0 and maxLength, even if there is more fuzzer input available.
+ *
+ * @param maxLength the maximum length of the string
+ * @return string consisting of letters of latin alphabet of length between 0 and maxLength (inclusive)
+ */
+fun KFuzzer.consumeLetterString(maxLength: Int): String = consumeString(maxLength, charset = CharacterSet.US_LETTERS)
+
+/**
+ * Consumes a nullable string consisting of letters of latin alphabet from the fuzzer input. The returned string may
+ * be of any length between 0 and maxLength, even if there is more fuzzer input available.
+ *
+ * @param maxLength the maximum length of the string
+ * @return nullable string consisting of letters of latin alphabet of length between 0 and maxLength (inclusive)
+ */
+fun KFuzzer.consumeLetterStringOrNull(maxLength: Int): String? = when {
+    consumeBoolean() -> consumeLetterString(maxLength)
+    else -> null
+}
+
+/**
+ * Consumes remaining fuzzing input as not null string consisting of letters of latin alphabet. After calling this
+ * method, further calls to methods of this interface will return fixed values only.
+ *
+ * @return string consisting of letters of latin alphabet
+ */
+fun KFuzzer.consumeRemainingAsLetterString(): String = consumeRemainingAsString(charset = CharacterSet.US_LETTERS)
 
 /**
  * Picks an element from collection based on the fuzzer input.
