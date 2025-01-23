@@ -18,9 +18,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
         val extension = project.extensions.create<KFuzzExtension>("kfuzz")
 
         project.tasks.register<FuzzTask>("fuzz") {
-            val fuzzConfig = extension.fuzzConfig
             doFirst {
-                systemProperties(fuzzConfig.toPropertiesMap())
+                systemProperties(extension.fuzzConfig.toPropertiesMap())
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
