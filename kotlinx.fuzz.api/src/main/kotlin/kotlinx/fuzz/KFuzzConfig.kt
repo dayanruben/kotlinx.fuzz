@@ -12,7 +12,7 @@ import kotlin.time.Duration.Companion.seconds
  * Class that stores generals fuzzing configuration
  *
  * @param fuzzEngine - name of engine to be used. Default: "jazzer"
- * @param hooks - apply fuzzing instrumentation
+ * @param hooks - apply fuzzing instrumentation. Default: true
  * @param keepGoing - how many bugs to discover before finishing fuzzing. Default: 1
  * @param instrument - glob patterns matching names of classes that should be instrumented for fuzzing
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
@@ -44,7 +44,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var hooks: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.hooks",
-        defaultValue = false,
+        defaultValue = true,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )

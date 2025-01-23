@@ -6,23 +6,14 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import org.gradle.kotlin.dsl.create
-import org.gradle.kotlin.dsl.register
 
+@Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.dependencies.add(
-            "testImplementation",
-            "kotlinx.fuzz:kotlinx.fuzz.api",
-        )
-        project.dependencies.add(
-            "testImplementation",
-            "kotlinx.fuzz:kotlinx.fuzz.gradle",
-        )
-        project.dependencies.add(
-            "testRuntimeOnly",
-            "kotlinx.fuzz:kotlinx.fuzz.jazzer",
-        )
+        project.dependencies {
+            add("testImplementation", "kotlinx.fuzz:kotlinx.fuzz.api")
+            add("testRuntimeOnly", "kotlinx.fuzz:kotlinx.fuzz.gradle")
+        }
 
         val extension = project.extensions.create<KFuzzExtension>("kfuzz")
 
@@ -44,10 +35,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 }
 
-open class KFuzzExtension {
+open class KFuzzExtension internal constructor() {
     internal lateinit var fuzzConfig: KFuzzConfig
         private set
 
+    @Suppress("unused")
     fun config(block: KFuzzConfigBuilder.() -> Unit) {
         fuzzConfig = KFuzzConfigBuilder.build(block)
     }

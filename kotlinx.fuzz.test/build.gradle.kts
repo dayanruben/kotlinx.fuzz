@@ -10,9 +10,7 @@ repositories {
 }
 
 dependencies {
-    testImplementation("org.junit.platform:junit-platform-engine:1.11.4")
-    testImplementation("org.junit.platform:junit-platform-launcher:1.11.4")
-//    testImplementation("kotlinx.fuzz:kotlinx.fuzz.gradle:0.0.1")
+    testRuntimeOnly("kotlinx.fuzz:kotlinx.fuzz.jazzer")
 }
 
 kfuzz.config {
@@ -22,8 +20,4 @@ kfuzz.config {
 
 kotlin {
     jvmToolchain(17)
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
