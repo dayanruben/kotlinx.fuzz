@@ -31,6 +31,9 @@ jobs:
     - name: Build
       run: ./gradlew build
 
+    - name: Run integration tests
+      run: ./gradlew :kotlinx.fuzz.test:fuzz
+
   dependency-submission:
     runs-on: ubuntu-latest
     permissions:
