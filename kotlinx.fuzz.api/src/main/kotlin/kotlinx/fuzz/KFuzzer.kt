@@ -510,12 +510,12 @@ interface KFuzzer {
                 )
             }
 
-            val rgxGenWhiteSpaces = WhitespaceChar.entries.associateBy { it.get() }
+            val rgxGenWhiteSpaces = WhitespaceChar.values().associateBy { it.get() }
             RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
                 properties,
                 allowedWhitespaces.map {
                     rgxGenWhiteSpaces[it]
-                        ?: error("$it is not a valid whitespace character, valid characters are: ${WhitespaceChar.entries.map { it.get() }}")
+                        ?: error("$it is not a valid whitespace character, valid characters are: ${WhitespaceChar.values().map { it.get() }}")
                 },
             )
             return properties

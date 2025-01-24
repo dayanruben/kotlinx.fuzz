@@ -1,12 +1,9 @@
 package kotlinx.fuzz.gradle.junit
 
+import kotlinx.fuzz.*
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.KFuzzer
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -31,6 +28,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             else -> throw AssertionError("Unsupported fuzzer engine!")
         }
     }
+    private val logger = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -76,12 +74,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             }
 
             is MethodTestDescriptor -> {
+                logger.debug("Executing method ${descriptor.displayName}")
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                val finding = fuzzEngine.runTarget(instance, method)
-                val result = when (finding) {
+                val result = when (val finding = fuzzEngine.runTarget(instance, method)) {
                     null -> TestExecutionResult.successful()
                     else -> TestExecutionResult.failed(finding)
                 }
