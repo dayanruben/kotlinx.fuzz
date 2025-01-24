@@ -3,7 +3,7 @@ package kotlinx.fuzz.test
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 
-object SampleTarget {
+class AnotherTarget {
 
     @KFuzzTest
     fun test(data: KFuzzer) {

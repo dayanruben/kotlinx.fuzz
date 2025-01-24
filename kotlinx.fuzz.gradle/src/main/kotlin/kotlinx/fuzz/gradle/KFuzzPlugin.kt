@@ -1,34 +1,55 @@
 package kotlinx.fuzz.gradle
 
+import kotlinx.fuzz.KFuzzConfig
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
-import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.register
+import org.gradle.kotlin.dsl.*
 
+@Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
     override fun apply(project: Project) {
-        project.dependencies.add(
-            "testImplementation",
-            "org.plan.research:kotlinx.fuzz.api",
-        )
-        project.tasks.register<FuzzTask>("fuzz") {
+        project.dependencies {
+            add("testImplementation", "kotlinx.fuzz:kotlinx.fuzz.api")
+            add("testRuntimeOnly", "kotlinx.fuzz:kotlinx.fuzz.gradle")
+        }
+
+        project.tasks.withType<Test>().configureEach {
+            if (this is FuzzTask) {
+                return@configureEach
+            }
+
             useJUnitPlatform {
-                includeEngines("kotlinx.fuzz-test")
+                excludeEngines("kotlinx.fuzz")
             }
         }
-    }
 
-    fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
-        val properties = KFuzzConfigBuilder.build(block).toPropertiesMap()
-        tasks.named<FuzzTask>("fuzz") {
-            systemProperties(properties)
+        project.tasks.register<FuzzTask>("fuzz") {
+            outputs.upToDateWhen { false }  // so the task will run on every invocation
+            doFirst {
+                systemProperties(fuzzConfig.toPropertiesMap())
+            }
+            useJUnitPlatform {
+                includeEngines("kotlinx.fuzz")
+            }
         }
     }
 }
 
 abstract class FuzzTask : Test() {
+    @get:Internal
+    internal lateinit var fuzzConfig: KFuzzConfig
+
     @TaskAction
     fun action(): Unit = Unit
+}
+
+@Suppress("unused")
+fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
+    val config = KFuzzConfigBuilder.build(block)
+    tasks.withType<FuzzTask>().forEach { task ->
+        task.fuzzConfig = config
+    }
 }

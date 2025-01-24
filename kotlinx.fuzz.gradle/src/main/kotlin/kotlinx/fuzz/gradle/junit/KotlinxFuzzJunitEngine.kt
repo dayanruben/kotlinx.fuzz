@@ -2,6 +2,7 @@ package kotlinx.fuzz.gradle.junit
 
 import java.lang.reflect.Method
 import java.net.URI
+import kotlin.reflect.KClass
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
@@ -77,7 +78,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             is MethodTestDescriptor -> {
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
-                val instance = method.declaringClass.kotlin.objectInstance!!
+                val instance = method.declaringClass.kotlin.testInstance()
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = when (finding) {
@@ -121,5 +122,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             ).isNotEmpty()
         }
         private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+        private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
