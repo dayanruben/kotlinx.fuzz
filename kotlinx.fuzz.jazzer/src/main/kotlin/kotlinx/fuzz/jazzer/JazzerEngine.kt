@@ -19,6 +19,7 @@ import java.io.File
 import java.security.MessageDigest
 import kotlin.io.path.Path
 
+@Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
@@ -32,7 +33,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.hooks)
-        Opt.instrument.setIfDefault(config.instrument)
+        Opt.instrumentationIncludes.setIfDefault(config.instrument)
+        Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
 
         AgentInstaller.install(Opt.hooks.get())

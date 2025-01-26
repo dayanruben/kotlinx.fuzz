@@ -1,5 +1,5 @@
 plugins {
-    id("org.plan.research.kotlinx-fuzz-module")
+    id("kotlinx.fuzz.src-module")
 }
 
 repositories {
@@ -8,8 +8,8 @@ repositories {
 
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
-    implementation("com.code-intelligence:jazzer:0.0.0-dev")
     implementation(kotlin("reflect"))
+    implementation(libs.jazzer)
 }
 
 tasks.register<Exec>("deployLocal") {

@@ -1,29 +1,13 @@
-import org.gradle.api.DefaultTask
+package kotlinx.fuzz.task.target
+
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
-import org.reflections.Reflections
-import org.reflections.scanners.Scanners
-import org.reflections.util.ConfigurationBuilder
-import java.io.File
 
-fun findTargets(directory: File): Set<String> {
-    val cb = ConfigurationBuilder().addUrls(directory.toURI().toURL())
-        .setScanners(Scanners.MethodsAnnotated).forPackage("org.plan.research")
-    val reflections = Reflections(cb)
-    val annotation = "com.code_intelligence.jazzer.junit.FuzzTest"
-    /* Can't use `getMethodsAnnotatedWith`
-    because it founds nothing,
-    probably because of loading classes from the outside of the project */
-    return reflections.store["MethodsAnnotated"]!![annotation]!!.map {
-        it.trim().replaceAfter("(", "").replace("(", "")
-    }.toSet()
-}
-
-abstract class PrintTargetNames : DefaultTask() {
+abstract class PrintTargetNames : TargetTask() {
     @get:InputDirectory
     abstract val classpathDir: DirectoryProperty
 

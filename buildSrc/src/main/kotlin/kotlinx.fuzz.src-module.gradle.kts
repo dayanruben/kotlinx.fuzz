@@ -22,7 +22,9 @@ kotlin {
 }
 
 tasks.getByName<KotlinCompile>("compileKotlin") {
-    compilerOptions.allWarningsAsErrors = true
+    compilerOptions {
+        allWarningsAsErrors = true
+    }
 }
 
 tasks.test {

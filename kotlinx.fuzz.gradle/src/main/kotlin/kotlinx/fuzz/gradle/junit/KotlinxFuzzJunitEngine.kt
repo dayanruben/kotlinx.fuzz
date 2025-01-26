@@ -2,6 +2,7 @@ package kotlinx.fuzz.gradle.junit
 
 import java.lang.reflect.Method
 import java.net.URI
+import kotlin.reflect.KClass
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
@@ -17,12 +18,18 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val config = KFuzzConfig.fromSystemProperties()
-    private val fuzzEngine: KFuzzEngine = when (config.fuzzEngine) {
-        "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine").getConstructor(KFuzzConfig::class.java)
-            .newInstance(config) as KFuzzEngine
+    // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
+    // To prevent failures due to lack of necessary properties, config is read lazily
+    private val config: KFuzzConfig by lazy {
+        KFuzzConfig.fromSystemProperties()
+    }
+    private val fuzzEngine: KFuzzEngine by lazy {
+        when (config.fuzzEngine) {
+            "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
 
-        else -> throw AssertionError("Unsupported fuzzer engine!")
+            else -> throw AssertionError("Unsupported fuzzer engine!")
+        }
     }
 
     override fun getId(): String = "kotlinx.fuzz"
@@ -72,7 +79,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             is MethodTestDescriptor -> {
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
-                val instance = method.declaringClass.kotlin.objectInstance!!
+                val instance = method.declaringClass.kotlin.testInstance()
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = when (finding) {
@@ -115,8 +122,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
         }
-
-        private fun Method.isFuzzTarget(): Boolean =
-            AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+        private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
