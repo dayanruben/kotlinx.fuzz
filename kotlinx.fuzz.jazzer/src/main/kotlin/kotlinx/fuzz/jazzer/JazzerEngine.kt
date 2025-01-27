@@ -6,26 +6,28 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
+import java.io.File
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.*
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
-import java.io.File
-import java.nio.file.Path
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.security.MessageDigest
-import kotlin.io.path.*
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     init {
-        val defaultPath = File(this::class.java.protectionDomain.codeSource.location.toURI()).parentFile
-        System.load("$defaultPath/${System.mapLibraryName("casr_adapter")}")
+        val codeLocation = this::class.java.protectionDomain.codeSource.location
+        val fileCodeLocation = File(codeLocation.toURI())
+        val libsLocation = fileCodeLocation.parentFile
+        System.load("$libsLocation/${System.mapLibraryName("casr_adapter")}")
     }
 
     private external fun parseAndClusterStackTraces(rawStacktraces: List<String>): List<Int>
@@ -65,7 +67,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 file.writeText(
                     finding.stackTraceToString().split("\n")
                         .takeWhile { it.trim() != "at kotlinx.fuzz.jazzer.JazzerTarget.fuzzTargetOne(JazzerTarget.kt:17)" }
-                        .joinToString("\n")
+                        .joinToString("\n"),
                 )
             }
         }
@@ -80,7 +82,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun convertToJavaStyleStackTrace(kotlinStackTrace: String): String {
         val lines = kotlinStackTrace.lines()
-        if (lines.isEmpty()) return kotlinStackTrace
+        if (lines.isEmpty()) {
+            return kotlinStackTrace
+        }
 
         val firstLine = lines.first()
         val updatedFirstLine = if (firstLine.startsWith("Exception in thread \"main\"")) {
@@ -120,17 +124,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             }
 
             val clusterDir = directoryPath.resolve(mapping[cluster]!!)
-            if (!clusterDir.exists()) clusterDir.createDirectory()
+            if (!clusterDir.exists()) {
+                clusterDir.createDirectory()
+            }
 
-            val stacktraceDest = clusterDir.resolve(stacktraceSrc.fileName)
-            val crashDest = clusterDir.resolve(crashSrc.fileName)
-
-            stacktraceSrc.copyTo(stacktraceDest, overwrite = true)
+            stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.fileName), overwrite = true)
             if (isOld) {
                 stacktraceSrc.deleteExisting()
             }
 
-            crashSrc.copyTo(crashDest, overwrite = true)
+            crashSrc.copyTo(clusterDir.resolve(crashSrc.fileName), overwrite = true)
             if (isOld) {
                 crashSrc.deleteExisting()
             }
