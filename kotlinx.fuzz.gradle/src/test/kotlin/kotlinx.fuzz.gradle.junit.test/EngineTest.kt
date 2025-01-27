@@ -1,5 +1,6 @@
 package kotlinx.fuzz.gradle.junit.test
 
+import java.io.File
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -9,7 +10,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
-import java.io.File
 
 object EngineTest {
     object SimpleFuzzTest {
@@ -36,7 +36,7 @@ object EngineTest {
         fun `failure test3`(data: KFuzzer) {
             if (data.int() in 5..15) {
                 val b = System.getProperty("abibaboba")
-                println(b!!.length)
+                System.setProperty("abacaba", b!!)
             }
         }
 
