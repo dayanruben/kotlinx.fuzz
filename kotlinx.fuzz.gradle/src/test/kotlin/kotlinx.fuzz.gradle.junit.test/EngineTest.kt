@@ -26,7 +26,7 @@ object EngineTest {
 
         @KFuzzTest
         fun `failure test2`(data: KFuzzer) {
-            if (data.consumeInt() in 16..24) {
+            if (data.int() in 16..24) {
                 val file = File("fuzz-test.txt")
                 file.readText()
             }
@@ -34,7 +34,7 @@ object EngineTest {
 
         @KFuzzTest
         fun `failure test3`(data: KFuzzer) {
-            if (data.consumeInt() in 5..15) {
+            if (data.int() in 5..15) {
                 val b = System.getProperty("abibaboba")
                 println(b!!.length)
             }
@@ -42,7 +42,7 @@ object EngineTest {
 
         @KFuzzTest
         fun `failure test4`(data: KFuzzer) {
-            if (data.consumeInt() in 25..215) {
+            if (data.int() in 25..215) {
                 throw IllegalArgumentException("Expected failure")
             }
         }
