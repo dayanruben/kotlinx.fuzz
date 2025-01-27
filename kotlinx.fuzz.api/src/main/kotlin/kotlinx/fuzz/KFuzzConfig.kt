@@ -1,5 +1,6 @@
 package kotlinx.fuzz
 
+import java.nio.file.Path
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
@@ -27,6 +28,7 @@ interface KFuzzConfig {
     val instrument: List<String>
     val customHookExcludes: List<String>
     val maxSingleTargetFuzzTime: Duration
+    val workDir: Path
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -71,6 +73,11 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
+    )
+    override var workDir: Path by KFuzzConfigProperty(
+        "kotlinx.fuzz.workDir",
+        toString = { it.toString() },
+        fromString = { Path.of(it) },
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()

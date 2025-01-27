@@ -5,6 +5,7 @@ import kotlinx.fuzz.gradle.KFuzzConfigBuilder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
+import kotlin.io.path.Path
 
 object FuzzConfigBuilderTest {
     @Test
@@ -19,6 +20,7 @@ object FuzzConfigBuilderTest {
             KFuzzConfigBuilder.build {
                 maxSingleTargetFuzzTime = 0.seconds
                 instrument = emptyList()
+                workDir = Path("test")
             }
         }
     }
@@ -29,6 +31,7 @@ object FuzzConfigBuilderTest {
             KFuzzConfigBuilder.build {
                 instrument = listOf("1", "2")
                 maxSingleTargetFuzzTime = 30.seconds
+                workDir = Path("test")
             }
         }
     }
@@ -43,6 +46,7 @@ object FuzzConfigBuilderTest {
                 instrument = listOf()
                 customHookExcludes = listOf("exclude")
                 maxSingleTargetFuzzTime = 1000.seconds
+                workDir = Path("test")
             }
         }
     }

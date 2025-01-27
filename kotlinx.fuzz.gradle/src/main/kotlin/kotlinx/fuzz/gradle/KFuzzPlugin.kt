@@ -48,7 +48,11 @@ abstract class FuzzTask : Test() {
 
 @Suppress("unused")
 fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
-    val config = KFuzzConfigBuilder.build(block)
+    val buildDir = layout.buildDirectory.get()
+    val config = KFuzzConfigBuilder.build {
+        workDir = buildDir.dir("fuzz").asFile.toPath()
+        block()
+    }
     tasks.withType<FuzzTask>().forEach { task ->
         task.fuzzConfig = config
     }
