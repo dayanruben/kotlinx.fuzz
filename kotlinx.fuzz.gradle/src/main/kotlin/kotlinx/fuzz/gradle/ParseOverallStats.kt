@@ -1,16 +1,14 @@
 package kotlinx.fuzz.gradle
 
+import java.nio.file.Path
+import kotlin.io.path.*
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import java.nio.file.Path
-import kotlin.io.path.*
 
 abstract class OverallStatsTask : DefaultTask() {
-
     @get:InputDirectory
     abstract val inputDir: DirectoryProperty
 
@@ -21,7 +19,6 @@ abstract class OverallStatsTask : DefaultTask() {
     fun calculateOverallStats() {
         processCsvFiles(inputDir.get().asFile.toPath(), outputFile)
     }
-
 
     companion object {
         private fun processCsvFiles(inputDir: Path, outputFile: Path) {
@@ -41,7 +38,7 @@ abstract class OverallStatsTask : DefaultTask() {
                     if (dataRows.isNotEmpty()) {
                         val lastRow = dataRows.last()
 
-                        if (headerRow == null) {
+                        headerRow ?: run {
                             headerRow = listOf("target name") + originalHeader
                         }
 

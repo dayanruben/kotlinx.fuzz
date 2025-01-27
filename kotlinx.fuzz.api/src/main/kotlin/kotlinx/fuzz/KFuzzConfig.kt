@@ -29,6 +29,7 @@ interface KFuzzConfig {
     val customHookExcludes: List<String>
     val maxSingleTargetFuzzTime: Duration
     val workDir: Path
+    val dumpCoverage: Boolean
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -78,6 +79,12 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         "kotlinx.fuzz.workDir",
         toString = { it.toString() },
         fromString = { Path.of(it) },
+    )
+    override var dumpCoverage: Boolean by KFuzzConfigProperty(
+        "kotlinx.fuzz.dumpCoverage",
+        defaultValue = true,
+        toString = { it.toString() },
+        fromString = { it.toBooleanStrict() },
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()

@@ -11,6 +11,7 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.absolute
 import kotlin.io.path.createDirectories
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
@@ -52,6 +53,13 @@ object Launcher {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
+
+        if (config.dumpCoverage) {
+            val coverageFile = config.workDir
+                .resolve("coverage").createDirectories()
+                .resolve("${method.fullName}.exec").absolute().toString()
+            Opt.coverageDump.setIfDefault(coverageFile)
+        }
 
         libFuzzerArgs += currentCorpus.toString()
         libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
