@@ -9,22 +9,23 @@ import com.code_intelligence.jazzer.utils.Log
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.deleteRecursively
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import java.io.File
+import java.nio.file.Path
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.security.MessageDigest
-import kotlin.io.path.Path
+import kotlin.io.path.*
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     init {
-        System.load("${Path("").toAbsolutePath()}/${System.mapLibraryName("casr_adapter")}")
+        val defaultPath = File(this::class.java.protectionDomain.codeSource.location.toURI()).parentFile
+        System.load("$defaultPath/${System.mapLibraryName("casr_adapter")}")
     }
 
     private external fun parseAndClusterStackTraces(rawStacktraces: List<String>): List<Int>
@@ -58,13 +59,15 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { bytes, finding ->
             atomicFinding.set(finding)
             val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
-            val file = File(Path(Opt.reproducerPath.get()).toAbsolutePath().toString(), "stacktrace-$hash")
-            file.createNewFile()
-            file.writeText(
-                finding.stackTraceToString().split("\n")
-                    .takeWhile { it.trim() != "at kotlinx.fuzz.jazzer.JazzerTarget.fuzzTargetOne(JazzerTarget.kt:17)" }
-                    .joinToString("\n")
-            )
+            val file = Paths.get(Opt.reproducerPath.get(), "stacktrace-$hash")
+            if (!file.exists()) {
+                file.createFile()
+                file.writeText(
+                    finding.stackTraceToString().split("\n")
+                        .takeWhile { it.trim() != "at kotlinx.fuzz.jazzer.JazzerTarget.fuzzTargetOne(JazzerTarget.kt:17)" }
+                        .joinToString("\n")
+                )
+            }
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
@@ -90,49 +93,46 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     override fun finishExecution() {
-        val directoryPath = Path(Opt.reproducerPath.get()).toAbsolutePath().toString()
-        val dir = File(directoryPath)
-
-        val stacktraceFiles = dir.listFiles { file -> file.name.startsWith("stacktrace-") }
-            ?: throw IllegalStateException("Unable to list files in directory: $directoryPath")
+        val directoryPath = Paths.get(Opt.reproducerPath.get()).toAbsolutePath()
+        val stacktraceFiles = directoryPath.listDirectoryEntries()
+            .filter { it.fileName.toString().startsWith("stacktrace-") }
+            .toList()
 
         val rawStackTraces = mutableListOf<String>()
-        val fileMapping = mutableListOf<Pair<String, String>>()
+        val fileMapping = mutableListOf<Pair<Path, Path>>()
 
         stacktraceFiles.forEach { file ->
-            val crashFile = File(dir, "crash-${file.name.removePrefix("stacktrace-")}")
-            val lines = convertToJavaStyleStackTrace(file.readText())
+            val crashFile = directoryPath.resolve("crash-${file.fileName.toString().removePrefix("stacktrace-")}")
+            val lines = convertToJavaStyleStackTrace(Files.readString(file))
             rawStackTraces.add(lines)
-            fileMapping.add(file.name to crashFile.name)
+            fileMapping.add(file to crashFile)
         }
 
         val clusters = parseAndClusterStackTraces(rawStackTraces)
-        val mapping = mutableMapOf<Int, String>()
+        val mapping = mutableMapOf<Int, Path>()
 
         clusters.forEachIndexed { index, cluster ->
-            val (stacktraceFile, crashFile) = fileMapping[index]
-            val stacktraceSrc = File(dir, stacktraceFile)
-            val crashSrc = File(dir, crashFile)
+            val (stacktraceSrc, crashSrc) = fileMapping[index]
             val isOld = mapping.containsKey(cluster)
 
             if (!mapping.containsKey(cluster)) {
-                mapping[cluster] = "cluster-${stacktraceSrc.readLines().first().trim()}"
+                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.readLines().first().trim()}")
             }
 
-            val clusterDir = File(dir, mapping[cluster]!!)
-            if (!clusterDir.exists()) clusterDir.mkdir()
+            val clusterDir = directoryPath.resolve(mapping[cluster]!!)
+            if (!clusterDir.exists()) clusterDir.createDirectory()
 
-            val stacktraceDest = File(clusterDir, stacktraceFile)
-            val crashDest = File(clusterDir, crashFile)
+            val stacktraceDest = clusterDir.resolve(stacktraceSrc.fileName)
+            val crashDest = clusterDir.resolve(crashSrc.fileName)
 
             stacktraceSrc.copyTo(stacktraceDest, overwrite = true)
             if (isOld) {
-                stacktraceSrc.delete()
+                stacktraceSrc.deleteExisting()
             }
 
             crashSrc.copyTo(crashDest, overwrite = true)
             if (isOld) {
-                crashSrc.delete()
+                crashSrc.deleteExisting()
             }
         }
     }

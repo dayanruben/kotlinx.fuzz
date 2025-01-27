@@ -10,7 +10,7 @@ use libcasr::stacktrace::{cluster_stacktraces, ParseStacktrace};
 pub extern "C" fn Java_kotlinx_fuzz_jazzer_JazzerEngine_parseAndClusterStackTraces(
     mut env: JNIEnv,
     _: JObject,
-    raw_stacktraces: jobject,
+    raw_stacktraces: jobject, // List<String>
 ) -> jobject {
     let stacktraces = convert_to_rust_format(&mut env, raw_stacktraces);
 
@@ -66,7 +66,10 @@ pub extern "C" fn Java_kotlinx_fuzz_jazzer_JazzerEngine_parseAndClusterStackTrac
     *java_result
 }
 
-fn convert_to_rust_format(env: &mut JNIEnv, java_list: jobject) -> Vec<String> {
+fn convert_to_rust_format(
+    env: &mut JNIEnv,
+    java_list: jobject // List<String>
+) -> Vec<String> {
     let java_list_obj = unsafe { JObject::from_raw(java_list) };
 
     let iterator = env

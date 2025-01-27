@@ -57,7 +57,7 @@ object EngineTest {
     }
 
     @Test
-    fun `one pass one fail`() {
+    fun `one pass four fail`() {
         EngineTestKit
             .engine(KotlinxFuzzJunitEngine())
             .selectors(selectClass(SimpleFuzzTest::class.java))
