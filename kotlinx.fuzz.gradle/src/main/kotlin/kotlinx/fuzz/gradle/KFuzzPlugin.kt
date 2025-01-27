@@ -35,6 +35,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 includeEngines("kotlinx.fuzz")
             }
         }
+
+        project.tasks.register<OverallStatsTask>("overall-stats") {
+            inputDir.set(project.layout.buildDirectory.dir("fuzz/stats"))
+            outputFile = project.layout.buildDirectory.dir("fuzz").get()
+                .file("overall-stats.csv").asFile.toPath()
+        }
     }
 }
 
