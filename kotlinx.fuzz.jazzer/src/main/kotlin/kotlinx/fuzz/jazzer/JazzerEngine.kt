@@ -4,8 +4,7 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import java.lang.reflect.Method
 import java.nio.file.Path
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.createDirectories
+import kotlin.io.path.*
 
 @Suppress("unused", "SpellCheckingInspection")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
@@ -48,9 +47,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     override fun finishExecution() {
-//        logsDir.listDirectoryEntries("*.err").forEach {
-//            it.toFile().copyTo(config.workDir.resolve(it.fileName).toFile())
-//        }
+        val statsDir = config.workDir.resolve("stats").createDirectories()
+        config.logsDir.listDirectoryEntries("*.err").forEach { file ->
+            val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
+            statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
+        }
     }
 }
 
