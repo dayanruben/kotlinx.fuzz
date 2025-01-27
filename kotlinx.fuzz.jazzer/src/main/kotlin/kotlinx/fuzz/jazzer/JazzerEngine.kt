@@ -3,13 +3,18 @@ package kotlinx.fuzz.jazzer
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import java.lang.reflect.Method
+import java.nio.file.Path
 import kotlin.io.path.ExperimentalPathApi
+import kotlin.io.path.createDirectories
 
-@Suppress("unused")
+@Suppress("unused", "SpellCheckingInspection")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
-    override fun initialise(): Unit = Unit
+    override fun initialise() {
+        config.corpusDir.createDirectories()
+        config.logsDir.createDirectories()
+    }
 
 
     @OptIn(ExperimentalPathApi::class)
@@ -20,8 +25,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val mainClass = "kotlinx.fuzz.jazzer.Launcher"
         val javaCommand = System.getProperty("java.home") + "/bin/java"
 
-        // to pass `config`
-        val properties = config.toPropertiesMap().map { (key, value) -> "-D$key=$value"}.toTypedArray()
+        // to pass `config` to new process
+        val properties =
+            config.toPropertiesMap().map { (key, value) -> "-D$key=$value" }.toTypedArray()
 
         val pb = ProcessBuilder(
             javaCommand,
@@ -30,8 +36,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             mainClass,
             method.declaringClass.name, method.name,
         )
+        pb.redirectError(config.logsDir.resolve("${method.fullName}.err").toFile())
+        pb.redirectOutput(config.logsDir.resolve("${method.fullName}.log").toFile())
 
-        pb.inheritIO()
         val res = pb.start().waitFor()
         if (res == 0) {
             return null
@@ -39,4 +46,19 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         // TODO: read real exception
         return Throwable("Jazzer subprocess returned with code $res")
     }
+
+    override fun finishExecution() {
+//        logsDir.listDirectoryEntries("*.err").forEach {
+//            it.toFile().copyTo(config.workDir.resolve(it.fileName).toFile())
+//        }
+    }
 }
+
+internal val Method.fullName: String
+    get() = "${this.declaringClass.name}.${this.name}"
+
+internal val KFuzzConfig.corpusDir: Path
+    get() = workDir.resolve("corpus")
+
+internal val KFuzzConfig.logsDir: Path
+    get() = workDir.resolve("logs")

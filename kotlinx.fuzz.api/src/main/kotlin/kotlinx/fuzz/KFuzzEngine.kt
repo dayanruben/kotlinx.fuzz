@@ -17,4 +17,6 @@ interface KFuzzEngine {
      * org.junit.platform.engine.TestExecutionResult) otherwise
      */
     fun runTarget(instance: Any, method: Method): Throwable?
+
+    fun finishExecution()
 }

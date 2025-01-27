@@ -7,14 +7,11 @@ import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
 import kotlinx.fuzz.KFuzzConfig
-import java.io.PrintStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
-import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectories
-import kotlin.io.path.outputStream
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
@@ -23,9 +20,6 @@ import kotlin.system.exitProcess
 object Launcher {
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
-
-    val corpusDir: Path = config.workDir.resolve("corpus")
-    val logsDir: Path = config.workDir.resolve("logs")
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -56,7 +50,7 @@ object Launcher {
     @OptIn(ExperimentalPathApi::class)
     fun runTarget(instance: Any, method: Method): Throwable? {
         val libFuzzerArgs = mutableListOf("fake_argv0")
-        val currentCorpus = corpusDir.resolve(method.name)
+        val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
 
         libFuzzerArgs += currentCorpus.toString()
@@ -71,18 +65,10 @@ object Launcher {
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
         FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
 
-        // corpusDir.deleteRecursively()
-
         return atomicFinding.get()
     }
 
     fun initJazzer() {
-        logsDir.createDirectories()
-        Log.fixOutErr(
-            PrintStream(logsDir.resolve("fuzz.log").outputStream()),
-            PrintStream(logsDir.resolve("fuzz.err").outputStream())
-        )
-
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.hooks)
@@ -96,6 +82,5 @@ object Launcher {
             JazzerTarget::fuzzTargetOne.javaMethod,
             LifecycleMethodsInvoker.noop(JazzerTarget),
         )
-
     }
 }
