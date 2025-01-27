@@ -1,9 +1,9 @@
 package kotlinx.fuzz.gradle.junit
 
-import kotlinx.fuzz.*
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
+import kotlinx.fuzz.*
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -15,6 +15,8 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
+    private val logger = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
+
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
     private val config: KFuzzConfig by lazy {
@@ -28,7 +30,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             else -> throw AssertionError("Unsupported fuzzer engine!")
         }
     }
-    private val logger = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -74,7 +75,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             }
 
             is MethodTestDescriptor -> {
-                logger.debug("Executing method ${descriptor.displayName}")
+                logger.debug { "Executing method ${descriptor.displayName}" }
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()

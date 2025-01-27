@@ -3,6 +3,7 @@ package kotlinx.fuzz.gradle
 import kotlinx.fuzz.KFuzzConfig
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
@@ -17,6 +18,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
 
         project.tasks.withType<Test>().configureEach {
+            configureLogging(project)
+
             if (this is FuzzTask) {
                 return@configureEach
             }
@@ -34,6 +37,25 @@ abstract class KFuzzPlugin : Plugin<Project> {
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
             }
+        }
+    }
+
+    private fun Test.configureLogging(project: Project) {
+        val userLoggingLevel = System.getProperty("kotlinx.fuzz.logging.level")
+        val projectLogLevel = project.gradle.startParameter.logLevel
+
+        systemProperties["kotlinx.fuzz.logging.level"] = when {
+            userLoggingLevel in LogLevel.values().map { it.name } -> userLoggingLevel
+            projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
+            else -> projectLogLevel.name
+        }
+
+        testLogging {
+            events("passed", "skipped", "failed")
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
         }
     }
 }

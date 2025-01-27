@@ -27,8 +27,8 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
 }
 
 tasks.test {
-    val property = System.getProperty("KOTLINX_FUZZ_LOGGING_LEVEL")
-    systemProperties["KOTLINX_FUZZ_LOGGING_LEVEL"] = if (property in LogLevel.values().map { it.name }) {
+    val property = System.getProperty("kotlinx.fuzz.logging.level")
+    systemProperties["kotlinx.fuzz.logging.level"] = if (property in LogLevel.values().map { it.name }) {
         property
     } else {
         if (gradle.startParameter.logLevel == LogLevel.LIFECYCLE) {
