@@ -9,12 +9,11 @@ import com.code_intelligence.jazzer.utils.Log
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.deleteRecursively
 import kotlin.reflect.jvm.javaMethod
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
+import java.nio.file.Paths
+import kotlin.io.path.*
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
@@ -41,9 +40,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val corpusDir = createTempDirectory("jazzer-corpus")
 
+        val reproducerPath = Paths.get(Opt.reproducerPath.get(), method.declaringClass.name, method.name).toAbsolutePath()
+        if (!reproducerPath.exists()) {
+            reproducerPath.createDirectories()
+        }
+
         libFuzzerArgs += corpusDir.toString()
         libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
+        libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
+        libFuzzerArgs += "${reproducerPath.toAbsolutePath()}"
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->

@@ -4,6 +4,7 @@ import kotlin.time.Duration.Companion.seconds
 plugins {
     kotlin("jvm") version "2.0.21"
     id("kotlinx.fuzz")
+    kotlin("plugin.serialization") version "2.0.20"
 }
 
 repositories {
@@ -13,11 +14,12 @@ repositories {
 dependencies {
     testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
     testRuntimeOnly("kotlinx.fuzz:kotlinx.fuzz.jazzer")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
 }
 
 fuzzConfig {
     instrument = listOf("kotlinx.fuzz.test.**")
-    maxSingleTargetFuzzTime = 10.seconds
+    maxSingleTargetFuzzTime = 3600.seconds
 }
 
 kotlin {
