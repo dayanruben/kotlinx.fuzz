@@ -70,17 +70,13 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 var inCausedBy = false
                 val stackTraceString = finding.stackTraceToString()
                 file.writeText(stackTraceString.split("\n").filter {
-                    if (inCausedBy) {
-                        true
-                    } else if (it.trim().startsWith("at")) {
+                    if (!inCausedBy && it.trim().startsWith("at")) {
                         indexOfFirstInternalFrame -= 1
-                        indexOfFirstInternalFrame >= 0
+                        return@filter indexOfFirstInternalFrame >= 0
                     } else if (it.trim().startsWith("Caused by")) {
                         inCausedBy = true
-                        true
-                    } else {
-                        true
                     }
+                    return@filter true
                 }.joinToString("\n"))
             }
         }
