@@ -15,7 +15,7 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val logger = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
+    private val log = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
@@ -75,7 +75,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             }
 
             is MethodTestDescriptor -> {
-                logger.debug { "Executing method ${descriptor.displayName}" }
+                log.debug { "Executing method ${descriptor.displayName}" }
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
