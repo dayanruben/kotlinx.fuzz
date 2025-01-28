@@ -2,7 +2,6 @@ package kotlinx.fuzz.jazzer
 
 import java.nio.file.Path
 import kotlin.io.path.forEachLine
-import kotlin.reflect.full.memberProperties
 import kotlin.time.Duration
 
 internal data class LibfuzzerLogEntryNoTimestamp(
@@ -28,20 +27,6 @@ internal data class LibfuzzerLogEntry(
     val crashes: Int,
 )
 
-private inline fun <reified T : Any> List<T>.toCsv(): String {
-    require(this.isNotEmpty())
-
-    val properties = T::class.memberProperties
-    val header = properties.joinToString(separator = ",") { it.name }
-    val rows = this.map { item ->
-        properties.joinToString(separator = ",") { prop ->
-            prop.get(item)?.toString() ?: error("$item doesnt have property $prop")
-        }
-    }
-
-    return (listOf(header) + rows).joinToString(separator = "\n")
-}
-
 internal fun jazzerLogToCsv(file: Path, duration: Duration): String {
     val lines =
         mutableListOf(LibfuzzerLogEntryNoTimestamp(execNr = 0, cov = 0, ft = 0, crashes = 0))
@@ -61,8 +46,10 @@ internal fun jazzerLogToCsv(file: Path, duration: Duration): String {
             (tokens[1] == "NEW" || tokens[1] == "REDUCE" || tokens[1] == "pulse")
         ) {
             val execs = tokens[0].substring(1).toInt()
+
             @Suppress("MAGIC_NUMBER")
             val covBlks = tokens[3].toInt()
+
             @Suppress("MAGIC_NUMBER")
             val covFt = tokens[5].toInt()
 
@@ -78,6 +65,11 @@ internal fun jazzerLogToCsv(file: Path, duration: Duration): String {
     val maxExecNr = lines.maxOf { it.execNr }
     val stats = lines.map { it.withTimestamp(it.execNr * durationSeconds / maxExecNr) }
 
-    val statsCsv = stats.toCsv()
-    return statsCsv
+    val header = "execNr,timeSeconds,cov,ft,crashes\n"
+    val rows = stats.joinToString(separator = "\n") { entry ->
+        with(entry) {
+            "$execNr,$timeSeconds,$cov,$ft,$crashes"
+        }
+    }
+    return header + rows
 }
