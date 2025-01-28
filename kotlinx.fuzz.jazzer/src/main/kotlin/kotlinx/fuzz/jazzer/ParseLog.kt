@@ -1,7 +1,7 @@
 package kotlinx.fuzz.jazzer
 
 import java.nio.file.Path
-import kotlin.io.path.forEachLine
+import kotlin.io.path.readLines
 import kotlin.time.Duration
 
 internal data class LibfuzzerLogEntryNoTimestamp(
@@ -10,7 +10,7 @@ internal data class LibfuzzerLogEntryNoTimestamp(
     val ft: Int,
     val crashes: Int,
 ) {
-    fun withTimestamp(timeSeconds: Long): LibfuzzerLogEntry = LibfuzzerLogEntry(
+    fun addTimestamp(timeSeconds: Long): LibfuzzerLogEntry = LibfuzzerLogEntry(
         timeSeconds = timeSeconds,
         execNr = execNr,
         cov = cov,
@@ -28,48 +28,43 @@ internal data class LibfuzzerLogEntry(
 )
 
 internal fun jazzerLogToCsv(file: Path, duration: Duration): String {
-    val lines =
-        mutableListOf(LibfuzzerLogEntryNoTimestamp(execNr = 0, cov = 0, ft = 0, crashes = 0))
-    val durationSeconds = duration.inWholeSeconds.toLong()
     var crashes = 0
 
-    file.forEachLine { line ->
+    val statsNoTimeStamps = file.readLines().mapNotNull { line ->
         val tokens = line.split("\\s+".toRegex())  // Split line into tokens
-        if (tokens.size < 2) {
-            return@forEachLine
-        }
+        when {
+            tokens.size < 2 -> null
 
-        if (tokens[0].startsWith("artifact_prefix=")) {
-            crashes++
-            return@forEachLine
-        } else if (tokens[0].startsWith("#") && tokens.size >= 14 &&
-            (tokens[1] == "NEW" || tokens[1] == "REDUCE" || tokens[1] == "pulse")
-        ) {
-            val execs = tokens[0].substring(1).toInt()
+            tokens[0].startsWith("artifact_prefix=") -> {
+                crashes++
+                null
+            }
 
+            !tokens[0].startsWith("#") -> null
             @Suppress("MAGIC_NUMBER")
-            val covBlks = tokens[3].toInt()
+            tokens.size < 14 -> null
 
-            @Suppress("MAGIC_NUMBER")
-            val covFt = tokens[5].toInt()
+            tokens[1] !in setOf("NEW", "REDUCE", "pulse") -> null
 
-            lines += LibfuzzerLogEntryNoTimestamp(
-                execNr = execs,
-                cov = covBlks,
-                ft = covFt,
-                crashes = crashes,
-            )
+            else ->
+                @Suppress("MAGIC_NUMBER")
+                LibfuzzerLogEntryNoTimestamp(
+                    execNr = tokens[0].substring(1).toInt(),
+                    cov = tokens[3].toInt(),
+                    ft = tokens[5].toInt(),
+                    crashes = crashes,
+                )
         }
     }
 
-    val maxExecNr = lines.maxOf { it.execNr }
-    val stats = lines.map { it.withTimestamp(it.execNr * durationSeconds / maxExecNr) }
+    val maxExecNr = statsNoTimeStamps.maxOf { it.execNr }
+    val stats = listOf(LibfuzzerLogEntry(0, 0, 0, 0, 0)) +
+        statsNoTimeStamps.map { it.addTimestamp(it.execNr * duration.inWholeSeconds / maxExecNr) }
 
+    @Suppress("LOCAL_VARIABLE_EARLY_DECLARATION")  // TODO: remove after tweaking diktat
     val header = "execNr,timeSeconds,cov,ft,crashes\n"
     val rows = stats.joinToString(separator = "\n") { entry ->
-        with(entry) {
-            "$execNr,$timeSeconds,$cov,$ft,$crashes"
-        }
+        with(entry) { "$execNr,$timeSeconds,$cov,$ft,$crashes" }
     }
     return header + rows
 }
