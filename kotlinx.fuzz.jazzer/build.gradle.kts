@@ -11,7 +11,7 @@ repositories {
 
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
-    implementation("com.code-intelligence:jazzer:0.0.0-dev")
+    implementation(libs.jazzer)
     implementation(kotlin("reflect"))
 }
 
@@ -26,7 +26,7 @@ tasks.register<Exec>("buildRustLib") {
 }
 
 tasks.register("linkRustLib") {
-    dependsOn("buildRustLib")
+    // dependsOn("buildRustLib")
     doLast {
         val sourceDir = file("$rootDir/CasrAdapter/target/release")
         val targetDir = file("$projectDir")

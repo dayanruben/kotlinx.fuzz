@@ -64,11 +64,24 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             val file = Paths.get(Opt.reproducerPath.get(), "stacktrace-$hash")
             if (!file.exists()) {
                 file.createFile()
-                file.writeText(
-                    finding.stackTraceToString().split("\n")
-                        .takeWhile { it.trim() != "at kotlinx.fuzz.jazzer.JazzerTarget.fuzzTargetOne(JazzerTarget.kt:17)" }
-                        .joinToString("\n"),
-                )
+                var indexOfFirstInternalFrame = finding.stackTrace.indexOfFirst {
+                    it.className == "kotlinx.fuzz.jazzer.JazzerTarget" && it.methodName == "fuzzTargetOne"
+                }
+                var inCausedBy = false
+                val stackTraceString = finding.stackTraceToString()
+                file.writeText(stackTraceString.split("\n").filter {
+                    if (inCausedBy) {
+                        true
+                    } else if (it.trim().startsWith("at")) {
+                        indexOfFirstInternalFrame -= 1
+                        indexOfFirstInternalFrame >= 0
+                    } else if (it.trim().startsWith("Caused by")) {
+                        inCausedBy = true
+                        true
+                    } else {
+                        true
+                    }
+                }.joinToString("\n"))
             }
         }
 
@@ -97,16 +110,14 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     override fun finishExecution() {
-        val directoryPath = Paths.get(Opt.reproducerPath.get()).toAbsolutePath()
-        val stacktraceFiles = directoryPath.listDirectoryEntries()
-            .filter { it.fileName.toString().startsWith("stacktrace-") }
-            .toList()
+        val directoryPath = Paths.get(Opt.reproducerPath.get()).absolute()
+        val stacktraceFiles = directoryPath.listDirectoryEntries("stacktrace-*")
 
         val rawStackTraces = mutableListOf<String>()
         val fileMapping = mutableListOf<Pair<Path, Path>>()
 
         stacktraceFiles.forEach { file ->
-            val crashFile = directoryPath.resolve("crash-${file.fileName.toString().removePrefix("stacktrace-")}")
+            val crashFile = directoryPath.resolve("crash-${file.name.removePrefix("stacktrace-")}")
             val lines = convertToJavaStyleStackTrace(Files.readString(file))
             rawStackTraces.add(lines)
             fileMapping.add(file to crashFile)
