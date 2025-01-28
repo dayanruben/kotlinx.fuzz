@@ -1,6 +1,7 @@
 package kotlinx.fuzz.gradle
 
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.LoggerFacade
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -41,10 +42,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 
     private fun Test.configureLogging(project: Project) {
-        val userLoggingLevel = System.getProperty("kotlinx.fuzz.logging.level")
+        val userLoggingLevel = System.getProperty(LoggerFacade.logLevelProperty)
         val projectLogLevel = project.gradle.startParameter.logLevel
 
-        systemProperties["kotlinx.fuzz.logging.level"] = when {
+        systemProperties[LoggerFacade.logLevelProperty] = when {
             userLoggingLevel in LogLevel.values().map { it.name } -> userLoggingLevel
             projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
             else -> projectLogLevel.name
@@ -56,6 +57,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             showExceptions = true
             showCauses = true
             showStackTraces = true
+            showStandardStreams = true
         }
     }
 }

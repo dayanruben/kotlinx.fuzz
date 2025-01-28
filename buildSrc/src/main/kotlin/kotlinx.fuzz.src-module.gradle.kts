@@ -26,16 +26,14 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
     }
 }
 
+val logLevelProperty = "kotlinx.fuzz.logging.level"
+
 tasks.test {
-    val property = System.getProperty("kotlinx.fuzz.logging.level")
-    systemProperties["kotlinx.fuzz.logging.level"] = if (property in LogLevel.values().map { it.name }) {
-        property
-    } else {
-        if (gradle.startParameter.logLevel == LogLevel.LIFECYCLE) {
-            LogLevel.WARN
-        } else {
-            gradle.startParameter.logLevel
-        }
+    val property = System.getProperty(logLevelProperty)
+    systemProperties[logLevelProperty] = when {
+        property?.uppercase() in LogLevel.values().map { it.name } -> property
+        gradle.startParameter.logLevel == LogLevel.LIFECYCLE -> LogLevel.WARN
+        else -> gradle.startParameter.logLevel
     }
 
     testLogging {
@@ -44,5 +42,6 @@ tasks.test {
         showExceptions = true
         showCauses = true
         showStackTraces = true
+        showStandardStreams = true
     }
 }
