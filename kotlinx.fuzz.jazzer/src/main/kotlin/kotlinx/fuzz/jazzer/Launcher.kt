@@ -6,7 +6,6 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
-import kotlinx.fuzz.KFuzzConfig
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.util.concurrent.atomic.AtomicReference
@@ -17,6 +16,7 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
+import kotlinx.fuzz.KFuzzConfig
 
 object Launcher {
     private val config = KFuzzConfig.fromSystemProperties()
@@ -25,12 +25,12 @@ object Launcher {
     @JvmStatic
     fun main(args: Array<String>) {
         if (args.size != 2) {
-            println("Usage: <full.class.Name> <methodName>")
+            // TODO Log.error "Usage: <full.class.Name> <methodName>"
             exitProcess(1)
         }
         val className = args[0]
         val methodName = args[1]
-        println("Running $className::$methodName")
+        // TODO Log.debug  "Running $className::$methodName"
 
         val targetClass = Class.forName(className).kotlin
         val targetMethod = targetClass.memberFunctions.single { it.name == methodName }.javaMethod!!
@@ -38,15 +38,13 @@ object Launcher {
 
         initJazzer()
 
-
         val error = runTarget(instance, targetMethod)
-        if (error != null) {
+        error?.let {
             System.err.println(error)
             exitProcess(1)
         }
         exitProcess(0)
     }
-
 
     @OptIn(ExperimentalPathApi::class)
     fun runTarget(instance: Any, method: Method): Throwable? {
@@ -56,8 +54,11 @@ object Launcher {
 
         if (config.dumpCoverage) {
             val coverageFile = config.workDir
-                .resolve("coverage").createDirectories()
-                .resolve("${method.fullName}.exec").absolute().toString()
+                .resolve("coverage")
+                .createDirectories()
+                .resolve("${method.fullName}.exec")
+                .absolute()
+                .toString()
             Opt.coverageDump.setIfDefault(coverageFile)
         }
 

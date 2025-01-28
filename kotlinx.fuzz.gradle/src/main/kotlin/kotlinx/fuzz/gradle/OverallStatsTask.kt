@@ -22,34 +22,35 @@ abstract class OverallStatsTask : DefaultTask() {
 
     companion object {
         private fun processCsvFiles(inputDir: Path, outputFile: Path) {
-            val collectedRows = mutableListOf<List<String>>()
-            var headerRow: List<String>? = null
+            val csvFiles = inputDir.listDirectoryEntries("*.csv")
+            val expectedHeader =
+                csvFiles.firstOrNull()
+                    ?.useLines { it.firstOrNull() }
+                    ?.split(',')
+                    ?.map { it.trim() }
+                    ?: error("Can't compute overall stats: no CSV files found in $inputDir")
 
-            val csvFiles =
-                inputDir.listDirectoryEntries().filter { file -> file.extension == "csv" }
+            val collectedRows = mutableListOf<List<String>>()
 
             for (file in csvFiles) {
                 val rows = file.readLines()
 
                 if (rows.isNotEmpty()) {
-                    val originalHeader = rows.first()
-                    val dataRows = rows.drop(1)
+                    val currentHeader = rows.first().split(",").map { it.trim() }
+                    check(currentHeader == expectedHeader) { "CSV file $file has different header. Expected '$expectedHeader' but got '$currentHeader'" }
+                    val lastRow = rows.drop(1).lastOrNull()
 
-                    if (dataRows.isNotEmpty()) {
-                        val lastRow = dataRows.last()
-
-                        headerRow ?: run {
-                            headerRow = listOf("target name") + originalHeader
-                        }
-
+                    lastRow?.let {
                         val newRow = listOf(file.nameWithoutExtension) + lastRow
                         collectedRows.add(newRow)
                     }
+                    // TODO: else { log.warn }
                 }
             }
 
-            if (headerRow != null && collectedRows.isNotEmpty()) {
-                outputFile.writeText(headerRow.joinToString(separator = ",", postfix = "\n"))
+            if (collectedRows.isNotEmpty()) {
+                outputFile.writeText("target name,")
+                outputFile.appendText(expectedHeader.joinToString(separator = ",", postfix = "\n"))
                 outputFile.appendLines(collectedRows.map { it.joinToString(separator = ",") })
             } else {
                 error("Can't compute overall stats: no CSV files found in $inputDir or no data rows found in any of them")
