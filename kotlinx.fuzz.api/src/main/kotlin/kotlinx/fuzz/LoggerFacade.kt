@@ -40,7 +40,7 @@ class LoggerFacade(clazz: Class<*>) {
     fun error(message: () -> String) = log.error(message())
 
     companion object {
-        const val logLevelProperty = "kotlinx.fuzz.logging.level"
-        private val logLevel: LogLevel = LogLevel.valueOf(System.getProperty(logLevelProperty).uppercase())
+        const val LOG_LEVEL_PROPERTY = "kotlinx.fuzz.logging.level"
+        private val logLevel: LogLevel = LogLevel.valueOf(System.getProperty(LOG_LEVEL_PROPERTY).uppercase())
     }
 }

@@ -42,10 +42,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 
     private fun Test.configureLogging(project: Project) {
-        val userLoggingLevel = System.getProperty(LoggerFacade.logLevelProperty)
+        val userLoggingLevel = System.getProperty(LoggerFacade.LOG_LEVEL_PROPERTY)
         val projectLogLevel = project.gradle.startParameter.logLevel
 
-        systemProperties[LoggerFacade.logLevelProperty] = when {
+        systemProperties[LoggerFacade.LOG_LEVEL_PROPERTY] = when {
             userLoggingLevel in LogLevel.values().map { it.name } -> userLoggingLevel
             projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
             else -> projectLogLevel.name
