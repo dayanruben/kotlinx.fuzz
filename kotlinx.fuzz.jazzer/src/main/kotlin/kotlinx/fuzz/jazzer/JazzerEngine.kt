@@ -48,6 +48,14 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         )
     }
 
+    private fun Throwable.filter(): Throwable {
+        val newThrowable = Throwable(cause?.filter())
+        newThrowable.stackTrace = stackTrace.takeWhile {
+            it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
+        }.toTypedArray()
+        return newThrowable
+    }
+
     @OptIn(ExperimentalPathApi::class, ExperimentalStdlibApi::class)
     override fun runTarget(instance: Any, method: Method): Throwable? {
         val libFuzzerArgs = mutableListOf("fake_argv0")
@@ -64,20 +72,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             val file = Paths.get(Opt.reproducerPath.get(), "stacktrace-$hash")
             if (!file.exists()) {
                 file.createFile()
-                var indexOfFirstInternalFrame = finding.stackTrace.indexOfFirst {
-                    it.className == "kotlinx.fuzz.jazzer.JazzerTarget" && it.methodName == "fuzzTargetOne"
-                }
-                var inCausedBy = false
-                val stackTraceString = finding.stackTraceToString()
-                file.writeText(stackTraceString.split("\n").filter {
-                    if (!inCausedBy && it.trim().startsWith("at")) {
-                        indexOfFirstInternalFrame -= 1
-                        return@filter indexOfFirstInternalFrame >= 0
-                    } else if (it.trim().startsWith("Caused by")) {
-                        inCausedBy = true
-                    }
-                    return@filter true
-                }.joinToString("\n"))
+                file.writeText(finding.filter().stackTraceToString())
             }
         }
 
