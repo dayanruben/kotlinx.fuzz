@@ -1,11 +1,11 @@
 package kotlinx.fuzz.jazzer
 
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
 import java.io.ObjectInputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
+import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KFuzzEngine
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -18,9 +18,6 @@ internal val KFuzzConfig.logsDir: Path
 
 internal val KFuzzConfig.exceptionsDir: Path
     get() = workDir.resolve("exceptions")
-
-internal fun KFuzzConfig.exceptionPath(method: Method): Path =
-    exceptionsDir.resolve("${method.fullName}.exception")
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
@@ -70,6 +67,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         }
     }
 }
+
+internal fun KFuzzConfig.exceptionPath(method: Method): Path =
+    exceptionsDir.resolve("${method.fullName}.exception")
 
 /**
  * Reads a Throwable from the specified [path].

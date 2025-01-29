@@ -55,11 +55,22 @@ abstract class FuzzTask : Test() {
 @Suppress("unused")
 fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     val buildDir = layout.buildDirectory.get()
-    val config = KFuzzConfigBuilder.build {
-        workDir = buildDir.dir("fuzz").asFile.toPath()
-        block()
-    }
+    val defaultWorkDir = buildDir.dir("fuzz").asFile.toPath()
+    // TODO: remove `tryOrNull` when do proper fix for KFuzzConfig
+    val config = tryOrNull {
+        KFuzzConfigBuilder.build {
+            workDir = defaultWorkDir
+            block()
+        }
+    } ?: KFuzzConfigBuilder.build(block)
+
     tasks.withType<FuzzTask>().forEach { task ->
         task.fuzzConfig = config
     }
+}
+
+private inline fun <T> tryOrNull(block: () -> T): T? = try {
+    block()
+} catch (_: Throwable) {
+    null
 }

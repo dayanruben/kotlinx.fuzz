@@ -6,7 +6,6 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
-import kotlinx.fuzz.KFuzzConfig
 import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -20,6 +19,7 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
+import kotlinx.fuzz.KFuzzConfig
 
 object JazzerLauncher {
     private val config = KFuzzConfig.fromSystemProperties()
@@ -98,7 +98,6 @@ object JazzerLauncher {
         )
     }
 }
-
 
 /**
  * Serializes [throwable] to the specified [path].
