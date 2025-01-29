@@ -144,7 +144,6 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
     override fun getValue(thisRef: Any, property: KProperty<*>): T = get()
 
     override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
-        assertCanSet()
         cachedValue = value
     }
 

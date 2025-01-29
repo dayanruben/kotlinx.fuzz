@@ -50,14 +50,4 @@ object FuzzConfigBuilderTest {
             }
         }
     }
-
-    @Test
-    fun `can't set option twice`() {
-        assertThrows<IllegalStateException> {
-            KFuzzConfigBuilder.build {
-                fuzzEngine = "once"
-                fuzzEngine = "twice"
-            }
-        }
-    }
 }
