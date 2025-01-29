@@ -1,11 +1,11 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KFuzzEngine
 import java.io.ObjectInputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -47,12 +47,13 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         pb.redirectError(config.logsDir.resolve("${method.fullName}.err").toFile())
         pb.redirectOutput(config.logsDir.resolve("${method.fullName}.log").toFile())
 
-        val res = pb.start().waitFor()
-        if (res == 0) {
-            return null
+        val exitCode = pb.start().waitFor()
+        return when (exitCode) {
+            0 -> null
+            else -> deserializeException(config.exceptionPath(method))
+                ?: Error("Failed to deserialize exception for target '${method.fullName}'")
+            // TODO log.error (or warn?)
         }
-        return deserializeException(config.exceptionPath(method))
-            ?: Error("Failed to deserialize exception for target '${method.fullName}'")
     }
 
     override fun finishExecution() {
