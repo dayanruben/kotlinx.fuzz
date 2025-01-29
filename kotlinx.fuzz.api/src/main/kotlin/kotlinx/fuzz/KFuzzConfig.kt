@@ -1,5 +1,8 @@
 package kotlinx.fuzz
 
+import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.absolutePathString
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
@@ -19,6 +22,8 @@ import kotlin.time.Duration.Companion.seconds
  * (custom and built-in).
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
+ * @param runMode - Regression or fuzzing. Default: regression_fuzzing
+ * @param reproducerPath - Path to store reproducers. Default: .
  */
 interface KFuzzConfig {
     val fuzzEngine: String
@@ -27,6 +32,8 @@ interface KFuzzConfig {
     val instrument: List<String>
     val customHookExcludes: List<String>
     val maxSingleTargetFuzzTime: Duration
+    val runMode: RunMode
+    val reproducerPath: Path
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -72,6 +79,18 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
     )
+    override var runMode: RunMode by KFuzzConfigProperty(
+        "kotlinx.fuzz.runMode",
+        defaultValue = RunMode.REGRESSION,
+        toString = { it.toString() },
+        fromString = { RunMode.valueOf(it.uppercase()) },
+    )
+    override var reproducerPath: Path by KFuzzConfigProperty(
+        "kotlinx.fuzz.reproducerPath",
+        defaultValue = Paths.get("."),
+        toString = { it.absolutePathString() },
+        fromString = { Paths.get(it) },
+    )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
         .associate { it.systemProperty to it.stringValue }
@@ -97,6 +116,10 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
             validate()
         }
     }
+}
+
+enum class RunMode {
+    FUZZING, REGRESSION, REGRESSION_FUZZING
 }
 
 /**

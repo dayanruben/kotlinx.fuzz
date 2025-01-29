@@ -1,3 +1,4 @@
+import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.gradle.fuzzConfig
 import kotlin.time.Duration.Companion.seconds
 
@@ -18,6 +19,8 @@ dependencies {
 }
 
 fuzzConfig {
+    keepGoing = 10
+    runMode = RunMode.REGRESSION
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 3600.seconds
 }

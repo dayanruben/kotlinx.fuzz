@@ -1,4 +1,5 @@
 @file:Suppress("UNCHECKED_CAST", "VARIABLE_WITH_REDUNDANT_INITIALIZER")
+
 package kotlinx.fuzz.test
 
 import kotlinx.fuzz.*
@@ -20,7 +21,7 @@ object ProtobufTests {
         TENTH(size = 10, value = "tenth"),
         ELEVENTH(size = 11, value = "eleventh"),
     }
-    
+
 
     private fun checkCauses(e: Throwable, pred: (String?) -> Boolean): Boolean {
         if (pred(e.message)) return true
@@ -28,16 +29,17 @@ object ProtobufTests {
         return checkCauses(e.cause!!, pred)
     }
 
-    private fun handleIllegalArgumentException(e: IllegalArgumentException, bytes: ByteArray) {
+    private fun handleIllegalArgumentException(e: IllegalArgumentException) {
         if (e.message != null &&
             (e.message == "Cannot read polymorphic value before its type token" ||
                     e.message!!.startsWith("Polymorphic value has not been read for class")) ||
             e.message!!.matches(Regex("startIndex: .+ > endIndex: .+")) ||
-            (e.message == "Polymorphic value has not been read for class null")) return
+            (e.message == "Polymorphic value has not been read for class null")
+        ) return
         throw e
     }
 
-    private fun handleSerializationException(e: SerializationException, bytes: ByteArray) {
+    private fun handleSerializationException(e: SerializationException) {
         if (e.message == null) {
             throw e
         }
@@ -55,14 +57,20 @@ object ProtobufTests {
             e.message == "Element 'value' is missing" ||
             e.message == "Element 'key' is missing" ||
             e.message == "Field 'value' is required for type with serial name 'org.plan.research.ProtobufMessageInt', but it was missing" ||
-            checkCauses(e) {s -> s != null && s.matches(Regex(".+ is not among valid .+ enum proto numbers")) }
+            checkCauses(e) { s -> s != null && s.matches(Regex(".+ is not among valid .+ enum proto numbers")) }
         ) return
 
-        if (e.message!!.matches(Regex("""Serializer for subclass .+ is not found in the polymorphic scope of .+""", RegexOption.DOT_MATCHES_ALL))) return
+        if (e.message!!.matches(
+                Regex(
+                    """Serializer for subclass .+ is not found in the polymorphic scope of .+""",
+                    RegexOption.DOT_MATCHES_ALL
+                )
+            )
+        ) return
 
         throw e
     }
-    
+
     private fun <T> KFuzzer.generateProtobufMessage(
         clazz: Class<T>,
         maxStrLength: Int,
@@ -94,7 +102,7 @@ object ProtobufTests {
 
         return res
     }
-    
+
     @Serializable
     data class ListInt(val value: List<Int>)
 
@@ -336,12 +344,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<Int>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<Int>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -353,12 +362,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<Long>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<Long>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -370,12 +380,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<Float>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<Float>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -387,12 +398,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<Double>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<Double>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -404,12 +416,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<String>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<String>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -421,12 +434,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<Boolean>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<Boolean>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -438,12 +452,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<TestEnum>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<TestEnum>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -455,12 +470,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<OneOfType>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<OneOfType>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -472,12 +488,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<ListInt>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<ListInt>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -489,12 +506,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<MapStringInt>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<MapStringInt>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
@@ -506,12 +524,13 @@ object ProtobufTests {
                 var message: ProtobufMessage<ProtobufMessageInt>? = null
                 try {
                     message = serializer.decodeFromByteArray<ProtobufMessage<ProtobufMessageInt>>(bytes)
-                    if (bytes.size > 10 && serializer.encodeToByteArray(message).size > 10) assertEquals(bytes, serializer.encodeToByteArray(message))
+                    assertEquals(bytes, serializer.encodeToByteArray(message))
                 } catch (e: SerializationException) {
-                    handleSerializationException(e, bytes)
+                    handleSerializationException(e)
                 } catch (e: IllegalArgumentException) {
-                    handleIllegalArgumentException(e, bytes)
-                } catch (_: IndexOutOfBoundsException) {} catch(_: MissingFieldException) {
+                    handleIllegalArgumentException(e)
+                } catch (_: IndexOutOfBoundsException) {
+                } catch (_: MissingFieldException) {
                 } catch (e: AssertionError) {
                     throw e
                 }
