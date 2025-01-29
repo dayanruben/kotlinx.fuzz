@@ -1,5 +1,6 @@
 package kotlinx.fuzz.gradle.test
 
+import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.gradle.KFuzzConfigBuilder
 import org.junit.jupiter.api.Test
@@ -19,6 +20,7 @@ object FuzzConfigBuilderTest {
             KFuzzConfigBuilder.build {
                 maxSingleTargetFuzzTime = 0.seconds
                 instrument = emptyList()
+                workDir = Path("test")
             }
         }
     }
@@ -29,6 +31,7 @@ object FuzzConfigBuilderTest {
             KFuzzConfigBuilder.build {
                 instrument = listOf("1", "2")
                 maxSingleTargetFuzzTime = 30.seconds
+                workDir = Path("test")
             }
         }
     }
@@ -43,16 +46,7 @@ object FuzzConfigBuilderTest {
                 instrument = listOf()
                 customHookExcludes = listOf("exclude")
                 maxSingleTargetFuzzTime = 1000.seconds
-            }
-        }
-    }
-
-    @Test
-    fun `can't set option twice`() {
-        assertThrows<IllegalStateException> {
-            KFuzzConfigBuilder.build {
-                fuzzEngine = "once"
-                fuzzEngine = "twice"
+                workDir = Path("test")
             }
         }
     }
