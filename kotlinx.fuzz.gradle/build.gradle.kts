@@ -11,6 +11,9 @@ dependencies {
     gradleApi()
     implementation(kotlin("reflect"))
     implementation(libs.junit.platform.engine)
+    implementation(libs.jacoco.core)
+    implementation(libs.jacoco.report)
+
 
     testImplementation(libs.junit.platform.testkit)
     testImplementation(libs.junit.jupiter)

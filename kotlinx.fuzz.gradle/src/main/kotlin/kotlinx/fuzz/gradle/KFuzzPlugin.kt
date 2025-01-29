@@ -112,6 +112,10 @@ abstract class FuzzTask : Test() {
     private fun overallStats() {
         val workDir = fuzzConfig.workDir
         overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
+
+        if (fuzzConfig.dumpCoverage) {
+            jacocoMerge(workDir.resolve("coverage"), workDir.resolve("merged-coverage.exec"))
+        }
     }
 }
 
