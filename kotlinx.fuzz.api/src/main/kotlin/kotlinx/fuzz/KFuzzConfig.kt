@@ -1,6 +1,7 @@
 package kotlinx.fuzz
 
 import java.nio.file.Path
+import java.nio.file.Paths
 import kotlin.io.path.*
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
@@ -25,7 +26,7 @@ import kotlin.time.Duration.Companion.seconds
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
  * @param runMode - Regression or fuzzing. Default: regression_fuzzing
- * @param reproducerPath - Path to store reproducers. Default: .
+ * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
  */
 interface KFuzzConfig {
     val fuzzEngine: String
@@ -102,7 +103,6 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
         "kotlinx.fuzz.reproducerPath",
-        defaultValue = Path("."),
         toString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
