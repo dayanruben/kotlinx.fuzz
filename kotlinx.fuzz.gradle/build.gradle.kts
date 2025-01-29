@@ -35,6 +35,10 @@ gradlePlugin {
 val logLevelProperty = "kotlinx.fuzz.logging.level"
 val loggerImplementationProperty = "kotlinx.fuzz.logger.implementation"
 
+/**
+ * Configures logging as in kotlinx.fuzz.gradle/src/main/kotlin/kotlinx/fuzz/gradle/KFuzzPlugin.kt
+ * If changed, consider changing there as well
+ */
 tasks.test {
     val property = System.getProperty(logLevelProperty)
     systemProperties[logLevelProperty] = when {

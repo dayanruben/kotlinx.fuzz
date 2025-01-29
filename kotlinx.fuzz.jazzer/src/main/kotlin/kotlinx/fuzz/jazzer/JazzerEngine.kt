@@ -36,11 +36,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         // spawn subprocess, redirect output to log and err files
         val classpath = System.getProperty("java.class.path")
         val javaCommand = System.getProperty("java.home") + "/bin/java"
-        val properties =
-            config.toPropertiesMap().map { (key, value) -> "-D$key=$value" }.toMutableList()
-        for ((property, value) in System.getProperties()) {
-            properties += "-D$property=$value"
-        }
+        val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
 
         val pb = ProcessBuilder(
             javaCommand,

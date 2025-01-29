@@ -1,8 +1,5 @@
 package kotlinx.fuzz
 
-import com.github.curiousoddman.rgxgen.config.RgxGenOption
-import com.github.curiousoddman.rgxgen.config.RgxGenProperties
-import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import java.nio.charset.Charset
 import kotlin.text.Charsets
 
@@ -495,32 +492,6 @@ interface KFuzzer {
         val allowedCharacters: CharacterSet? = null,
         val allowedWhitespaces: CharacterSet = CharacterSet.WHITESPACES,
     ) {
-        fun asRegexProperties(): RgxGenProperties {
-            val properties = RgxGenProperties()
-            RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(
-                properties,
-                this.maxInfinitePatternLength,
-            )
-
-            RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, caseInsensitive)
-            allowedCharacters?.let {
-                RgxGenOption.DOT_MATCHES_ONLY.setInProperties(
-                    properties,
-                    allowedCharacters.toRgxGenProperties(),
-                )
-            }
-
-            val rgxGenWhiteSpaces = WhitespaceChar.entries.associateBy { it.get() }
-            RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
-                properties,
-                allowedWhitespaces.map {
-                    rgxGenWhiteSpaces[it]
-                        ?: error("$it is not a valid whitespace character, valid characters are: ${WhitespaceChar.entries.map { it.get() }}")
-                },
-            )
-            return properties
-        }
-
         companion object {
             val DEFAULT = RegexConfiguration()
         }

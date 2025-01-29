@@ -7,7 +7,7 @@ object KLoggerFactory {
     const val LOGGER_IMPLEMENTATION_PROPERTY = "kotlinx.fuzz.logger.implementation"
 
     fun getLogger(clazz: Class<*>): KLogger {
-        val loggerImplementation = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY, DefaultLogger::class.qualifiedName!!)
+        val loggerImplementation = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY, NoOpLogger::class.qualifiedName!!)
         return Class.forName(loggerImplementation)
             .kotlin
             .primaryConstructor!!
@@ -22,7 +22,7 @@ abstract class KLogger(clazz: Class<*>) {
     abstract fun error(message: () -> String)
 }
 
-class DefaultLogger(clazz: Class<*>) : KLogger(clazz) {
+class NoOpLogger(clazz: Class<*>) : KLogger(clazz) {
     override fun debug(message: () -> String) {}
     override fun info(message: () -> String) {}
     override fun warn(message: () -> String) {}

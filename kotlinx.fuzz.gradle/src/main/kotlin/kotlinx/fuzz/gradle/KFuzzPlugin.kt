@@ -41,6 +41,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
     }
 
+    /**
+     * Configures logging as in kotlinx.fuzz.gradle/build.gradle.kts and in buildSrc/src/main/kotlin/kotlinx.fuzz.src-module.gradle.kts
+     * If changed, consider changing there as well
+     */
     private fun Test.configureLogging(project: Project) {
         val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
         val projectLogLevel = project.gradle.startParameter.logLevel

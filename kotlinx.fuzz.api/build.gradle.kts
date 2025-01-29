@@ -3,7 +3,6 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.rgxgen)
     implementation(libs.junit.platform.engine)
     implementation(kotlin("reflect"))
 
