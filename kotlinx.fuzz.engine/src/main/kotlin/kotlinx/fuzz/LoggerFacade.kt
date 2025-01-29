@@ -5,23 +5,10 @@ import kotlin.reflect.full.primaryConstructor
 object KLoggerFactory {
     const val LOGGER_IMPLEMENTATION_PROPERTY = "kotlinx.fuzz.logger.implementation"
 
-    private var loggerImplementation: String? = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY)
-
-    fun getLogger(clazz: Class<*>): KLogger =
-        loggerImplementation?.let {
-            try {
-                val loggerClass = Class.forName(it).kotlin
-                val constructor = loggerClass.primaryConstructor
-                if (constructor != null) {
-                    constructor.call(clazz) as? KLogger
-                } else {
-                    loggerClass.objectInstance as? KLogger
-                }
-            } catch (e: Exception) {
-                println("Failed to load logger implementation: $it, using DefaultLogger. Error: ${e.message}")
-                DefaultLogger(clazz)
-            }
-        } ?: DefaultLogger(clazz)
+    fun getLogger(clazz: Class<*>): KLogger {
+        val loggerImplementation = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY, DefaultLogger::class.qualifiedName!!)
+        return Class.forName(loggerImplementation).kotlin.primaryConstructor!!.call(clazz) as KLogger
+    }
 }
 
 
