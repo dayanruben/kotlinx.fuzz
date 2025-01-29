@@ -35,12 +35,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 includeEngines("kotlinx.fuzz")
             }
         }
-
-        project.tasks.register<OverallStatsTask>("overall-stats") {
-            inputDir.set(project.layout.buildDirectory.dir("fuzz/stats"))
-            outputFile = project.layout.buildDirectory.dir("fuzz").get()
-                .file("overall-stats.csv").asFile.toPath()
-        }
     }
 }
 
@@ -49,7 +43,14 @@ abstract class FuzzTask : Test() {
     internal lateinit var fuzzConfig: KFuzzConfig
 
     @TaskAction
-    fun action(): Unit = Unit
+    fun action() {
+        overallStats()
+    }
+
+    private fun overallStats() {
+        val workDir = fuzzConfig.workDir
+        overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
+    }
 }
 
 @Suppress("unused")

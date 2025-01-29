@@ -1,11 +1,11 @@
 package kotlinx.fuzz.jazzer
 
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
 import java.io.ObjectInputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
+import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KFuzzEngine
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
