@@ -493,8 +493,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     }
 
     override fun string(regex: Regex, configuration: RegexConfiguration): String {
-         val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
-         return rgxGen.generate(this)
+        val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
+        return rgxGen.generate(this)
     }
 
     override fun stringOrNull(regex: Regex, configuration: RegexConfiguration) = when {

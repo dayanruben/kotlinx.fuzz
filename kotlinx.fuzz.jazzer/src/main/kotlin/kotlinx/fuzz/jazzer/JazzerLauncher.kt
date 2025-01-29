@@ -23,14 +23,14 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KLoggerFactory
 
 object JazzerLauncher {
+    private val log = KLoggerFactory.getLogger(JazzerLauncher::class.java)
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
-    private val log = KLoggerFactory.getLogger(JazzerLauncher::class.java)
 
     @JvmStatic
     fun main(args: Array<String>) {
         if (args.size != 2) {
-            log.error {  "Usage: <full.class.Name> <methodName>" }
+            log.error { "Usage: <full.class.Name> <methodName>" }
             exitProcess(1)
         }
         // arg[0] - fully qualified name of the class containing fuzz target

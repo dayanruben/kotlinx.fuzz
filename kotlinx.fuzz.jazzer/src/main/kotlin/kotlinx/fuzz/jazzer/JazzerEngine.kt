@@ -22,8 +22,8 @@ internal val KFuzzConfig.exceptionsDir: Path
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
-    private val jazzerConfig = JazzerConfig.fromSystemProperties()
     private val log = KLoggerFactory.getLogger(JazzerEngine::class.java)
+    private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     override fun initialise() {
         config.corpusDir.createDirectories()
@@ -57,11 +57,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             0 -> null
             else -> {
                 val deserializedException = deserializeException(config.exceptionPath(method))
-                if (deserializedException == null) {
+                deserializedException ?: run {
                     log.error { "Failed to deserialize exception for target '${method.fullName}'" }
                     Error("Failed to deserialize exception for target '${method.fullName}'")
-                } else {
-                    deserializedException
                 }
             }
         }

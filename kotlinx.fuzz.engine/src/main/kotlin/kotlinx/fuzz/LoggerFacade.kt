@@ -2,15 +2,18 @@ package kotlinx.fuzz
 
 import kotlin.reflect.full.primaryConstructor
 
+@Suppress("OBJECT_NAME_INCORRECT")
 object KLoggerFactory {
     const val LOGGER_IMPLEMENTATION_PROPERTY = "kotlinx.fuzz.logger.implementation"
 
     fun getLogger(clazz: Class<*>): KLogger {
         val loggerImplementation = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY, DefaultLogger::class.qualifiedName!!)
-        return Class.forName(loggerImplementation).kotlin.primaryConstructor!!.call(clazz) as KLogger
+        return Class.forName(loggerImplementation)
+            .kotlin
+            .primaryConstructor!!
+            .call(clazz) as KLogger
     }
 }
-
 
 abstract class KLogger(clazz: Class<*>) {
     abstract fun debug(message: () -> String)

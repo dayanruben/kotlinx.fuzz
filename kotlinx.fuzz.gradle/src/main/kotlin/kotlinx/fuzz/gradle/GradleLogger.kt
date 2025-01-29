@@ -5,7 +5,7 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
-class GradleLogger(clazz: Class<*>): KLogger(clazz) {
+class GradleLogger(clazz: Class<*>) : KLogger(clazz) {
     private val log: Logger = Logging.getLogger(clazz)
 
     override fun debug(message: () -> String) {
