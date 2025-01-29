@@ -495,7 +495,7 @@ interface KFuzzer {
         val allowedCharacters: CharacterSet? = null,
         val allowedWhitespaces: CharacterSet = CharacterSet.WHITESPACES,
     ) {
-        internal fun asRegexProperties(): RgxGenProperties {
+        fun asRegexProperties(): RgxGenProperties {
             val properties = RgxGenProperties()
             RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(
                 properties,

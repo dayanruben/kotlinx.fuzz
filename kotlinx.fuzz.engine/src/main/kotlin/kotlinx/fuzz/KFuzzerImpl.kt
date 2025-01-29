@@ -81,7 +81,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     /**
      * Implementation taken from #Random.next
      */
-    override fun next(bits: Int): Int = (int() ushr (48 - bits)).toInt()
+    override fun next(bits: Int): Int = (int() ushr (48 - bits))
 
     override fun boolean(): Boolean = iterator.readBoolean()
 
@@ -493,8 +493,8 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     }
 
     override fun string(regex: Regex, configuration: RegexConfiguration): String {
-        val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
-        return rgxGen.generate(this)
+         val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
+         return rgxGen.generate(this)
     }
 
     override fun stringOrNull(regex: Regex, configuration: RegexConfiguration) = when {

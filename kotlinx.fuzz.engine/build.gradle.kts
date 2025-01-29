@@ -3,9 +3,9 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":kotlinx.fuzz.api"))
+    implementation(gradleApi())
     implementation(libs.rgxgen)
-    implementation(libs.junit.platform.engine)
-    implementation(kotlin("reflect"))
 
     testRuntimeOnly(libs.junit.jupiter)
 }

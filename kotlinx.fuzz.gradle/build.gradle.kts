@@ -5,6 +5,7 @@ plugins {
 }
 
 dependencies {
+    implementation(project(":kotlinx.fuzz.engine"))
     implementation(project(":kotlinx.fuzz.api"))
 
     gradleApi()
