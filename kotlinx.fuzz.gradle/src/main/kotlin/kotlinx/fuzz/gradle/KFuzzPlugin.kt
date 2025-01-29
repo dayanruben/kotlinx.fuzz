@@ -43,12 +43,25 @@ abstract class FuzzTask : Test() {
     internal lateinit var fuzzConfig: KFuzzConfig
 
     @TaskAction
-    fun action(): Unit = Unit
+    fun action() {
+        overallStats()
+    }
+
+    private fun overallStats() {
+        val workDir = fuzzConfig.workDir
+        overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
+    }
 }
 
 @Suppress("unused")
 fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
-    val config = KFuzzConfigBuilder.build(block)
+    val buildDir = layout.buildDirectory.get()
+    val defaultWorkDir = buildDir.dir("fuzz").asFile.toPath()
+    val config = KFuzzConfigBuilder.build {
+        workDir = defaultWorkDir
+        block()
+    }
+
     tasks.withType<FuzzTask>().forEach { task ->
         task.fuzzConfig = config
     }

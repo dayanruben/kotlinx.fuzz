@@ -1,8 +1,7 @@
 package kotlinx.fuzz
 
 import java.nio.file.Path
-import java.nio.file.Paths
-import kotlin.io.path.absolutePathString
+import kotlin.io.path.*
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
@@ -19,6 +18,9 @@ import kotlin.time.Duration.Companion.seconds
  * @param keepGoing - how many bugs to discover before finishing fuzzing. Default: 1
  * @param instrument - glob patterns matching names of classes that should be instrumented for fuzzing
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
+ * @param workDir - Directory where the all fuzzing results will be stored. Default: `build/fuzz`
+ * @param dumpCoverage - Whether fuzzer will generate jacoco .exec files.
+ * Default: true
  * (custom and built-in).
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
@@ -32,6 +34,8 @@ interface KFuzzConfig {
     val instrument: List<String>
     val customHookExcludes: List<String>
     val maxSingleTargetFuzzTime: Duration
+    val workDir: Path
+    val dumpCoverage: Boolean
     val runMode: RunMode
     val reproducerPath: Path
 
@@ -79,6 +83,17 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
     )
+    override var workDir: Path by KFuzzConfigProperty(
+        "kotlinx.fuzz.workDir",
+        toString = { it.toString() },
+        fromString = { Path(it).absolute() },
+    )
+    override var dumpCoverage: Boolean by KFuzzConfigProperty(
+        "kotlinx.fuzz.dumpCoverage",
+        defaultValue = true,
+        toString = { it.toString() },
+        fromString = { it.toBooleanStrict() },
+    )
     override var runMode: RunMode by KFuzzConfigProperty(
         "kotlinx.fuzz.runMode",
         defaultValue = RunMode.REGRESSION_FUZZING,
@@ -87,9 +102,9 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
         "kotlinx.fuzz.reproducerPath",
-        defaultValue = Paths.get("."),
+        defaultValue = Path("."),
         toString = { it.absolutePathString() },
-        fromString = { Paths.get(it) },
+        fromString = { Path(it).absolute() },
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
