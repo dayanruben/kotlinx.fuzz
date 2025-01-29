@@ -1,7 +1,7 @@
 package kotlinx.fuzz.gradle
 
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.LoggerFacade
+import kotlinx.fuzz.KLoggerFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.logging.LogLevel
@@ -42,14 +42,16 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 
     private fun Test.configureLogging(project: Project) {
-        val userLoggingLevel = System.getProperty(LoggerFacade.LOG_LEVEL_PROPERTY)
+        val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
         val projectLogLevel = project.gradle.startParameter.logLevel
 
-        systemProperties[LoggerFacade.LOG_LEVEL_PROPERTY] = when {
+        systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
             userLoggingLevel in LogLevel.values().map { it.name } -> userLoggingLevel
             projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
             else -> projectLogLevel.name
         }
+
+        systemProperties[KLoggerFactory.LOGGER_IMPLEMENTATION_PROPERTY] = GradleLogger::class.qualifiedName
 
         testLogging {
             events("passed", "skipped", "failed")

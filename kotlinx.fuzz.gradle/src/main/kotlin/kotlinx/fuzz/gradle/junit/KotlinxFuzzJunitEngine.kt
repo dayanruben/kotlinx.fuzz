@@ -15,7 +15,7 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val log = LoggerFacade(KotlinxFuzzJunitEngine::class.java)
+    private val log = KLoggerFactory.getLogger(KotlinxFuzzJunitEngine::class.java)
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily

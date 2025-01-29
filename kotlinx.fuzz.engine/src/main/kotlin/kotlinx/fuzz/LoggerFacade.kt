@@ -1,46 +1,40 @@
 package kotlinx.fuzz
 
-import org.gradle.api.logging.LogLevel
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
+import kotlin.reflect.full.primaryConstructor
 
-class LoggerFacade(clazz: Class<*>) {
-    private val log: Logger = Logging.getLogger(clazz)
+object KLoggerFactory {
+    const val LOGGER_IMPLEMENTATION_PROPERTY = "kotlinx.fuzz.logger.implementation"
 
-    fun debug(message: () -> String) {
-        if (logLevel <= LogLevel.DEBUG) {
-            log.lifecycle(message())
-        }
-    }
+    private var loggerImplementation: String? = System.getProperty(LOGGER_IMPLEMENTATION_PROPERTY)
 
-    fun info(message: () -> String) {
-        if (logLevel <= LogLevel.INFO) {
-            log.lifecycle(message())
-        }
-    }
+    fun getLogger(clazz: Class<*>): KLogger =
+        loggerImplementation?.let {
+            try {
+                val loggerClass = Class.forName(it).kotlin
+                val constructor = loggerClass.primaryConstructor
+                if (constructor != null) {
+                    constructor.call(clazz) as? KLogger
+                } else {
+                    loggerClass.objectInstance as? KLogger
+                }
+            } catch (e: Exception) {
+                println("Failed to load logger implementation: $it, using DefaultLogger. Error: ${e.message}")
+                DefaultLogger(clazz)
+            }
+        } ?: DefaultLogger(clazz)
+}
 
-    fun lifecycle(message: () -> String) {
-        if (logLevel <= LogLevel.LIFECYCLE) {
-            log.lifecycle(message())
-        }
-    }
 
-    fun warn(message: () -> String) {
-        if (logLevel <= LogLevel.WARN) {
-            log.lifecycle(message())
-        }
-    }
+abstract class KLogger(clazz: Class<*>) {
+    abstract fun debug(message: () -> String)
+    abstract fun info(message: () -> String)
+    abstract fun warn(message: () -> String)
+    abstract fun error(message: () -> String)
+}
 
-    fun quiet(message: () -> String) {
-        if (logLevel <= LogLevel.QUIET) {
-            log.lifecycle(message())
-        }
-    }
-
-    fun error(message: () -> String) = log.error(message())
-
-    companion object {
-        const val LOG_LEVEL_PROPERTY = "kotlinx.fuzz.logging.level"
-        private val logLevel: LogLevel = LogLevel.valueOf(System.getProperty(LOG_LEVEL_PROPERTY).uppercase())
-    }
+class DefaultLogger(clazz: Class<*>) : KLogger(clazz) {
+    override fun debug(message: () -> String) {}
+    override fun info(message: () -> String) {}
+    override fun warn(message: () -> String) {}
+    override fun error(message: () -> String) {}
 }

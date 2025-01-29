@@ -32,7 +32,19 @@ gradlePlugin {
     }
 }
 
+val logLevelProperty = "kotlinx.fuzz.logging.level"
+val loggerImplementationProperty = "kotlinx.fuzz.logger.implementation"
+
 tasks.test {
+    val property = System.getProperty(logLevelProperty)
+    systemProperties[logLevelProperty] = when {
+        property?.uppercase() in LogLevel.values().map { it.name } -> property
+        gradle.startParameter.logLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
+        else -> gradle.startParameter.logLevel.name
+    }
+
+    systemProperties[loggerImplementationProperty] = "kotlinx.fuzz.gradle.GradleLogger"
+
     useJUnitPlatform {
         excludeEngines("kotlinx.fuzz")
     }
