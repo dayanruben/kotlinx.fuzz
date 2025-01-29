@@ -49,11 +49,25 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     private fun Throwable.filter(): Throwable {
-        val newThrowable = Throwable(cause?.filter()).apply {
+        val filteredCause = cause?.filter()
+
+        val newThrowable = (try {
+            this::class.java.getConstructor(String::class.java, Throwable::class.java)
+                .newInstance(message, filteredCause)
+        } catch (e: Exception) {
+            try {
+                cause?.let {
+                    this::class.java.getConstructor(Throwable::class.java).newInstance(filteredCause)
+                } ?: this::class.java.getConstructor(String::class.java).newInstance(message)
+            } catch (e: Exception) {
+                Throwable(message, filteredCause)
+            }
+        }).apply {
             stackTrace = stackTrace.takeWhile {
                 it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
             }.toTypedArray()
         }
+
         return newThrowable
     }
 
