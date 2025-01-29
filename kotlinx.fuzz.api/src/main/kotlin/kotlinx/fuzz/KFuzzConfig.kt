@@ -1,6 +1,8 @@
 package kotlinx.fuzz
 
 import java.nio.file.Path
+import kotlin.io.path.Path
+import kotlin.io.path.absolute
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty1
@@ -17,6 +19,9 @@ import kotlin.time.Duration.Companion.seconds
  * @param keepGoing - how many bugs to discover before finishing fuzzing. Default: 1
  * @param instrument - glob patterns matching names of classes that should be instrumented for fuzzing
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
+ * @param workDir - Directory where the all fuzzing results will be stored. Default: `build/fuzz`
+ * @param dumpCoverage - Whether fuzzer will generate jacoco .exec files.
+ * Default: true
  * (custom and built-in).
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
@@ -78,7 +83,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var workDir: Path by KFuzzConfigProperty(
         "kotlinx.fuzz.workDir",
         toString = { it.toString() },
-        fromString = { Path.of(it) },
+        fromString = { Path(it).absolute() },
     )
     override var dumpCoverage: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.dumpCoverage",

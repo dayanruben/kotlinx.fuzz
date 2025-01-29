@@ -15,7 +15,7 @@ internal val KFuzzConfig.corpusDir: Path
 internal val KFuzzConfig.logsDir: Path
     get() = workDir.resolve("logs")
 
-@Suppress("unused", "SpellCheckingInspection")
+@Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
@@ -36,7 +36,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             javaCommand,
             "-classpath", classpath,
             *properties,
-            Launcher::class.qualifiedName!!,
+            JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
         )
         pb.redirectError(config.logsDir.resolve("${method.fullName}.err").toFile())
@@ -51,6 +51,10 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     override fun finishExecution() {
+        collectStatistics()
+    }
+
+    private fun collectStatistics() {
         val statsDir = config.workDir.resolve("stats").createDirectories()
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
             val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)

@@ -18,7 +18,7 @@ import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
 
-object Launcher {
+object JazzerLauncher {
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
@@ -28,6 +28,8 @@ object Launcher {
             // TODO Log.error "Usage: <full.class.Name> <methodName>"
             exitProcess(1)
         }
+        // arg[0] - fully qualified name of the class containing fuzz target
+        // arg[1] - method name of the fuzz target
         val className = args[0]
         val methodName = args[1]
         // TODO Log.debug  "Running $className::$methodName"
