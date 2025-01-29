@@ -81,7 +81,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var runMode: RunMode by KFuzzConfigProperty(
         "kotlinx.fuzz.runMode",
-        defaultValue = RunMode.REGRESSION,
+        defaultValue = RunMode.REGRESSION_FUZZING,
         toString = { it.toString() },
         fromString = { RunMode.valueOf(it.uppercase()) },
     )

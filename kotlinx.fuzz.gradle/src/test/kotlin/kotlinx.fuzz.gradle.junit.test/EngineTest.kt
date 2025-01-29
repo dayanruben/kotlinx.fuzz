@@ -11,14 +11,16 @@ import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
 
 object EngineTest {
-    object SimpleFuzzTest {
+    object SimpleFailureFuzzTest {
         @KFuzzTest
         fun `failure test`(data: KFuzzer) {
             if (data.boolean()) {
                 error("Expected failure")
             }
         }
+    }
 
+    object SimpleSuccessFuzzTest {
         @KFuzzTest
         fun `success test`(@Suppress("UNUSED_PARAMETER") data: KFuzzer) {
         }
@@ -33,13 +35,23 @@ object EngineTest {
     }
 
     @Test
-    fun `one pass one fail`() {
+    fun `one pass`() {
         EngineTestKit
             .engine(KotlinxFuzzJunitEngine())
-            .selectors(selectClass(SimpleFuzzTest::class.java))
+            .selectors(selectClass(SimpleSuccessFuzzTest::class.java))
             .execute()
             .testEvents()
-            .assertStatistics { it.started(2).succeeded(1).failed(1) }
+            .assertStatistics { it.started(1).succeeded(1).failed(0) }
+    }
+
+    @Test
+    fun `one fail`() {
+        EngineTestKit
+            .engine(KotlinxFuzzJunitEngine())
+            .selectors(selectClass(SimpleFailureFuzzTest::class.java))
+            .execute()
+            .testEvents()
+            .assertStatistics { it.started(1).succeeded(0).failed(1) }
     }
 }
 

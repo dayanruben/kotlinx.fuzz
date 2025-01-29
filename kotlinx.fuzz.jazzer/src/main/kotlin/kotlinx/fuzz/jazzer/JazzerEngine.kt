@@ -70,7 +70,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             },
         )
 
-        return libFuzzerArgs to reproducerPath
+        return libFuzzerArgs to corpusDir
     }
 
     @OptIn(ExperimentalPathApi::class)
