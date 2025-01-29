@@ -6,17 +6,20 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
+import kotlinx.fuzz.KFuzzConfig
+import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
+import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.absolute
 import kotlin.io.path.createDirectories
+import kotlin.io.path.outputStream
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
-import kotlinx.fuzz.KFuzzConfig
 
 object JazzerLauncher {
     private val config = KFuzzConfig.fromSystemProperties()
@@ -42,7 +45,7 @@ object JazzerLauncher {
 
         val error = runTarget(instance, targetMethod)
         error?.let {
-            System.err.println(error)
+            serializeException(error, config.exceptionPath(targetMethod))
             exitProcess(1)
         }
         exitProcess(0)
@@ -93,5 +96,17 @@ object JazzerLauncher {
             JazzerTarget::fuzzTargetOne.javaMethod,
             LifecycleMethodsInvoker.noop(JazzerTarget),
         )
+    }
+}
+
+
+/**
+ * Serializes [throwable] to the specified [path].
+ */
+private fun serializeException(throwable: Throwable, path: Path) {
+    path.outputStream().buffered().use { outputStream ->
+        ObjectOutputStream(outputStream).use { objectOutputStream ->
+            objectOutputStream.writeObject(throwable)
+        }
     }
 }

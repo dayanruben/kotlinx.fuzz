@@ -1,10 +1,11 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KFuzzEngine
+import java.io.ObjectInputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -15,6 +16,12 @@ internal val KFuzzConfig.corpusDir: Path
 internal val KFuzzConfig.logsDir: Path
     get() = workDir.resolve("logs")
 
+internal val KFuzzConfig.exceptionsDir: Path
+    get() = workDir.resolve("exceptions")
+
+internal fun KFuzzConfig.exceptionPath(method: Method): Path =
+    exceptionsDir.resolve("${method.fullName}.exception")
+
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
@@ -22,6 +29,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     override fun initialise() {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
+        config.exceptionsDir.createDirectories()
     }
 
     @OptIn(ExperimentalPathApi::class)
@@ -46,8 +54,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         if (res == 0) {
             return null
         }
-        // TODO: read real exception
-        return Throwable("Jazzer subprocess returned with code $res")
+        return deserializeException(config.exceptionPath(method))
+            ?: Error("Failed to deserialize exception for target '${method.fullName}'")
     }
 
     override fun finishExecution() {
@@ -59,6 +67,17 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
             val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
+        }
+    }
+}
+
+/**
+ * Reads a Throwable from the specified [path].
+ */
+private fun deserializeException(path: Path): Throwable? {
+    path.inputStream().buffered().use { inputStream ->
+        ObjectInputStream(inputStream).use { objectInputStream ->
+            return objectInputStream.readObject() as? Throwable
         }
     }
 }
