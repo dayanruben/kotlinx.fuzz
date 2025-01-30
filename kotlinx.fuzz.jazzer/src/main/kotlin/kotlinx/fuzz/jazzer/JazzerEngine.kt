@@ -22,7 +22,7 @@ internal val KFuzzConfig.exceptionsDir: Path
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
-    private val log = KLoggerFactory.getLogger(JazzerEngine::class.java)
+    private val log = KLoggerFactory.getLogger(JazzerEngine::class)
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     override fun initialise() {

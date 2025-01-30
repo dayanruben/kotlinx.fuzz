@@ -46,11 +46,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
      * If changed, consider changing there as well
      */
     private fun Test.configureLogging(project: Project) {
-        val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
+        val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY, "null")
         val projectLogLevel = project.gradle.startParameter.logLevel
 
         systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
-            userLoggingLevel in LogLevel.values().map { it.name } -> userLoggingLevel
+            userLoggingLevel.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
             projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
             else -> projectLogLevel.name
         }

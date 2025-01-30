@@ -1,5 +1,7 @@
 package kotlinx.fuzz
 
+import java.lang.Class
+import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
 @Suppress("OBJECT_NAME_INCORRECT")
@@ -13,6 +15,8 @@ object KLoggerFactory {
             .primaryConstructor!!
             .call(clazz) as KLogger
     }
+
+    fun getLogger(clazz: KClass<*>) = getLogger(clazz.java)
 }
 
 abstract class KLogger(clazz: Class<*>) {
