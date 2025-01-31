@@ -2,17 +2,12 @@ package kotlinx.fuzz.test
 
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.test.RealUserCode.method1
 
 class AnotherTarget {
 
     @KFuzzTest
     fun test(data: KFuzzer) {
-        if (data.int() % 2 == 0) {
-            if (data.int() % 3 == 2) {
-                if (data.int() % 31 == 11) {
-                    data.boolean()
-                }
-            }
-        }
+        method1(data.int(), data.int(), data.int(), data.boolean())
     }
 }

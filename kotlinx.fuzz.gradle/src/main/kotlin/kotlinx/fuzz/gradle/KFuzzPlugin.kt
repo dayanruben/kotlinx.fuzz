@@ -1,12 +1,16 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KLoggerFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.LogLevel
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
@@ -33,10 +37,17 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
         }
 
+        val sourceSets = project.extensions.getByType(SourceSetContainer::class.java)
+        val mainSourceSet = sourceSets.getByName("main")
+
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
+
+            projectClasspath = mainSourceSet.output.files
+            sourceDirectories = mainSourceSet.allSource.sourceDirectories.files
+
             outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
@@ -104,6 +115,12 @@ abstract class FuzzTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
+    @get:InputFiles
+    internal lateinit var projectClasspath: Set<File>
+
+    @get:InputFiles
+    internal lateinit var sourceDirectories: Set<File>
+
     @TaskAction
     fun action() {
         overallStats()
@@ -114,8 +131,17 @@ abstract class FuzzTask : Test() {
         overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
 
         if (fuzzConfig.dumpCoverage) {
-            jacocoMerge(workDir.resolve("coverage"), workDir.resolve("merged-coverage.exec"))
+            val coverageMerged = workDir.resolve("merged-coverage.exec")
+            jacocoMerge(workDir.resolve("coverage"), coverageMerged)
+
+            jacocoReport(
+                coverageMerged,
+                projectClasspath,
+                sourceDirectories,
+                workDir.resolve("jacoco-report").createDirectories(),
+            )
         }
+        // this.classpath.asPath.let { File(it) }
     }
 }
 
