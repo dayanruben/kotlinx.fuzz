@@ -1,7 +1,7 @@
 plugins {
     id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
-    libs.plugins.gradle.publish
+    alias(libs.plugins.gradle.publish)
 }
 
 dependencies {
@@ -18,8 +18,7 @@ dependencies {
 }
 
 gradlePlugin {
-    // TODO
-    website = "https://jetbrains.com/404"
+    website = "https://github.com/JetBrains-Research/kotlinx.fuzz"
     vcsUrl = "https://github.com/JetBrains-Research/kotlinx.fuzz.git"
     plugins {
         create("kotlinx.fuzz") {
