@@ -21,7 +21,7 @@ dependencies {
 3. Apply `kotlinx.fuzz` plugin to your project:
 ```kotlin
 plugins {
-    id("kotlinx.fuzz") version "0.1.0"
+    id("org.jetbrains.kotlinx.fuzz") version "0.1.0"
 }
 ```
 
