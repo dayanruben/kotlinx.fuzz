@@ -22,7 +22,8 @@ gradlePlugin {
     vcsUrl = "https://github.com/JetBrains-Research/kotlinx.fuzz.git"
     plugins {
         create("kotlinx.fuzz") {
-            id = "kotlinx.fuzz"
+            group = "org.jetbrains"
+            id = "org.jetbrains.kotlinx.fuzz"
             displayName = "kotlinx.fuzz Gradle plugin"
             description = "Gradle plugin for using kotlinx.fuzz"
             tags = listOf("testing", "fuzzing")
