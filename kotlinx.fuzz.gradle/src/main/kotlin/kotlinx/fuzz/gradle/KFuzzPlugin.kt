@@ -17,8 +17,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
     override fun apply(project: Project) {
         project.dependencies {
-            add("testImplementation", "kotlinx.fuzz:kotlinx.fuzz.api")
-            add("testRuntimeOnly", "kotlinx.fuzz:kotlinx.fuzz.gradle")
+            add("testImplementation", "org.jetbrains:kotlinx.fuzz.api")
+            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle")
         }
 
         project.tasks.withType<Test>().configureEach {
