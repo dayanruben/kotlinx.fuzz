@@ -34,7 +34,7 @@ class NoOpLogger(clazz: Class<*>) : KLogger(clazz) {
     override fun error(message: () -> String) {}
 }
 
-class LazyLogger(clazz: Class<*>) : KLogger(clazz) {
+private class LazyLogger(clazz: Class<*>) : KLogger(clazz) {
     private val lazyLog by lazy { KLoggerFactory.loadLogger(clazz) }
 
     override fun debug(message: () -> String) = lazyLog.debug(message)
