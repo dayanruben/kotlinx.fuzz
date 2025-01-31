@@ -40,7 +40,7 @@ val loggerImplementationProperty = "kotlinx.fuzz.logger.implementation"
  * If changed, consider changing there as well
  */
 tasks.test {
-    val property = System.getProperty(logLevelProperty, "null")
+    val property = System.getProperty(logLevelProperty)
     systemProperties[logLevelProperty] = when {
         property?.uppercase() in LogLevel.values().map { it.name } -> property
         gradle.startParameter.logLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
