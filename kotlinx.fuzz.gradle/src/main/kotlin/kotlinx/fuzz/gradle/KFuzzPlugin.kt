@@ -4,6 +4,7 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KLoggerFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
@@ -12,6 +13,8 @@ import org.gradle.kotlin.dsl.*
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
+    val log = KLoggerFactory.getLogger(KFuzzPlugin::class)
+
     override fun apply(project: Project) {
         project.dependencies {
             add("testImplementation", "kotlinx.fuzz:kotlinx.fuzz.api")
@@ -30,7 +33,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
         }
 
+        val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
+            classpath = defaultCP
+            testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
@@ -66,6 +72,32 @@ abstract class KFuzzPlugin : Plugin<Project> {
             showStandardStreams = true
         }
     }
+
+    /**
+     * Finds the default values of classpath and testClassesDir properties of test tasks.
+     * Required to fix https://docs.gradle.org/8.12/userguide/upgrading_version_8.html#test_task_default_classpath for fuzz tests.
+     *
+     * @return the default values of classpath and testClassesDir properties of test tasks
+     */
+    private fun Project.defaultTestParameters(): Pair<FileCollection, FileCollection> =
+        tasks.withType<Test>()
+            .filterNot { it is FuzzTask }
+            .map {
+                log.debug { "Reusing the classpath of the task '${it.name}' for fuzz tests" }
+                it.classpath to it.testClassesDirs
+            }
+            .singleOrNull()
+            ?: run {
+                log.warn { "'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations" }
+                log.warn { "Please, specify them manually in your gradle config using the following syntax:" }
+                log.warn {
+                    """tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }""".trimIndent()
+                }
+                project.files() to project.files()
+            }
 }
 
 abstract class FuzzTask : Test() {
