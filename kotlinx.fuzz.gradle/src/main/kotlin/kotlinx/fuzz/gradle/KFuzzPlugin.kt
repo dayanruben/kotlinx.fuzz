@@ -8,6 +8,7 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
+import org.gradle.internal.cc.base.logger
 import org.gradle.kotlin.dsl.*
 
 @Suppress("unused")
@@ -30,7 +31,25 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
         }
 
+        // Fix https://docs.gradle.org/8.12/userguide/upgrading_version_8.html#test_task_default_classpath for fuzz tests
+        val (cp, tcd) = project.tasks.withType<Test>()
+            .firstOrNull { it !is FuzzTask }
+            ?.let { it.classpath to it.testClassesDirs }
+            ?: run {
+                logger.warn("There were no test tasks found, so 'fuzz' task did not inherit default classpath and testClassesDirs")
+                logger.warn("Please, specify them manually in your gradle config using the following syntax:")
+                logger.warn("""
+                    tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }
+                """.trimIndent())
+                project.files() to project.files()
+            }
+
         project.tasks.register<FuzzTask>("fuzz") {
+            classpath = cp
+            testClassesDirs = tcd
             outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
