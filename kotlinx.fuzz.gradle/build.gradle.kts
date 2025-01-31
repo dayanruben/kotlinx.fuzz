@@ -1,3 +1,5 @@
+import kotlinx.fuzz.configurePublishing
+
 plugins {
     id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
@@ -57,3 +59,5 @@ tasks.test {
         excludeEngines("kotlinx.fuzz")
     }
 }
+
+configurePublishing()

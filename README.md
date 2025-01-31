@@ -5,11 +5,22 @@
 ## Usage
 
 1. Add PLAN lab maven repository to your gradle config:
+
+`build.gradle.kts`:
 ```kotlin
 repositories {
     maven(url = "https://plan-maven.apal-research.com")
 }
 ```
+`settings.gradle.kts`:
+```kotlin
+pluginManagement {
+    repositories {
+        maven(url = "https://plan-maven.apal-research.com")
+    }
+}
+```
+
 
 2. Add `kotlinx.fuzz` as a dependency:
 ```kotlin
