@@ -4,15 +4,17 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KLoggerFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
-import org.gradle.internal.cc.base.logger
 import org.gradle.kotlin.dsl.*
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
+    val log = KLoggerFactory.getLogger(KFuzzPlugin::class)
+
     override fun apply(project: Project) {
         project.dependencies {
             add("testImplementation", "kotlinx.fuzz:kotlinx.fuzz.api")
@@ -31,25 +33,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
         }
 
-        // Fix https://docs.gradle.org/8.12/userguide/upgrading_version_8.html#test_task_default_classpath for fuzz tests
-        val (cp, tcd) = project.tasks.withType<Test>()
-            .firstOrNull { it !is FuzzTask }
-            ?.let { it.classpath to it.testClassesDirs }
-            ?: run {
-                logger.warn("There were no test tasks found, so 'fuzz' task did not inherit default classpath and testClassesDirs")
-                logger.warn("Please, specify them manually in your gradle config using the following syntax:")
-                logger.warn("""
-                    tasks.withType<FuzzTask>().configureEach {
-                        classpath = TODO()
-                        testClassesDirs = TODO()
-                    }
-                """.trimIndent())
-                project.files() to project.files()
-            }
-
+        val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
-            classpath = cp
-            testClassesDirs = tcd
+            classpath = defaultCP
+            testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
@@ -85,6 +72,28 @@ abstract class KFuzzPlugin : Plugin<Project> {
             showStandardStreams = true
         }
     }
+
+    /**
+     * Finds the default values of classpath and testClassesDir properties of test tasks.
+     * Required to fix https://docs.gradle.org/8.12/userguide/upgrading_version_8.html#test_task_default_classpath for fuzz tests.
+     *
+     * @return the default values of classpath and testClassesDir properties of test tasks
+     */
+    private fun Project.defaultTestParameters(): Pair<FileCollection, FileCollection> =
+        tasks.withType<Test>()
+            .firstOrNull { it !is FuzzTask }
+            ?.let { it.classpath to it.testClassesDirs }
+            ?: run {
+                log.warn { "There were no test tasks found, so 'fuzz' task did not inherit default classpath and testClassesDirs" }
+                log.warn { "Please, specify them manually in your gradle config using the following syntax:" }
+                log.warn {
+                    """tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }""".trimIndent()
+                }
+                project.files() to project.files()
+            }
 }
 
 abstract class FuzzTask : Test() {
