@@ -7,7 +7,7 @@ import org.gradle.api.logging.Logging
 
 class GradleLogger(clazz: Class<*>) : KLogger(clazz) {
     private val logLevel: LogLevel = LogLevel.valueOf(
-        System.getProperty(LOG_LEVEL_PROPERTY, LogLevel.WARN.name).uppercase()
+        System.getProperty(LOG_LEVEL_PROPERTY, LogLevel.WARN.name).uppercase(),
     )
     private val log: Logger = Logging.getLogger(clazz)
 
