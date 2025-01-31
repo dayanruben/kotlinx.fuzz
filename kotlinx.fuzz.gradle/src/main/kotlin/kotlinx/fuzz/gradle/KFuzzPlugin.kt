@@ -82,7 +82,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
     private fun Project.defaultTestParameters(): Pair<FileCollection, FileCollection> =
         tasks.withType<Test>()
             .filterNot { it is FuzzTask }
-            .map { it.classpath to it.testClassesDirs }
+            .map {
+                log.info { "Checking the classpath of the task ${it.name}" }
+                it.classpath to it.testClassesDirs
+            }
             .singleOrNull()
             ?: run {
                 log.warn { "'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations" }
