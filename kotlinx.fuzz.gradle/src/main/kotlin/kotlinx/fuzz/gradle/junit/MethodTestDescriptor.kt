@@ -1,17 +1,21 @@
 package kotlinx.fuzz.gradle.junit
 
 import java.lang.reflect.Method
+import kotlinx.fuzz.KFuzzTest
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 
 internal class MethodTestDescriptor(
-    val testMethod: Method, parent: TestDescriptor,
+    val testMethod: Method,
+    parent: TestDescriptor,
 ) : AbstractTestDescriptor(
     parent.uniqueId.append("method", testMethod.name),
     displayName(testMethod),
     MethodSource.from(testMethod),
 ) {
+    val kfuzzAnnotation: KFuzzTest = testMethod.getAnnotation(KFuzzTest::class.java) ?: error("expected annotation")
+
     init {
         setParent(parent)
     }

@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
  * Default: true
  * (custom and built-in).
  * Default: empty list
- * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
+ * @param maxSingleTargetFuzzTime - max time to fuzz a single target.
  */
 interface KFuzzConfig {
     val fuzzEngine: String
@@ -55,13 +55,13 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var hooks: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.hooks",
-        defaultValue = true,
+        defaultValue = Defaults.HOOKS,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var keepGoing: Int by KFuzzConfigProperty(
         "kotlinx.fuzz.keepGoing",
-        defaultValue = 1,
+        defaultValue = Defaults.KEEP_GOING,
         validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toInt() },
@@ -73,12 +73,13 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var customHookExcludes: List<String> by KFuzzConfigProperty(
         "kotlinx.fuzz.customHookExcludes",
-        defaultValue = emptyList(),
+        defaultValue = Defaults.CUSTOM_HOOK_EXCLUDES,
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
     override var maxSingleTargetFuzzTime: Duration by KFuzzConfigProperty(
         "kotlinx.fuzz.maxSingleTargetFuzzTime",
+        defaultValue = Duration.parse(Defaults.MAX_SINGLE_TARGET_FUZZ_TIME_STRING),
         validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
@@ -90,7 +91,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var dumpCoverage: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.dumpCoverage",
-        defaultValue = true,
+        defaultValue = Defaults.DUMP_COVERAGE,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
@@ -120,6 +121,17 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     }
 
     companion object {
+        internal object Defaults {
+            const val KEEP_GOING = 1
+            const val HOOKS = true
+            const val DUMP_COVERAGE = true
+
+            // string for compatibility with annotations
+            const val MAX_SINGLE_TARGET_FUZZ_TIME_STRING = "1m"
+
+            // incompatible with annotation defaults (const array is not allowed either)
+            val CUSTOM_HOOK_EXCLUDES = emptyList<String>()
+        }
         fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = KFuzzConfigImpl().apply {
             block()
             assertAllSet()
@@ -131,6 +143,20 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
             assertAllSet()
             validate()
         }
+
+        internal fun fromAnotherConfig(config: KFuzzConfig, edit: KFuzzConfigImpl.() -> Unit): KFuzzConfig =
+            KFuzzConfigImpl().apply {
+                fuzzEngine = config.fuzzEngine
+                hooks = config.hooks
+                keepGoing = config.keepGoing
+                instrument = config.instrument
+                customHookExcludes = config.customHookExcludes
+                maxSingleTargetFuzzTime = config.maxSingleTargetFuzzTime
+                workDir = config.workDir
+                dumpCoverage = config.dumpCoverage
+
+                edit()
+            }
     }
 }
 
