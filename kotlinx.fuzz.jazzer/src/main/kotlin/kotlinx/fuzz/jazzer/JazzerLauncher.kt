@@ -20,22 +20,24 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KLoggerFactory
 
 object JazzerLauncher {
+    private val log = KLoggerFactory.getLogger(JazzerLauncher::class.java)
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     @JvmStatic
     fun main(args: Array<String>) {
         if (args.size != 2) {
-            // TODO Log.error "Usage: <full.class.Name> <methodName>"
+            log.error { "Usage: <full.class.Name> <methodName>" }
             exitProcess(1)
         }
         // arg[0] - fully qualified name of the class containing fuzz target
         // arg[1] - method name of the fuzz target
         val className = args[0]
         val methodName = args[1]
-        // TODO Log.debug  "Running $className::$methodName"
+        log.debug { "Running $className::$methodName" }
 
         val targetClass = Class.forName(className).kotlin
         val targetMethod = targetClass.memberFunctions.single { it.name == methodName }.javaMethod!!

@@ -81,7 +81,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     /**
      * Implementation taken from #Random.next
      */
-    override fun next(bits: Int): Int = (int() ushr (48 - bits)).toInt()
+    override fun next(bits: Int): Int = (int() ushr (48 - bits))
 
     override fun boolean(): Boolean = iterator.readBoolean()
 

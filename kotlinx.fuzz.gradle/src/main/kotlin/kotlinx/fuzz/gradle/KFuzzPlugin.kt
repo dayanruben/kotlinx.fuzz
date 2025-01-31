@@ -1,8 +1,10 @@
 package kotlinx.fuzz.gradle
 
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KLoggerFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.testing.Test
@@ -17,6 +19,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
 
         project.tasks.withType<Test>().configureEach {
+            configureLogging(project)
+
             if (this is FuzzTask) {
                 return@configureEach
             }
@@ -34,6 +38,32 @@ abstract class KFuzzPlugin : Plugin<Project> {
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
             }
+        }
+    }
+
+    /**
+     * Configures logging as in kotlinx.fuzz.gradle/build.gradle.kts and in buildSrc/src/main/kotlin/kotlinx.fuzz.src-module.gradle.kts
+     * If changed, consider changing there as well
+     */
+    private fun Test.configureLogging(project: Project) {
+        val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
+        val projectLogLevel = project.gradle.startParameter.logLevel
+
+        systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
+            userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
+            projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
+            else -> projectLogLevel.name
+        }
+
+        systemProperties[KLoggerFactory.LOGGER_IMPLEMENTATION_PROPERTY] = GradleLogger::class.qualifiedName
+
+        testLogging {
+            events("passed", "skipped", "failed")
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+            showExceptions = true
+            showCauses = true
+            showStackTraces = true
+            showStandardStreams = true
         }
     }
 }
