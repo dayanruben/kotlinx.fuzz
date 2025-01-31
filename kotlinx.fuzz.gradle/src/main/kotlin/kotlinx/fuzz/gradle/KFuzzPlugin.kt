@@ -83,7 +83,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         tasks.withType<Test>()
             .filterNot { it is FuzzTask }
             .map {
-                log.info { "Checking the classpath of the task ${it.name}" }
+                log.debug { "Reusing the classpath of the task '${it.name}' for fuzz tests" }
                 it.classpath to it.testClassesDirs
             }
             .singleOrNull()

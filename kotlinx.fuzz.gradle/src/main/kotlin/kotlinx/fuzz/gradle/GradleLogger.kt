@@ -6,6 +6,9 @@ import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 
 class GradleLogger(clazz: Class<*>) : KLogger(clazz) {
+    private val logLevel: LogLevel = LogLevel.valueOf(
+        System.getProperty(LOG_LEVEL_PROPERTY, LogLevel.WARN.name).uppercase()
+    )
     private val log: Logger = Logging.getLogger(clazz)
 
     override fun debug(message: () -> String) {
@@ -30,6 +33,5 @@ class GradleLogger(clazz: Class<*>) : KLogger(clazz) {
 
     companion object {
         const val LOG_LEVEL_PROPERTY = "kotlinx.fuzz.logging.level"
-        private val logLevel: LogLevel = LogLevel.valueOf(System.getProperty(LOG_LEVEL_PROPERTY).uppercase())
     }
 }
