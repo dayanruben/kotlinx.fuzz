@@ -1,3 +1,5 @@
+import kotlinx.fuzz.configurePublishing
+
 plugins {
     id("kotlinx.fuzz.src-module")
 }
@@ -13,3 +15,5 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+configurePublishing()
