@@ -34,6 +34,10 @@ gradlePlugin {
 
 val logLevelProperty = "kotlinx.fuzz.logging.level"
 val loggerImplementationProperty = "kotlinx.fuzz.logger.implementation"
+val gradleLogger = "kotlinx.fuzz.gradle.GradleLogger"
+
+// default property values
+System.setProperty(loggerImplementationProperty, gradleLogger)
 
 /**
  * Configures logging as in kotlinx.fuzz.gradle/src/main/kotlin/kotlinx/fuzz/gradle/KFuzzPlugin.kt
@@ -47,7 +51,7 @@ tasks.test {
         else -> gradle.startParameter.logLevel.name
     }
 
-    systemProperties[loggerImplementationProperty] = "kotlinx.fuzz.gradle.GradleLogger"
+    systemProperties[loggerImplementationProperty] = gradleLogger
 
     useJUnitPlatform {
         excludeEngines("kotlinx.fuzz")
