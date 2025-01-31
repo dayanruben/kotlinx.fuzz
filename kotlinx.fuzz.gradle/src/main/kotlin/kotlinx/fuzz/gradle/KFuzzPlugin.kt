@@ -81,10 +81,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
      */
     private fun Project.defaultTestParameters(): Pair<FileCollection, FileCollection> =
         tasks.withType<Test>()
-            .firstOrNull { it !is FuzzTask }
-            ?.let { it.classpath to it.testClassesDirs }
+            .filterNot { it is FuzzTask }
+            .map { it.classpath to it.testClassesDirs }
+            .singleOrNull()
             ?: run {
-                log.warn { "There were no test tasks found, so 'fuzz' task did not inherit default classpath and testClassesDirs" }
+                log.warn { "'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations" }
                 log.warn { "Please, specify them manually in your gradle config using the following syntax:" }
                 log.warn {
                     """tasks.withType<FuzzTask>().configureEach {
