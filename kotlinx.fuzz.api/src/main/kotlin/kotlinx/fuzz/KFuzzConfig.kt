@@ -73,7 +73,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var customHookExcludes: List<String> by KFuzzConfigProperty(
         "kotlinx.fuzz.customHookExcludes",
-        defaultValue = Defaults.CUSTOM_HOOK_EXCLUDES,
+        defaultValue = emptyList(),
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
@@ -128,9 +128,6 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
 
             // string for compatibility with annotations
             const val MAX_SINGLE_TARGET_FUZZ_TIME_STRING = "1m"
-
-            // incompatible with annotation defaults (const array is not allowed either)
-            val CUSTOM_HOOK_EXCLUDES = emptyList<String>()
         }
         fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = KFuzzConfigImpl().apply {
             block()
