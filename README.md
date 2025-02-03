@@ -32,7 +32,7 @@ dependencies {
 3. Apply `kotlinx.fuzz` plugin to your project:
 ```kotlin
 plugins {
-    id("kotlinx.fuzz.gradle") version "0.0.5"
+    id("kotlinx.fuzz.gradle") version "0.1.0"
 }
 ```
 
