@@ -1,7 +1,6 @@
 package kotlinx.fuzz
 
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.io.path.*
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty

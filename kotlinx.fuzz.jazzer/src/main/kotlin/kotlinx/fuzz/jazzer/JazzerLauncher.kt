@@ -11,6 +11,7 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.io.path.*
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
@@ -18,7 +19,6 @@ import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KLoggerFactory
 import kotlinx.fuzz.RunMode
-import kotlin.io.path.*
 
 object JazzerLauncher {
     private val log = KLoggerFactory.getLogger(JazzerLauncher::class.java)
@@ -109,10 +109,8 @@ object JazzerLauncher {
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
 
         when (config.runMode) {
-            RunMode.REGRESSION -> {
-                reproducerPath.listDirectoryEntries("crash-*").forEach {
-                    FuzzTargetRunner.runOne(it.readBytes())
-                }
+            RunMode.REGRESSION -> reproducerPath.listDirectoryEntries("crash-*").forEach {
+                FuzzTargetRunner.runOne(it.readBytes())
             }
             RunMode.REGRESSION_FUZZING -> {
                 reproducerPath.forEach {
@@ -120,9 +118,7 @@ object JazzerLauncher {
                 }
                 FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
             }
-            RunMode.FUZZING -> {
-                FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-            }
+            RunMode.FUZZING -> FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
         }
 
         return atomicFinding.get()
