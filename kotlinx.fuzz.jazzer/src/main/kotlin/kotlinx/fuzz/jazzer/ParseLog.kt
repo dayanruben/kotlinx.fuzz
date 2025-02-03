@@ -62,7 +62,7 @@ internal fun jazzerLogToCsv(file: Path, duration: Duration): String {
         }
     }
 
-    val maxExecNr = statsNoTimeStamps.maxOf { it.execNr }
+    val maxExecNr = statsNoTimeStamps.maxOfOrNull { it.execNr } ?: 0
     val stats = listOf(
         LibfuzzerLogEntry(0, 0, 0, 0, 0),
     ) + statsNoTimeStamps.map { it.addTimestamp(it.execNr * duration.inWholeSeconds / maxExecNr) }

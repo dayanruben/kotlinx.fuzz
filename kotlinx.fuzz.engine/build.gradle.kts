@@ -5,10 +5,15 @@ plugins {
 }
 
 dependencies {
-    implementation(project(":kotlinx.fuzz.engine"))
     implementation(project(":kotlinx.fuzz.api"))
-    implementation(kotlin("reflect"))
-    implementation(libs.jazzer)
+    implementation(gradleApi())
+    implementation(libs.rgxgen)
+
+    testRuntimeOnly(libs.junit.jupiter)
+}
+
+tasks.test {
+    useJUnitPlatform()
 }
 
 configurePublishing()

@@ -1,9 +1,10 @@
+import kotlinx.fuzz.configurePublishing
+
 plugins {
     id("kotlinx.fuzz.src-module")
 }
 
 dependencies {
-    implementation(libs.rgxgen)
     implementation(libs.junit.platform.engine)
     implementation(kotlin("reflect"))
 
@@ -13,3 +14,5 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+configurePublishing()

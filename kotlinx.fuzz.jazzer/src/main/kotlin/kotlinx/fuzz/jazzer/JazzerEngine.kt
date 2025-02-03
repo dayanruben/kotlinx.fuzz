@@ -6,6 +6,7 @@ import java.nio.file.Path
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KLoggerFactory
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -21,6 +22,7 @@ internal val KFuzzConfig.exceptionsDir: Path
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
+    private val log = KLoggerFactory.getLogger(JazzerEngine::class)
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     override fun initialise() {
@@ -34,13 +36,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         // spawn subprocess, redirect output to log and err files
         val classpath = System.getProperty("java.class.path")
         val javaCommand = System.getProperty("java.home") + "/bin/java"
-        val properties =
-            config.toPropertiesMap().map { (key, value) -> "-D$key=$value" }.toTypedArray()
+        val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
 
         val pb = ProcessBuilder(
             javaCommand,
             "-classpath", classpath,
-            *properties,
+            *properties.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
         )
@@ -50,9 +51,13 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val exitCode = pb.start().waitFor()
         return when (exitCode) {
             0 -> null
-            else -> deserializeException(config.exceptionPath(method))
-                ?: Error("Failed to deserialize exception for target '${method.fullName}'")
-            // TODO log.error (or warn?)
+            else -> {
+                val deserializedException = deserializeException(config.exceptionPath(method))
+                deserializedException ?: run {
+                    log.error { "Failed to deserialize exception for target '${method.fullName}'" }
+                    Error("Failed to deserialize exception for target '${method.fullName}'")
+                }
+            }
         }
     }
 
