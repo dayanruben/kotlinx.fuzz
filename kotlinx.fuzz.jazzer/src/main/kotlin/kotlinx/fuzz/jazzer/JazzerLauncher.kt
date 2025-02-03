@@ -51,13 +51,7 @@ object JazzerLauncher {
         exitProcess(0)
     }
 
-    private fun configure(method: Method): List<String> {
-        val reproducerPath =
-            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
-        if (!reproducerPath.exists()) {
-            reproducerPath.createDirectories()
-        }
-
+    private fun configure(reproducerPath: Path, method: Method): List<String> {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
@@ -99,7 +93,13 @@ object JazzerLauncher {
 
     @OptIn(ExperimentalPathApi::class)
     fun runTarget(instance: Any, method: Method): Throwable? {
-        val libFuzzerArgs = configure(method)
+        val reproducerPath =
+            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
+        if (!reproducerPath.exists()) {
+            reproducerPath.createDirectories()
+        }
+
+        val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
@@ -110,12 +110,12 @@ object JazzerLauncher {
 
         when (config.runMode) {
             RunMode.REGRESSION -> {
-                Path(Opt.reproducerPath.get()).listDirectoryEntries("crash-*").forEach {
+                reproducerPath.listDirectoryEntries("crash-*").forEach {
                     FuzzTargetRunner.runOne(it.readBytes())
                 }
             }
             RunMode.REGRESSION_FUZZING -> {
-                Path(Opt.reproducerPath.get()).listDirectoryEntries("crash-*").forEach {
+                reproducerPath.forEach {
                     FuzzTargetRunner.runOne(it.readBytes())
                 }
                 FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
