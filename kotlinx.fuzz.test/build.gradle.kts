@@ -3,7 +3,7 @@ import kotlin.time.Duration.Companion.seconds
 
 plugins {
     kotlin("jvm") version "2.0.21"
-    id("org.jetbrains.kotlinx.fuzz")
+    id("kotlinx.fuzz.gradle")
 }
 
 repositories {
