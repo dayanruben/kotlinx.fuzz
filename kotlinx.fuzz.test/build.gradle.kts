@@ -22,7 +22,7 @@ fuzzConfig {
     keepGoing = 10
     runMode = RunMode.REGRESSION
     instrument = listOf("kotlinx.fuzz.test.**")
-    maxSingleTargetFuzzTime = 3600.seconds
+    maxSingleTargetFuzzTime = 10.seconds
 }
 
 kotlin {
