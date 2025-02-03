@@ -52,14 +52,14 @@ abstract class KFuzzPlugin : Plugin<Project> {
      * If changed, consider changing there as well
      */
     private fun Test.configureLogging(@Suppress("UNUSED_PARAMETER") project: Project) {
-//        val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
-//        val projectLogLevel = project.gradle.startParameter.logLevel
-//
-//        systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
-//            userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
-//            projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
-//            else -> projectLogLevel.name
-//        }
+        // val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
+        // val projectLogLevel = project.gradle.startParameter.logLevel
+        // 
+        // systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
+        // userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
+        // projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
+        // else -> projectLogLevel.name
+        // }
 
         // systemProperties[KLoggerFactory.LOGGER_IMPLEMENTATION_PROPERTY] = GradleLogger::class.qualifiedName
 
@@ -90,11 +90,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
             ?: run {
                 log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
-                log.warn(
-                    """tasks.withType<FuzzTask>().configureEach {
+                log.warn("""
+                    tasks.withType<FuzzTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
-                    }""".trimIndent()
+                    }""".trimIndent(),
                 )
                 project.files() to project.files()
             }
