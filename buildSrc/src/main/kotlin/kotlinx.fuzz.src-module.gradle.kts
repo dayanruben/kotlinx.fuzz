@@ -10,6 +10,7 @@ version = VERSION
 
 repositories {
     mavenCentral()
+    maven(url = "https://plan-maven.apal-research.com")
 }
 
 dependencies {

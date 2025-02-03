@@ -6,7 +6,6 @@ plugins {
 
 repositories {
     mavenLocal()
-    maven(url = "https://plan-maven.apal-research.com")
 }
 
 dependencies {
