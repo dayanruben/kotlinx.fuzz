@@ -32,6 +32,7 @@ object EngineTest {
             maxSingleTargetFuzzTime = 10.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
+            reproducerPath = workDir.resolve("reproducers")
         }
     }
 

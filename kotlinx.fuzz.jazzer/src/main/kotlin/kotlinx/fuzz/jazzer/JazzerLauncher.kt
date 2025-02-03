@@ -76,24 +76,18 @@ object JazzerLauncher {
 
         Opt.keepGoing.setIfDefault(
             when (config.runMode) {
-                RunMode.REGRESSION -> {
-                    libFuzzerArgs += "${reproducerPath.toAbsolutePath()}"
-                    libFuzzerArgs += "-runs=${reproducerPath.listDirectoryEntries("crash-*").size}"
-
-                    reproducerPath.listDirectoryEntries("crash-*").size.toLong()
-                }
+                RunMode.REGRESSION -> reproducerPath.listDirectoryEntries("crash-*").size.toLong()
 
                 RunMode.REGRESSION_FUZZING -> {
-                    libFuzzerArgs += "${reproducerPath.toAbsolutePath()}"
                     libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
 
-                    reproducerPath.listDirectoryEntries("crash-*").size + config.keepGoing.toLong()
+                    reproducerPath.listDirectoryEntries("crash-*").size + config.keepGoing
                 }
 
                 RunMode.FUZZING -> {
                     libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
 
-                    config.keepGoing.toLong()
+                    config.keepGoing
                 }
             },
         )
@@ -111,7 +105,23 @@ object JazzerLauncher {
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
-        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+
+        when (config.runMode) {
+            RunMode.REGRESSION -> {
+                Path(Opt.reproducerPath.get()).listDirectoryEntries("crash-*").forEach {
+                    FuzzTargetRunner.runOne(it.readBytes())
+                }
+            }
+            RunMode.REGRESSION_FUZZING -> {
+                Path(Opt.reproducerPath.get()).listDirectoryEntries("crash-*").forEach {
+                    FuzzTargetRunner.runOne(it.readBytes())
+                }
+                FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+            }
+            RunMode.FUZZING -> {
+                FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+            }
+        }
 
         return atomicFinding.get()
     }
