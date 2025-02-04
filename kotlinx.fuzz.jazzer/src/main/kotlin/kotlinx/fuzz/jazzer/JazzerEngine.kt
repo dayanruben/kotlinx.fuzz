@@ -1,6 +1,8 @@
 package kotlinx.fuzz.jazzer
 
+import java.io.InputStream
 import java.io.ObjectInputStream
+import java.io.OutputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -46,10 +48,18 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
         )
-        pb.redirectError(config.logsDir.resolve("${method.fullName}.err").toFile())
-        pb.redirectOutput(config.logsDir.resolve("${method.fullName}.log").toFile())
+        pb.redirectErrorStream(true)
 
-        val exitCode = pb.start().waitFor()
+        val process = pb.start()
+        val stdoutFile = config.logsDir.resolve("${method.fullName}.log").toFile().outputStream()
+        val stdoutThread = logProcessStream(process.inputStream, stdoutFile) {
+            if (jazzerConfig.enableLogging) {
+                log.info(it)
+            }
+        }
+        val exitCode = process.waitFor()
+        stdoutThread.join()
+
         return when (exitCode) {
             0 -> null
             else -> {
@@ -73,6 +83,21 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
         }
     }
+
+    private fun logProcessStream(
+        inputStream: InputStream,
+        outputStream: OutputStream,
+        log: (String?) -> Unit,
+    ): Thread = Thread {
+        inputStream.bufferedReader().use { reader ->
+            outputStream.bufferedWriter().use { writer ->
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    log(line)
+                }
+            }
+        }
+    }.also { it.start() }
 }
 
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
