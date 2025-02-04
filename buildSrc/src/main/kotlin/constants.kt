@@ -1,2 +1,2 @@
-const val GROUP_ID = "kotlinx.fuzz"
-const val VERSION = "0.0.1"
+const val GROUP_ID = "org.jetbrains"
+const val VERSION = "0.0.6"

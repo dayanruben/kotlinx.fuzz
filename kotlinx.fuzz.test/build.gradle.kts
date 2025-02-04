@@ -3,7 +3,7 @@ import kotlin.time.Duration.Companion.seconds
 
 plugins {
     kotlin("jvm") version "2.0.21"
-    id("kotlinx.fuzz")
+    id("kotlinx.fuzz.gradle")
 }
 
 repositories {
@@ -12,7 +12,7 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
-    testRuntimeOnly("kotlinx.fuzz:kotlinx.fuzz.jazzer")
+    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
 }
 
 fuzzConfig {

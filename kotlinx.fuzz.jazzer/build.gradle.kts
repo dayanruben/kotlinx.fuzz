@@ -1,3 +1,5 @@
+import kotlinx.fuzz.configurePublishing
+
 plugins {
     id("kotlinx.fuzz.src-module")
 }
@@ -8,3 +10,5 @@ dependencies {
     implementation(kotlin("reflect"))
     implementation(libs.jazzer)
 }
+
+configurePublishing()
