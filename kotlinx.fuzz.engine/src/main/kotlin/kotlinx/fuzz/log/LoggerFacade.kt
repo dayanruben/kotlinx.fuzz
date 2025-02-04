@@ -4,6 +4,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 
+/**
+ * Custom logger facade that uses slf4j service provider if available and falls back to StdoutLogger if not
+ */
 object LoggerFacade {
     const val LOG_LEVEL_PROPERTY = "kotlinx.fuzz.log.level"
     val LOG_LEVEL = System.getProperty(LOG_LEVEL_PROPERTY, Level.WARN.toString()).uppercase()
@@ -17,10 +20,12 @@ object LoggerFacade {
         slf4jProviders.isNotEmpty()
     }
 
-    fun getLogger(name: String): Logger = when {
-        isSlf4jAvailable -> LoggerFactory.getLogger(name)
-        else -> DefaultSlf4jLogger(name)
-    }
+    fun getLogger(name: String): Logger = LoggerWrapper(
+        when {
+            isSlf4jAvailable -> LoggerFactory.getLogger(name)
+            else -> StdoutLogger
+        }
+    )
 
     inline fun <reified T> getLogger(): Logger = getLogger(T::class.java.name)
 }

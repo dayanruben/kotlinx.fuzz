@@ -5,21 +5,23 @@ import org.slf4j.Logger
 import org.slf4j.Marker
 import org.slf4j.event.Level
 
+/**
+ * Basic slf4j logger implementation that works as a fallback when there are no slf4j service providers.
+ * By default, all the levels are enabled.
+ */
 @LoggerImpl
-internal class DefaultSlf4jLogger(
-    private val name: String,
-) : Logger {
+internal object StdoutLogger : Logger {
     private fun log(level: Level, msg: String?, t: Throwable? = null) {
         val timestamp = LocalDateTime.now()
         val threadName = Thread.currentThread().name
-        val message = "$timestamp [$threadName] [$level] $name - ${msg ?: ""}"
+        val message = "$timestamp [$threadName] [$level] - ${msg ?: ""}"
         println(message)
         t?.printStackTrace()
     }
 
-    private fun isLevelEnabled(level: Level): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= level.toInt()
+    private fun isLevelEnabled(level: Level): Boolean = true
 
-    override fun getName(): String = name
+    override fun getName(): String = "stdout"
 
     override fun isTraceEnabled(): Boolean = isLevelEnabled(Level.TRACE)
     override fun trace(msg: String?) = log(Level.TRACE, msg)

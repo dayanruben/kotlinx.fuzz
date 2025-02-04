@@ -1,7 +1,6 @@
 package kotlinx.fuzz.gradle
 
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.log.LoggerFacade
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
@@ -49,7 +48,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 
     private fun Test.configureLogging() {
-        systemProperties[LoggerFacade.LOG_LEVEL_PROPERTY] = LoggerFacade.LOG_LEVEL.toString()
         testLogging {
             events("passed", "skipped", "failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
