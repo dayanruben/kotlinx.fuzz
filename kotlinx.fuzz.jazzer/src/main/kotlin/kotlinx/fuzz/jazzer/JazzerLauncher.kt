@@ -105,8 +105,9 @@ object JazzerLauncher {
             }
         }
 
-        if (config.runModes.contains(RunMode.FUZZING))
+        if (config.runModes.contains(RunMode.FUZZING)) {
             FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+        }
 
         return atomicFinding.get()
     }
