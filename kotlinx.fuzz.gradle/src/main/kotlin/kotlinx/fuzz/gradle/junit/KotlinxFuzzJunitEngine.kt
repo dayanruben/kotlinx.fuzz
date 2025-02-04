@@ -5,8 +5,8 @@ import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.info
 import kotlinx.fuzz.log.debug
+import kotlinx.fuzz.log.info
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
