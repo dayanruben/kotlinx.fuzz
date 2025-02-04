@@ -19,8 +19,8 @@ internal class LoggerWrapper(
     override fun isDebugEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.DEBUG)
     override fun isInfoEnabled(): Boolean = isLevelEnabled(Level.INFO)
     override fun isInfoEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.INFO)
-    override fun isWarnEnabled(): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.WARN.toInt()
-    override fun isWarnEnabled(marker: Marker?): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.WARN.toInt()
-    override fun isErrorEnabled(): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.ERROR.toInt()
+    override fun isWarnEnabled(): Boolean = isLevelEnabled(Level.WARN)
+    override fun isWarnEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.WARN)
+    override fun isErrorEnabled(): Boolean = isLevelEnabled(Level.ERROR)
     override fun isErrorEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.ERROR)
 }

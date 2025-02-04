@@ -5,6 +5,7 @@ import java.io.ObjectInputStream
 import java.io.OutputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
@@ -78,12 +79,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun ProcessBuilder.executeAndSaveLogs(stdout: String, stderr: String): Int {
         val process = start()
-        val stdoutStream = config.logsDir.resolve(stdout)
-            .toFile()
-            .outputStream()
-        val stderrStream = config.logsDir.resolve(stderr)
-            .toFile()
-            .outputStream()
+        val stdoutStream = config.logsDir.resolve(stdout).outputStream()
+        val stderrStream = config.logsDir.resolve(stderr).outputStream()
         val stdoutThread = logProcessStream(process.inputStream, stdoutStream) {
             if (jazzerConfig.enableLogging) {
                 log.info(it)
@@ -104,7 +101,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         inputStream: InputStream,
         outputStream: OutputStream,
         log: (String?) -> Unit,
-    ): Thread = Thread {
+    ): Thread = thread(start = true) {
         inputStream.bufferedReader().use { reader ->
             outputStream.bufferedWriter().use { writer ->
                 var line: String?
@@ -113,7 +110,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
             }
         }
-    }.also { it.start() }
+    }
 }
 
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
