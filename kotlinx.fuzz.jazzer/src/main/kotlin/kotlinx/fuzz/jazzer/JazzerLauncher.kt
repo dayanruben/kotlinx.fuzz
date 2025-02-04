@@ -57,6 +57,7 @@ object JazzerLauncher {
 
     private fun Throwable.filter(): Throwable {
         val filteredCause = cause?.filter()
+        val oldStackTrace = stackTrace
 
         val newThrowable = (when {
             message == null && filteredCause == null -> this::class.java.getConstructor().newInstance()
@@ -69,11 +70,11 @@ object JazzerLauncher {
 
             else -> this::class.java.getConstructor(String::class.java, Throwable::class.java)
                 .newInstance(message, filteredCause)
-        })
-
-        newThrowable.stackTrace = stackTrace.takeWhile {
-            it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
-        }.toTypedArray()
+        }).apply {
+            stackTrace = oldStackTrace.takeWhile {
+                it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
+            }.toTypedArray()
+        }
 
         return newThrowable
     }
