@@ -22,32 +22,27 @@ fun <T> Logger.warn(t: T) = this.warn(t.toString())
 fun Logger.error() = this.error("")
 fun <T> Logger.error(t: T) = this.error(t.toString())
 
-inline fun Logger.debug(message: () -> String) =
-    when {
-        isDebugEnabled -> debug(message())
-        else -> {}
-    }
+inline fun Logger.debug(message: () -> String) = when {
+    isDebugEnabled -> debug(message())
+    else -> {}
+}
 
-inline fun Logger.trace(message: () -> String) =
-    when {
-        isTraceEnabled -> trace(message())
-        else -> {}
-    }
+inline fun Logger.trace(message: () -> String) = when {
+    isTraceEnabled -> trace(message())
+    else -> {}
+}
 
-inline fun Logger.info(message: () -> String) =
-    when {
-        isInfoEnabled -> info(message())
-        else -> {}
-    }
+inline fun Logger.info(message: () -> String) = when {
+    isInfoEnabled -> info(message())
+    else -> {}
+}
 
-inline fun Logger.warn(message: () -> String) =
-    when {
-        isWarnEnabled -> warn(message())
-        else -> {}
-    }
+inline fun Logger.warn(message: () -> String) = when {
+    isWarnEnabled -> warn(message())
+    else -> {}
+}
 
-inline fun Logger.error(message: () -> String) =
-    when {
-        isErrorEnabled -> error(message())
-        else -> {}
-    }
+inline fun Logger.error(message: () -> String) = when {
+    isErrorEnabled -> error(message())
+    else -> {}
+}

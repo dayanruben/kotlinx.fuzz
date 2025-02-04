@@ -19,7 +19,7 @@ internal object StdoutLogger : Logger {
         t?.printStackTrace()
     }
 
-    private fun isLevelEnabled(level: Level): Boolean = true
+    private fun isLevelEnabled(@Suppress("UNUSED_PARAMETER") level: Level): Boolean = true
 
     override fun getName(): String = "stdout"
 
@@ -80,14 +80,14 @@ internal object StdoutLogger : Logger {
     override fun info(marker: Marker?, format: String?, vararg arguments: Any?) = info(format, *arguments)
     override fun info(marker: Marker?, msg: String?, t: Throwable?) = info(msg, t)
 
-    override fun isWarnEnabled(): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.WARN.toInt()
+    override fun isWarnEnabled(): Boolean = isLevelEnabled(Level.WARN)
     override fun warn(msg: String?) = log(Level.WARN, msg)
     override fun warn(format: String?, arg: Any?) = log(Level.WARN, format?.format(arg))
     override fun warn(format: String?, arg1: Any?, arg2: Any?) = log(Level.WARN, format?.format(arg1, arg2))
     override fun warn(format: String?, vararg arguments: Any?) = log(Level.WARN, format?.format(*arguments))
     override fun warn(msg: String?, t: Throwable?) = log(Level.WARN, msg, t)
 
-    override fun isWarnEnabled(marker: Marker?): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.WARN.toInt()
+    override fun isWarnEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.WARN)
     override fun warn(marker: Marker?, msg: String?) = warn(msg)
     override fun warn(marker: Marker?, format: String?, arg: Any?) = warn(format, arg)
     override fun warn(
@@ -99,7 +99,7 @@ internal object StdoutLogger : Logger {
     override fun warn(marker: Marker?, format: String?, vararg arguments: Any?) = warn(format, *arguments)
     override fun warn(marker: Marker?, msg: String?, t: Throwable?) = warn(msg, t)
 
-    override fun isErrorEnabled(): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= Level.ERROR.toInt()
+    override fun isErrorEnabled(): Boolean = isLevelEnabled(Level.ERROR)
     override fun error(msg: String?) = log(Level.ERROR, msg)
     override fun error(format: String?, arg: Any?) = log(Level.ERROR, format?.format(arg))
     override fun error(format: String?, arg1: Any?, arg2: Any?) = log(Level.ERROR, format?.format(arg1, arg2))
