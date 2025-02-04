@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.0.21"
 diktat = "2.0.0"
-jazzer = "0.0.1"
+jazzer = "0.0.2"
 
 junit-platform = "1.11.4"
 junit-jupiter = "5.11.4"
