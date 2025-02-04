@@ -51,7 +51,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         pb.redirectErrorStream(true)
 
         val process = pb.start()
-        val stdoutFile = config.logsDir.resolve("${method.fullName}.log").toFile().outputStream()
+        val stdoutFile = config.logsDir.resolve("${method.fullName}.log")
+            .toFile()
+            .outputStream()
         val stdoutThread = logProcessStream(process.inputStream, stdoutFile) {
             if (jazzerConfig.enableLogging) {
                 log.info(it)

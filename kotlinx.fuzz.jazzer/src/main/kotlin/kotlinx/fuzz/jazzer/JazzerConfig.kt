@@ -1,7 +1,13 @@
 package kotlinx.fuzz.jazzer
 
+/**
+ * Jazzer specific configuration properties
+ *
+ * @param libFuzzerRssLimit rss limit in MB, 0 by default
+ * @param enableLogging flag to enable jazzer logs, false by default
+ */
 data class JazzerConfig(
-    val libFuzzerRssLimit: Int,  // TODO: Other settings
+    val libFuzzerRssLimit: Int,
     val enableLogging: Boolean,
 ) {
     companion object {
