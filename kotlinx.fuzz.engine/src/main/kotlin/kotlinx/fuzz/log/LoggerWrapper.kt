@@ -11,7 +11,6 @@ internal class LoggerWrapper(
     private val logger: Logger,
 ) : Logger by logger {
     private fun isLevelEnabled(level: Level): Boolean {
-        System.err.println("Is enabled: $level, allowed from ${LoggerFacade.LOG_LEVEL}")
         return LoggerFacade.LOG_LEVEL.toInt() <= level.toInt()
     }
 
