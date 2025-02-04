@@ -58,22 +58,22 @@ object JazzerLauncher {
     private fun Throwable.filter(): Throwable {
         val filteredCause = cause?.filter()
 
-        val newThrowable = (try {
-            this::class.java.getConstructor(String::class.java, Throwable::class.java)
+        val newThrowable = (when {
+            message == null && filteredCause == null -> this::class.java.getConstructor().newInstance()
+
+            message == null && filteredCause != null -> this::class.java.getConstructor(Throwable::class.java)
+                .newInstance(filteredCause)
+
+            message != null && filteredCause == null -> this::class.java.getConstructor(String::class.java)
+                .newInstance(message)
+
+            else -> this::class.java.getConstructor(String::class.java, Throwable::class.java)
                 .newInstance(message, filteredCause)
-        } catch (e: Exception) {
-            try {
-                cause?.let {
-                    this::class.java.getConstructor(Throwable::class.java).newInstance(filteredCause)
-                } ?: this::class.java.getConstructor(String::class.java).newInstance(message)
-            } catch (e: Exception) {
-                Throwable(message, filteredCause)
-            }
-        }).apply {
-            stackTrace = stackTrace.takeWhile {
-                it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
-            }.toTypedArray()
-        }
+        })
+
+        newThrowable.stackTrace = stackTrace.takeWhile {
+            it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
+        }.toTypedArray()
 
         return newThrowable
     }
