@@ -83,8 +83,14 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                val result = when (val finding = fuzzEngine.runTarget(instance, method)) {
-                    null -> TestExecutionResult.successful()
+                val finding = fuzzEngine.runTarget(instance, method)
+                val result = when {
+                    finding == null -> TestExecutionResult.successful()
+                    method.isAnnotationPresent(IgnoreFailures::class.java) -> {
+                        log.info { "Test failed, but is ignored by @IgnoreFailures: $finding" }
+                        TestExecutionResult.successful()
+                    }
+
                     else -> TestExecutionResult.failed(finding)
                 }
                 request.engineExecutionListener.executionFinished(descriptor, result)
