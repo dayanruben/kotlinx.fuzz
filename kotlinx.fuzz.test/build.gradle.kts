@@ -17,7 +17,7 @@ dependencies {
 
 fuzzConfig {
     instrument = listOf("kotlinx.fuzz.test.**")
-    maxSingleTargetFuzzTime = 1.seconds
+    maxSingleTargetFuzzTime = 10.seconds
 }
 
 kotlin {
