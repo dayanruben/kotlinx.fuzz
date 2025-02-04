@@ -51,9 +51,6 @@ object JazzerLauncher {
         exitProcess(0)
     }
 
-    private fun countCrashes(reproducerPath: Path) =
-        reproducerPath.listDirectoryEntries("{crash-*,timeout-*,slow-imput-*}").size.toLong()
-
     private fun configure(reproducerPath: Path, method: Method): List<String> {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
@@ -74,7 +71,7 @@ object JazzerLauncher {
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
 
         var keepGoing = when (RunMode.REGRESSION) {
-            in config.runModes -> countCrashes(reproducerPath)
+            in config.runModes -> reproducerPath.listCrashes().size.toLong()
             else -> 0
         }
         if (config.runModes.contains(RunMode.FUZZING)) {
@@ -105,7 +102,7 @@ object JazzerLauncher {
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
 
         if (config.runModes.contains(RunMode.REGRESSION)) {
-            reproducerPath.listDirectoryEntries("crash-*").forEach {
+            reproducerPath.listCrashes().forEach {
                 FuzzTargetRunner.runOne(it.readBytes())
             }
         }
