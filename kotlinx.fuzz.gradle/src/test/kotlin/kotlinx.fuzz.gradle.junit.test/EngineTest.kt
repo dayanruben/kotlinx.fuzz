@@ -2,6 +2,7 @@ package kotlinx.fuzz.gradle.junit.test
 
 import java.io.File
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.gradle.KFuzzConfigBuilder
@@ -15,6 +16,14 @@ object EngineTest {
     object SimpleFuzzTest {
         @KFuzzTest
         fun `failure test`(data: KFuzzer) {
+            if (data.boolean()) {
+                error("Expected failure")
+            }
+        }
+
+        @IgnoreFailures
+        @KFuzzTest
+        fun `ignored failure test`(data: KFuzzer) {
             if (data.boolean()) {
                 error("Expected failure")
             }
@@ -51,20 +60,26 @@ object EngineTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            maxSingleTargetFuzzTime = 10.seconds
+            maxSingleTargetFuzzTime = 5.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
         }
     }
 
     @Test
-    fun `one pass four fail`() {
+    fun `two pass four fail`() {
+        val successTests = 2L
+        val failedTests = 4L
+        val startedTests = successTests + failedTests
+
         EngineTestKit
             .engine(KotlinxFuzzJunitEngine())
             .selectors(selectClass(SimpleFuzzTest::class.java))
             .execute()
             .testEvents()
-            .assertStatistics { it.started(5).succeeded(1).failed(4) }
+            .assertStatistics {
+                it.started(startedTests).succeeded(successTests).failed(failedTests)
+            }
     }
 }
 

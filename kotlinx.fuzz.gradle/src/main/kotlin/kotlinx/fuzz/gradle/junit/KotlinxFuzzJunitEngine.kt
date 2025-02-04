@@ -81,8 +81,14 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                val result = when (val finding = fuzzEngine.runTarget(instance, method)) {
-                    null -> TestExecutionResult.successful()
+                val finding = fuzzEngine.runTarget(instance, method)
+                val result = when {
+                    finding == null -> TestExecutionResult.successful()
+                    method.isAnnotationPresent(IgnoreFailures::class.java) -> {
+                        log.info { "Test failed, but is ignored by @IgnoreFailures: $finding" }
+                        TestExecutionResult.successful()
+                    }
+
                     else -> TestExecutionResult.failed(finding)
                 }
                 request.engineExecutionListener.executionFinished(descriptor, result)
@@ -121,7 +127,13 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
         }
-        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
-        private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
+
+        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(
+            this,
+            KFuzzTest::class.java,
+        ) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+
+        private fun KClass<*>.testInstance(): Any =
+            objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
