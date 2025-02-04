@@ -15,21 +15,20 @@ dependencies {
     implementation(kotlin("reflect"))
 }
 
-tasks.register<Exec>("deployLocal") {
-    workingDir = file("$rootDir/jazzer/deploy")
-    commandLine = listOf("bash", "deploy_local.sh")
-}
-
 tasks.register<Exec>("buildRustLib") {
-    workingDir = file("$rootDir/CasrAdapter")
+    workingDir = file("$projectDir/CasrAdapter")
     commandLine = listOf("cargo", "build", "--release")
 }
 
 tasks.register("linkRustLib") {
-    // dependsOn("buildRustLib")
+    dependsOn("buildRustLib")
     doLast {
-        val sourceDir = file("$rootDir/CasrAdapter/target/release")
-        val targetDir = file("$projectDir")
+        val sourceDir = file("$projectDir/CasrAdapter/target/release")
+        val targetDir = file(layout.buildDirectory.dir("libs"))
+
+        if (!targetDir.exists()) {
+            targetDir.mkdirs()
+        }
 
         if (!sourceDir.exists()) {
             throw GradleException("Source directory $sourceDir does not exist")
@@ -58,16 +57,4 @@ tasks.register("linkRustLib") {
 
 tasks.named("compileKotlin") {
     dependsOn("linkRustLib")
-}
-
-tasks.named("processResources") {
-    dependsOn("linkRustLib")
-}
-
-tasks.named("jar") {
-    dependsOn("linkRustLib")
-}
-
-tasks.named("build") {
-    dependsOn("linkRustLib", "deployLocal")
 }

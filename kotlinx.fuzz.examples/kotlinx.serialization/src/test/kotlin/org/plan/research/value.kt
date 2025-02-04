@@ -1,7 +1,6 @@
 package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
-import com.code_intelligence.jazzer.third_party.kotlin.reflect.jvm.internal.impl.resolve.constants.ArrayValue
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
@@ -276,7 +275,7 @@ data class ArrayValue(val value: Array<Value>) : Value() {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as org.plan.research.ArrayValue
+        other as ArrayValue
 
         return value.contentEquals(other.value)
     }
