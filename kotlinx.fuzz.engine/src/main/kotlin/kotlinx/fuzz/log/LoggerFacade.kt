@@ -24,7 +24,7 @@ object LoggerFacade {
         when {
             isSlf4jAvailable -> LoggerFactory.getLogger(name)
             else -> StdoutLogger
-        }
+        },
     )
 
     inline fun <reified T> getLogger(): Logger = getLogger(T::class.java.name)

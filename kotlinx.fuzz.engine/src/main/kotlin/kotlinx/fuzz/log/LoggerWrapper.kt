@@ -7,12 +7,11 @@ import org.slf4j.event.Level
 /**
  * slf4j logger wrapper, that only prints the output if kotlinx.fuzz logging is enabled
  */
+@LoggerImpl
 internal class LoggerWrapper(
     private val logger: Logger,
 ) : Logger by logger {
-    private fun isLevelEnabled(level: Level): Boolean {
-        return LoggerFacade.LOG_LEVEL.toInt() <= level.toInt()
-    }
+    private fun isLevelEnabled(level: Level): Boolean = LoggerFacade.LOG_LEVEL.toInt() <= level.toInt()
 
     override fun isTraceEnabled(): Boolean = isLevelEnabled(Level.TRACE)
     override fun isTraceEnabled(marker: Marker?): Boolean = isLevelEnabled(Level.TRACE)
