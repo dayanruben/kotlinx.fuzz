@@ -35,6 +35,7 @@ interface KFuzzConfig {
     val maxSingleTargetFuzzTime: Duration
     val workDir: Path
     val dumpCoverage: Boolean
+    val jacocoReports: Set<JacocoReport>
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -90,6 +91,12 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         defaultValue = true,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
+    )
+    override var jacocoReports: Set<JacocoReport> by KFuzzConfigProperty(
+        "kotlinx.fuzz.jacocoReportTypes",
+        defaultValue = setOf(JacocoReport.HTML),
+        toString = { it.joinToString(",") },
+        fromString = { it.split(",").map { JacocoReport.valueOf(it.uppercase()) }.toSet() },
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()

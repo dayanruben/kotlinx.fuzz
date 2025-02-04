@@ -1,3 +1,4 @@
+import kotlinx.fuzz.JacocoReport.*
 import kotlinx.fuzz.gradle.fuzzConfig
 import kotlin.time.Duration.Companion.seconds
 
@@ -18,6 +19,7 @@ dependencies {
 fuzzConfig {
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds
+    jacocoReports = setOf(HTML, CSV, XML)
 }
 
 kotlin {

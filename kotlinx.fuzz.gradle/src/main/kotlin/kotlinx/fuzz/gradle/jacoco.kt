@@ -5,6 +5,7 @@ import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.outputStream
+import kotlinx.fuzz.JacocoReport
 import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
 import org.jacoco.core.tools.ExecFileLoader
@@ -12,7 +13,18 @@ import org.jacoco.report.DirectorySourceFileLocator
 import org.jacoco.report.FileMultiReportOutput
 import org.jacoco.report.IReportVisitor
 import org.jacoco.report.MultiReportVisitor
+import org.jacoco.report.csv.CSVFormatter
 import org.jacoco.report.html.HTMLFormatter
+import org.jacoco.report.xml.XMLFormatter
+
+private fun JacocoReport.toVisitor(reportDir: Path): IReportVisitor = when (this) {
+    JacocoReport.HTML -> HTMLFormatter().createVisitor(FileMultiReportOutput(reportDir.toFile()))
+    JacocoReport.XML ->
+        XMLFormatter().createVisitor(reportDir.resolve("jacoco.xml").outputStream().buffered())
+
+    JacocoReport.CSV ->
+        CSVFormatter().createVisitor(reportDir.resolve("jacoco.csv").outputStream().buffered())
+}
 
 /**
  * Merges all JaCoCo .exec files in [execDir] into a single .exec result file at [result].
@@ -38,46 +50,33 @@ fun jacocoMerge(execDir: Path, result: Path) {
  * @param classPath Directory containing compiled .class files
  * @param sourceDirectories Directory containing source files (for line coverage information)
  * @param reportDir Output directory where the coverage report will be generated
+ * @param reports Jacoco reports to generate (xml, html, csv)
  */
 fun jacocoReport(
     execFile: Path,
     classPath: Set<File>,
     sourceDirectories: Set<File>,
     reportDir: Path,
+    reports: Set<JacocoReport>,
 ) {
-    // 1) Load execution data
     val execLoader = ExecFileLoader()
     execFile.inputStream().buffered().use { execLoader.load(it) }
 
-    // 2) Analyze class files
     val coverageBuilder = CoverageBuilder()
     val analyzer = Analyzer(execLoader.executionDataStore, coverageBuilder)
     classPath.filter { it.exists() }.forEach { classFile ->
         analyzer.analyzeAll(classFile)
     }
 
-    // 3) Create coverage bundle
-    val bundle = coverageBuilder.getBundle("Coverage Report")
-
-    // 4) Prepare report visitors (HTML, XML if desired)
-    val htmlFormatter = HTMLFormatter()
-    val htmlVisitor = htmlFormatter.createVisitor(FileMultiReportOutput(reportDir.toFile()))
-
-    // If you want XML output as well, uncomment below:
-    // val xmlFormatter = XMLFormatter()
-    // val xmlVisitor = xmlFormatter.createVisitor(File(reportDir.toFile(), "jacoco.xml"))
-
-    // Combine multiple visitors if needed
-    val visitors = mutableListOf<IReportVisitor>(htmlVisitor)
-    // visitors.add(xmlVisitor) // if you enable XML
+    val visitors = reports.map { it.toVisitor(reportDir) }
     val reportVisitor = MultiReportVisitor(visitors)
 
-    // htmlVisitor.visitInfo()
-    // 5) Build the report
     reportVisitor.visitInfo(
         execLoader.sessionInfoStore.infos,
         execLoader.executionDataStore.contents,
     )
+
+    val bundle = coverageBuilder.getBundle("Coverage Report")
     sourceDirectories.forEach { directory ->
         reportVisitor.visitBundle(
             bundle,

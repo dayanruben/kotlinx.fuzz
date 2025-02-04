@@ -142,6 +142,7 @@ abstract class FuzzTask : Test() {
                 classPath = if (!reportWithAllClasspath) projectClasspath else projectClasspath + runtimeClasspath,
                 sourceDirectories = sourceDirectories,
                 reportDir = workDir.resolve("jacoco-report").createDirectories(),
+                reports = fuzzConfig.jacocoReports,
             )
         }
     }
