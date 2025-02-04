@@ -41,26 +41,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val javaCommand = System.getProperty("java.home") + "/bin/java"
         val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
 
-        val pb = ProcessBuilder(
+        val exitCode = ProcessBuilder(
             javaCommand,
             "-classpath", classpath,
             *properties.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
+        ).executeAndSaveLogs(
+            stdout = "${method.fullName}.log",
+            stderr = "${method.fullName}.err",
         )
-        pb.redirectErrorStream(true)
-
-        val process = pb.start()
-        val stdoutFile = config.logsDir.resolve("${method.fullName}.log")
-            .toFile()
-            .outputStream()
-        val stdoutThread = logProcessStream(process.inputStream, stdoutFile) {
-            if (jazzerConfig.enableLogging) {
-                log.info(it)
-            }
-        }
-        val exitCode = process.waitFor()
-        stdoutThread.join()
 
         return when (exitCode) {
             0 -> null
@@ -84,6 +74,30 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
         }
+    }
+
+    private fun ProcessBuilder.executeAndSaveLogs(stdout: String, stderr: String): Int {
+        val process = start()
+        val stdoutStream = config.logsDir.resolve(stdout)
+            .toFile()
+            .outputStream()
+        val stderrStream = config.logsDir.resolve(stderr)
+            .toFile()
+            .outputStream()
+        val stdoutThread = logProcessStream(process.inputStream, stdoutStream) {
+            if (jazzerConfig.enableLogging) {
+                log.info(it)
+            }
+        }
+        val stderrThread = logProcessStream(process.errorStream, stderrStream) {
+            if (jazzerConfig.enableLogging) {
+                log.info(it)
+            }
+        }
+        val exitCode = process.waitFor()
+        stdoutThread.join()
+        stderrThread.join()
+        return exitCode
     }
 
     private fun logProcessStream(
