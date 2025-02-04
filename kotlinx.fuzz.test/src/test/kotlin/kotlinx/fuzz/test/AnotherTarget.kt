@@ -1,10 +1,10 @@
 package kotlinx.fuzz.test
 
+import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 
 class AnotherTarget {
-
     @KFuzzTest
     fun test(data: KFuzzer) {
         if (data.int() % 2 == 0) {
@@ -13,6 +13,14 @@ class AnotherTarget {
                     data.boolean()
                 }
             }
+        }
+    }
+
+    @KFuzzTest
+    @IgnoreFailures
+    fun `test which fails`(data: KFuzzer) {
+        if (data.boolean()) {
+            error("Expected failure")
         }
     }
 }
