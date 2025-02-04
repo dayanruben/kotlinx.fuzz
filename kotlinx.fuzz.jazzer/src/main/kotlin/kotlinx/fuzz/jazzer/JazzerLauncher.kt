@@ -51,6 +51,9 @@ object JazzerLauncher {
         exitProcess(0)
     }
 
+    private fun countCrashes(reproducerPath: Path) =
+        reproducerPath.listDirectoryEntries("{crash-*,timeout-*,slow-imput-*}").size.toLong()
+
     private fun configure(reproducerPath: Path, method: Method): List<String> {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
@@ -70,8 +73,10 @@ object JazzerLauncher {
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
 
-        var keepGoing =
-            if (config.runModes.contains(RunMode.REGRESSION)) reproducerPath.listDirectoryEntries("crash-*").size.toLong() else 0
+        var keepGoing = when(RunMode.REGRESSION) {
+            in config.runModes -> countCrashes(reproducerPath)
+            else -> 0
+        }
         if (config.runModes.contains(RunMode.FUZZING)) {
             libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
             keepGoing += config.keepGoing
