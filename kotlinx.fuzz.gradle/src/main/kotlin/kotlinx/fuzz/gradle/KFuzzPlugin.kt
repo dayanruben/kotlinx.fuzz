@@ -1,5 +1,6 @@
 package kotlinx.fuzz.gradle
 
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -12,7 +13,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import kotlin.io.path.createDirectories
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
@@ -59,7 +59,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
     private fun Test.configureLogging(@Suppress("UNUSED_PARAMETER") project: Project) {
         // val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
         // val projectLogLevel = project.gradle.startParameter.logLevel
-        //
+        // 
         // systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
         // userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
         // projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
@@ -97,11 +97,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
                 log.warn(
-                    """
-                    tasks.withType<FuzzTask>().configureEach {
-                        classpath = TODO()
-                        testClassesDirs = TODO()
-                    }""".trimIndent(),
+                    """tasks.withType<FuzzTask>().configureEach {
+                            classpath = TODO()
+                            testClassesDirs = TODO()
+                    }
+                    """.trimIndent(),
                 )
                 project.files() to project.files()
             }
