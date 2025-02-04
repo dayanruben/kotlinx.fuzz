@@ -5,5 +5,4 @@ package kotlinx.fuzz
  * Instead, it will be reported as passed
  */
 @Target(AnnotationTarget.FUNCTION)
-@Suppress("unused")
 annotation class IgnoreFailures
