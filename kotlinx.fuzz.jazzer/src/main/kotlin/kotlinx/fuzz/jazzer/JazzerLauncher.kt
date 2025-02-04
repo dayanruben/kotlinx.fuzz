@@ -73,7 +73,7 @@ object JazzerLauncher {
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
 
-        var keepGoing = when(RunMode.REGRESSION) {
+        var keepGoing = when (RunMode.REGRESSION) {
             in config.runModes -> countCrashes(reproducerPath)
             else -> 0
         }
