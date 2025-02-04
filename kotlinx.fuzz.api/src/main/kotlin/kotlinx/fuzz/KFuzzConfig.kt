@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
  * (custom and built-in).
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
- * @param runMode - Regression or fuzzing. Default: regression_fuzzing
+ * @param runModes - Set of modes to be run: each element can be regression or fuzzing. Default: regression, fuzzing
  * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
  */
 interface KFuzzConfig {
@@ -36,7 +36,7 @@ interface KFuzzConfig {
     val maxSingleTargetFuzzTime: Duration
     val workDir: Path
     val dumpCoverage: Boolean
-    val runMode: RunMode
+    val runModes: Set<RunMode>
     val reproducerPath: Path
 
     fun toPropertiesMap(): Map<String, String>
@@ -94,11 +94,12 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
-    override var runMode: RunMode by KFuzzConfigProperty(
-        "kotlinx.fuzz.runMode",
-        defaultValue = RunMode.REGRESSION_FUZZING,
-        toString = { it.toString() },
-        fromString = { RunMode.valueOf(it.uppercase()) },
+    override var runModes: Set<RunMode> by KFuzzConfigProperty(
+        "kotlinx.fuzz.runModes",
+        defaultValue = setOf(RunMode.REGRESSION, RunMode.FUZZING),
+        validate = { require(it.isNotEmpty()) { "runModes should not be empty" } },
+        toString = { it.joinToString(", ") },
+        fromString = { it.split(",").map { RunMode.valueOf(it.trim().uppercase()) }.toSet() },
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
         "kotlinx.fuzz.reproducerPath",
@@ -133,7 +134,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
 }
 
 enum class RunMode {
-    FUZZING, REGRESSION, REGRESSION_FUZZING
+    FUZZING, REGRESSION
 }
 
 /**

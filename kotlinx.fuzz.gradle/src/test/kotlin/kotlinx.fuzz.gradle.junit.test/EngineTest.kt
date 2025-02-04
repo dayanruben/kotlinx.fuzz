@@ -28,7 +28,7 @@ object EngineTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            runMode = RunMode.FUZZING
+            runModes = setOf(RunMode.FUZZING)
             maxSingleTargetFuzzTime = 10.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")

@@ -70,23 +70,14 @@ object JazzerLauncher {
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
 
-        Opt.keepGoing.setIfDefault(
-            when (config.runMode) {
-                RunMode.REGRESSION -> reproducerPath.listDirectoryEntries("crash-*").size.toLong()
+        var keepGoing =
+            if (config.runModes.contains(RunMode.REGRESSION)) reproducerPath.listDirectoryEntries("crash-*").size.toLong() else 0
+        if (config.runModes.contains(RunMode.FUZZING)) {
+            libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
+            keepGoing += config.keepGoing
+        }
 
-                RunMode.REGRESSION_FUZZING -> {
-                    libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
-
-                    reproducerPath.listDirectoryEntries("crash-*").size + config.keepGoing
-                }
-
-                RunMode.FUZZING -> {
-                    libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
-
-                    config.keepGoing
-                }
-            },
-        )
+        Opt.keepGoing.setIfDefault(keepGoing)
 
         return libFuzzerArgs
     }
@@ -102,24 +93,20 @@ object JazzerLauncher {
         val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
-        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
+        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { _, finding ->
             atomicFinding.set(finding)
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
 
-        when (config.runMode) {
-            RunMode.REGRESSION -> reproducerPath.listDirectoryEntries("crash-*").forEach {
+        if (config.runModes.contains(RunMode.REGRESSION)) {
+            reproducerPath.listDirectoryEntries("crash-*").forEach {
                 FuzzTargetRunner.runOne(it.readBytes())
             }
-            RunMode.REGRESSION_FUZZING -> {
-                reproducerPath.forEach {
-                    FuzzTargetRunner.runOne(it.readBytes())
-                }
-                FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-            }
-            RunMode.FUZZING -> FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
         }
+
+        if (config.runModes.contains(RunMode.FUZZING))
+            FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
 
         return atomicFinding.get()
     }

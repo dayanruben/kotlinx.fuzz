@@ -21,7 +21,7 @@ dependencies {
 
 fuzzConfig {
     keepGoing = 10
-    runMode = RunMode.REGRESSION
+    runModes = setOf(RunMode.REGRESSION)
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds
 }
