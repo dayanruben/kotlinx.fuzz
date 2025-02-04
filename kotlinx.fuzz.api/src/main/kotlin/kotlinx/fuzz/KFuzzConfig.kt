@@ -98,7 +98,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         "kotlinx.fuzz.runModes",
         defaultValue = setOf(RunMode.REGRESSION, RunMode.FUZZING),
         validate = { require(it.isNotEmpty()) { "runModes should not be empty" } },
-        toString = { it.joinToString(", ") },
+        toString = { it.joinToString(",") },
         fromString = { it.split(",").map { RunMode.valueOf(it.trim().uppercase()) }.toSet() },
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
