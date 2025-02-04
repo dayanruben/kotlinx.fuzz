@@ -10,8 +10,7 @@ class AnotherTarget {
         if (data.int() % 2 == 0) {
             if (data.int() % 3 == 2) {
                 if (data.int() % 31 == 11) {
-                    if(data.boolean()) throw NullPointerException()
-                    else throw AssertionError()
+                    data.boolean()
                 }
             }
         }
