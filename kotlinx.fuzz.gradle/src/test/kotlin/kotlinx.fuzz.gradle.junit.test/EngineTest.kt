@@ -55,6 +55,21 @@ object EngineTest {
                 throw IllegalArgumentException("Expected failure")
             }
         }
+
+        @KFuzzTest
+        fun `success test2`(data: KFuzzer) {
+            if (data.int() in 215..2015) {
+                Thread.sleep(30000)
+            }
+        }
+
+        @KFuzzTest
+        fun `failure test5`(data: KFuzzer) {
+            if (data.int() in 2015..8005) {
+                Thread.sleep(30000)
+                error("Expected failure")
+            }
+        }
     }
 
     @BeforeEach
@@ -67,9 +82,9 @@ object EngineTest {
     }
 
     @Test
-    fun `two pass four fail`() {
-        val successTests = 2L
-        val failedTests = 4L
+    fun `three pass five fail`() {
+        val successTests = 3L
+        val failedTests = 5L
         val startedTests = successTests + failedTests
 
         EngineTestKit

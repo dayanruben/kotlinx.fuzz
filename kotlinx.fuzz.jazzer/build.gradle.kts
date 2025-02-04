@@ -19,7 +19,7 @@ dependencies {
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
-    commandLine = listOf("/Users/Timur.Kudashev/.cargo/bin/cargo", "build", "--release")
+    commandLine = listOf("cargo", "build", "--release")
 }
 
 tasks.register("linkRustLib") {
