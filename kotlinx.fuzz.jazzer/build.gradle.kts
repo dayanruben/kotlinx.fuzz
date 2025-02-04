@@ -1,5 +1,6 @@
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import kotlinx.fuzz.configurePublishing
 
 plugins {
     id("kotlinx.fuzz.src-module")
@@ -10,9 +11,10 @@ repositories {
 }
 
 dependencies {
+    implementation(project(":kotlinx.fuzz.engine"))
     implementation(project(":kotlinx.fuzz.api"))
-    implementation(libs.jazzer)
     implementation(kotlin("reflect"))
+    implementation(libs.jazzer)
 }
 
 tasks.register<Exec>("buildRustLib") {
@@ -58,3 +60,5 @@ tasks.register("linkRustLib") {
 tasks.named("compileKotlin") {
     dependsOn("linkRustLib")
 }
+
+configurePublishing()

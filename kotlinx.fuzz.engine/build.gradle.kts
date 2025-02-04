@@ -5,8 +5,9 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.junit.platform.engine)
-    implementation(kotlin("reflect"))
+    implementation(project(":kotlinx.fuzz.api"))
+    implementation(gradleApi())
+    implementation(libs.rgxgen)
 
     testRuntimeOnly(libs.junit.jupiter)
 }

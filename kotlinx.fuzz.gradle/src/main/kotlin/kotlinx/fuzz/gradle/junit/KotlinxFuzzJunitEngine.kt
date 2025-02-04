@@ -3,10 +3,7 @@ package kotlinx.fuzz.gradle.junit
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.*
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -18,6 +15,8 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
+    private val log = KLoggerFactory.getLogger(KotlinxFuzzJunitEngine::class)
+
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
     private val config: KFuzzConfig by lazy {
@@ -77,12 +76,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             }
 
             is MethodTestDescriptor -> {
+                log.debug { "Executing method ${descriptor.displayName}" }
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                val finding = fuzzEngine.runTarget(instance, method)
-                val result = when (finding) {
+                val result = when (val finding = fuzzEngine.runTarget(instance, method)) {
                     null -> TestExecutionResult.successful()
                     else -> TestExecutionResult.failed(finding)
                 }

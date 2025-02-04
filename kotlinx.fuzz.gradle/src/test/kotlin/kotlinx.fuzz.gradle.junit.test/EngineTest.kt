@@ -21,7 +21,7 @@ object EngineTest {
         }
 
         @KFuzzTest
-        fun `success test`(@Suppress("UNUSED_PARAMETER") data: KFuzzer) {
+        fun `success test`(@Suppress("UNUSED_PARAMETER", "unused") data: KFuzzer) {
         }
 
         @KFuzzTest
@@ -53,6 +53,7 @@ object EngineTest {
         writeToSystemProperties {
             maxSingleTargetFuzzTime = 10.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
+            workDir = kotlin.io.path.createTempDirectory("fuzz-test")
         }
     }
 

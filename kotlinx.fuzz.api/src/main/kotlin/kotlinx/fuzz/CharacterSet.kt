@@ -1,9 +1,5 @@
 package kotlinx.fuzz
 
-import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
-import com.github.curiousoddman.rgxgen.model.SymbolRange
-import com.github.curiousoddman.rgxgen.util.chars.CharList
-
 /**
  * Class that represents a custom character set consisting of a list of char ranges and a set of unique symbols
  *
@@ -22,11 +18,6 @@ data class CharacterSet(
             "All ranges must be ascending and with step 1"
         }
     }
-
-    internal fun toRgxGenProperties(): RgxGenCharsDefinition = RgxGenCharsDefinition.of(
-        ranges.map { SymbolRange.range(it.first.code, it.last.code) },
-        CharList.charList(symbols.joinToString("")),
-    )
 
     operator fun contains(char: Char): Boolean = char in symbols || ranges.any { char in it }
 
