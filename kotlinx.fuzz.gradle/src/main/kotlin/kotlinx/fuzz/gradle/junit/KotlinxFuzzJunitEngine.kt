@@ -4,6 +4,8 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.debug
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -15,7 +17,7 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
-    private val log = KLoggerFactory.getLogger(KotlinxFuzzJunitEngine::class)
+    private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
@@ -121,7 +123,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
         }
-        private fun Method.isFuzzTarget(): Boolean = AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) && parameters.size == 1 && parameters[0].type == KFuzzer::class.java
+
+        private fun Method.isFuzzTarget(): Boolean =
+            AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
+                parameters.size == 1 &&
+                parameters[0].type == KFuzzer::class.java
+
         private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }

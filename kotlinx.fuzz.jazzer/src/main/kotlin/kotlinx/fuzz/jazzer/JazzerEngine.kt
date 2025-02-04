@@ -6,7 +6,8 @@ import java.nio.file.Path
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KLoggerFactory
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -22,7 +23,7 @@ internal val KFuzzConfig.exceptionsDir: Path
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
-    private val log = KLoggerFactory.getLogger(JazzerEngine::class)
+    private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     override fun initialise() {
