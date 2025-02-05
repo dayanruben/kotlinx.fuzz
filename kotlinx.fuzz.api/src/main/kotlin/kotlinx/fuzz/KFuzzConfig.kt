@@ -20,6 +20,7 @@ import kotlin.time.Duration.Companion.seconds
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
  * @param workDir - Directory where the all fuzzing results will be stored. Default: `build/fuzz`
  * @param dumpCoverage - Whether fuzzer will generate jacoco .exec files.
+ * @param logLevel - Logging level enabled for kotlinx.fuzz
  * Default: true
  * (custom and built-in).
  * Default: empty list
@@ -38,6 +39,8 @@ interface KFuzzConfig {
     val dumpCoverage: Boolean
     val runModes: Set<RunMode>
     val reproducerPath: Path
+    val logLevel: String
+    val jacocoReports: Set<JacocoReport>
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -106,6 +109,19 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
+    override var logLevel: String by KFuzzConfigProperty(
+        "kotlinx.fuzz.log.level",
+        defaultValue = "WARN",
+        validate = { require(it.uppercase() in listOf("TRACE", "INFO", "DEBUG", "WARN", "ERROR")) },
+        toString = { it },
+        fromString = { it },
+    )
+    override var jacocoReports: Set<JacocoReport> by KFuzzConfigProperty(
+        "kotlinx.fuzz.jacocoReportTypes",
+        defaultValue = setOf(JacocoReport.HTML),
+        toString = { it.joinToString(",") },
+        fromString = { it.split(",").map { JacocoReport.valueOf(it.uppercase()) }.toSet() },
+    )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
         .associate { it.systemProperty to it.stringValue }
@@ -163,7 +179,6 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
     override fun getValue(thisRef: Any, property: KProperty<*>): T = get()
 
     override fun setValue(thisRef: Any, property: KProperty<*>, value: T) {
-        assertCanSet()
         cachedValue = value
     }
 

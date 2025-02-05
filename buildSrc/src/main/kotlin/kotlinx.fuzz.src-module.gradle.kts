@@ -27,10 +27,6 @@ tasks.getByName<KotlinCompile>("compileKotlin") {
     }
 }
 
-/**
- * Configures logging as in kotlinx.fuzz.gradle/src/main/kotlin/kotlinx/fuzz/gradle/KFuzzPlugin.kt
- * If changed, consider changing there as well
- */
 tasks.test {
     testLogging {
         events("passed", "skipped", "failed")

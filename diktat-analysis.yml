@@ -171,3 +171,9 @@
 - name: SAY_NO_TO_VAR
   enabled: true
   ignoreAnnotated: [ KFuzzTest, Test ]
+- name: WRONG_OVERLOADING_FUNCTION_ARGUMENTS
+  enabled: true
+  ignoreAnnotated: [ LoggerImpl ]
+- name: DEBUG_PRINT
+  enabled: true
+  ignoreAnnotated: [ LoggerImpl ]

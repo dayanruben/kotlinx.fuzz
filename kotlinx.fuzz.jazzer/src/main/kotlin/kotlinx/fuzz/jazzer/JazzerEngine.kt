@@ -1,12 +1,16 @@
 package kotlinx.fuzz.jazzer
 
+import java.io.InputStream
 import java.io.ObjectInputStream
+import java.io.OutputStream
 import java.lang.reflect.Method
 import java.nio.file.Path
+import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KLoggerFactory
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -22,7 +26,7 @@ internal val KFuzzConfig.exceptionsDir: Path
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
-    private val log = KLoggerFactory.getLogger(JazzerEngine::class)
+    private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
     override fun initialise() {
@@ -38,17 +42,17 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val javaCommand = System.getProperty("java.home") + "/bin/java"
         val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
 
-        val pb = ProcessBuilder(
+        val exitCode = ProcessBuilder(
             javaCommand,
             "-classpath", classpath,
             *properties.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
+        ).executeAndSaveLogs(
+            stdout = "${method.fullName}.log",
+            stderr = "${method.fullName}.err",
         )
-        pb.redirectError(config.logsDir.resolve("${method.fullName}.err").toFile())
-        pb.redirectOutput(config.logsDir.resolve("${method.fullName}.log").toFile())
 
-        val exitCode = pb.start().waitFor()
         return when (exitCode) {
             0 -> null
             else -> {
@@ -70,6 +74,42 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
             val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
+        }
+    }
+
+    private fun ProcessBuilder.executeAndSaveLogs(stdout: String, stderr: String): Int {
+        val process = start()
+        val stdoutStream = config.logsDir.resolve(stdout).outputStream()
+        val stderrStream = config.logsDir.resolve(stderr).outputStream()
+        val stdoutThread = logProcessStream(process.inputStream, stdoutStream) {
+            if (jazzerConfig.enableLogging) {
+                log.info(it)
+            }
+        }
+        val stderrThread = logProcessStream(process.errorStream, stderrStream) {
+            if (jazzerConfig.enableLogging) {
+                log.info(it)
+            }
+        }
+        val exitCode = process.waitFor()
+        stdoutThread.join()
+        stderrThread.join()
+        return exitCode
+    }
+
+    private fun logProcessStream(
+        inputStream: InputStream,
+        outputStream: OutputStream,
+        log: (String?) -> Unit,
+    ): Thread = thread(start = true) {
+        inputStream.bufferedReader().use { reader ->
+            outputStream.bufferedWriter().use { writer ->
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    writer.appendLine(line)
+                    log(line)
+                }
+            }
         }
     }
 }

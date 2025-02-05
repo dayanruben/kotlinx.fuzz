@@ -17,11 +17,13 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KLoggerFactory
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.debug
+import kotlinx.fuzz.log.error
 import kotlinx.fuzz.RunMode
 
 object JazzerLauncher {
-    private val log = KLoggerFactory.getLogger(JazzerLauncher::class.java)
+    private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
