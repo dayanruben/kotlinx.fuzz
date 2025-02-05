@@ -15,6 +15,7 @@ dependencies {
     implementation(project(":kotlinx.fuzz.api"))
     implementation(kotlin("reflect"))
     implementation(libs.jazzer)
+    implementation(libs.slf4j.api)
 }
 
 tasks.register<Exec>("buildRustLib") {

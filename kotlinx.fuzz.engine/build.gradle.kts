@@ -6,8 +6,8 @@ plugins {
 
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
-    implementation(gradleApi())
     implementation(libs.rgxgen)
+    implementation(libs.slf4j.api)
 
     testRuntimeOnly(libs.junit.jupiter)
 }
