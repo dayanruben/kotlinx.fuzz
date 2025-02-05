@@ -38,6 +38,7 @@ interface KFuzzConfig {
     val dumpCoverage: Boolean
     val logLevel: String
     val jacocoReports: Set<JacocoReport>
+    val jacocoReportIncludedDependencies: Set<String>
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -106,6 +107,12 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         defaultValue = setOf(JacocoReport.HTML),
         toString = { it.joinToString(",") },
         fromString = { it.split(",").map { JacocoReport.valueOf(it.uppercase()) }.toSet() },
+    )
+    override var jacocoReportIncludedDependencies: Set<String> by KFuzzConfigProperty(
+        "kotlinx.fuzz.jacocoReportIncludedDependencies",
+        defaultValue = emptySet(),
+        toString = { it.joinToString(",") },
+        fromString = { it.split(",").map { it.trim() }.toSet() },
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
