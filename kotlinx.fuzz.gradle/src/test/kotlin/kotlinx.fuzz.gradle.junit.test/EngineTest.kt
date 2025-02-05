@@ -5,6 +5,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.gradle.KFuzzConfigBuilder
 import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.BeforeEach
@@ -68,9 +69,11 @@ object EngineTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
+            runModes = setOf(RunMode.FUZZING)
             maxSingleTargetFuzzTime = 5.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
+            reproducerPath = workDir.resolve("reproducers")
             keepGoing = 2
         }
     }

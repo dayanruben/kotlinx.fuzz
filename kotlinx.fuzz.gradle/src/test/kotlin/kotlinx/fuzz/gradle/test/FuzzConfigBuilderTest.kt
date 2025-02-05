@@ -21,6 +21,7 @@ object FuzzConfigBuilderTest {
                 maxSingleTargetFuzzTime = 0.seconds
                 instrument = emptyList()
                 workDir = Path("test")
+                reproducerPath = Path("test")
             }
         }
     }
@@ -32,6 +33,7 @@ object FuzzConfigBuilderTest {
                 instrument = listOf("1", "2")
                 maxSingleTargetFuzzTime = 30.seconds
                 workDir = Path("test")
+                reproducerPath = Path("test")
             }
         }
     }
@@ -47,6 +49,7 @@ object FuzzConfigBuilderTest {
                 customHookExcludes = listOf("exclude")
                 maxSingleTargetFuzzTime = 1000.seconds
                 workDir = Path("test")
+                reproducerPath = Path("test")
             }
         }
     }
