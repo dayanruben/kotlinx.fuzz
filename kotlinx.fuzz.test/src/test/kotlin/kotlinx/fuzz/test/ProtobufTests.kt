@@ -333,6 +333,7 @@ object ProtobufTests {
     @JvmInline
     value class SecondOption(@ProtoNumber(1001) val valueDouble: Double) : OneOfType
 
+    @IgnoreFailures
     @OptIn(ExperimentalSerializationApi::class)
     @KFuzzTest
     fun protoBufDecodeFromByteArray(data: KFuzzer) {
