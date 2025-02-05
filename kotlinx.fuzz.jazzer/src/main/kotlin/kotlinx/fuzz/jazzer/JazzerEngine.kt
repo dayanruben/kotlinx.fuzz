@@ -75,7 +75,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         Files.walk(config.reproducerPath)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .forEach { clusterDir ->
-                clusterDir.listDirectoryEntries("stacktrace-*")
+                clusterDir.listStacktraces()
                     .forEach { stacktraceFile ->
                         val crashFileName = "crash-" + stacktraceFile.name.removePrefix("stacktrace-")
                         val targetFile = clusterDir.resolve(crashFileName)
@@ -140,7 +140,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
 
-internal fun Path.listCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
+internal fun Path.listAllCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
+
+internal fun Path.listStacktraces(): List<Path> = listDirectoryEntries("stacktrace-*")
+
+internal fun Path.listClusters(): List<Path> = listDirectoryEntries("cluster-*")
 
 /**
  * Reads a Throwable from the specified [path].

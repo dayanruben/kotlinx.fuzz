@@ -21,7 +21,7 @@ dependencies {
 }
 
 fuzzConfig {
-    keepGoing = 10
+    keepGoing = 2
     runModes = setOf(RunMode.FUZZING)
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds

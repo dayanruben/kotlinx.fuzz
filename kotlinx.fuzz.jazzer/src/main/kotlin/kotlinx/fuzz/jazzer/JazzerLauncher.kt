@@ -29,6 +29,11 @@ object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
+    private var oldRepresentatives: Int? = null
+        set(value) {
+            require(field == null && value != null) { "Number of old representatives should be set only once to a non-null value" }
+            field = value
+        }
 
     init {
         val codeLocation = this::class.java.protectionDomain.codeSource.location
@@ -101,31 +106,20 @@ object JazzerLauncher {
                 .resolve("coverage")
                 .createDirectories()
                 .resolve("${method.fullName}.exec")
-                .absolute()
-                .toString()
+                .absolutePathString()
             Opt.coverageDump.setIfDefault(coverageFile)
         }
 
         libFuzzerArgs += currentCorpus.toString()
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
-
-        var keepGoing = when (RunMode.REGRESSION) {
-            in config.runModes -> {
-                val crashCount = reproducerPath.listCrashes().size
-                if (crashCount == 0) {
-                    log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
-                }
-                crashCount.toLong()
-            }
-            else -> 0
-        }
-        if (config.runModes.contains(RunMode.FUZZING)) {
+        if (RunMode.FUZZING in config.runModes) {
             libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
-            keepGoing += config.keepGoing
         }
 
-        Opt.keepGoing.setIfDefault(keepGoing)
+        if (RunMode.REGRESSION in config.runModes && reproducerPath.listAllCrashes().isEmpty()) {
+            log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
+        }
 
         return libFuzzerArgs
     }
@@ -137,19 +131,23 @@ object JazzerLauncher {
             reproducerPath.createDirectories()
         }
 
+        oldRepresentatives = reproducerPath.listStacktraces().size
+
         val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { bytes, finding ->
-            if (isTerminalFinding(bytes, finding, reproducerPath)) {
+            val stopFuzzing = isTerminalFinding(bytes, finding, reproducerPath)
+            if (stopFuzzing) {
                 atomicFinding.set(finding)
             }
+            stopFuzzing
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
 
         if (config.runModes.contains(RunMode.REGRESSION)) {
-            reproducerPath.listCrashes().forEach {
+            reproducerPath.listAllCrashes().forEach {
                 FuzzTargetRunner.runOne(it.readBytes())
             }
         }
@@ -165,11 +163,13 @@ object JazzerLauncher {
     private fun isTerminalFinding(bytes: ByteArray, finding: Throwable, reproducerPath: Path): Boolean {
         val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
         val file = reproducerPath.absolute().resolve("stacktrace-$hash")
+
         if (!file.exists()) {
             file.createFile()
             file.writeText(finding.filter().stackTraceToString())
         }
-        return clusterCrashes(reproducerPath) >= Opt.keepGoing.get()
+
+        return clusterCrashes(reproducerPath) - oldRepresentatives!! >= config.keepGoing
     }
 
     fun initJazzer() {
@@ -180,6 +180,7 @@ object JazzerLauncher {
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
         Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
+        Opt.keepGoing.setIfDefault(0)
 
         AgentInstaller.install(Opt.hooks.get())
 
@@ -212,7 +213,7 @@ object JazzerLauncher {
     ): MutableMap<Int, Path> {
         val mapping = mutableMapOf<Int, Path>()
 
-        val representativeFiles = directoryPath.listDirectoryEntries("cluster-*")
+        val representativeFiles = directoryPath.listClusters()
         val representatives = representativeFiles.map { it.name.removePrefix("cluster-") }
 
         for (representative in representatives) {
@@ -228,7 +229,7 @@ object JazzerLauncher {
 
 
     private fun clusterCrashes(directoryPath: Path): Int {
-        val stacktraceFiles = directoryPath.listDirectoryEntries("stacktrace-*")
+        val stacktraceFiles = directoryPath.listStacktraces()
 
         val rawStackTraces = mutableListOf<String>()
 
@@ -258,7 +259,7 @@ object JazzerLauncher {
             }
         }
 
-        return clusters.max()
+        return clusters.maxOrNull() ?: 0
     }
 }
 
