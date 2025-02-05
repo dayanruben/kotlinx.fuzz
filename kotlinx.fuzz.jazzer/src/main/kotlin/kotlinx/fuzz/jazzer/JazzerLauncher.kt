@@ -209,13 +209,12 @@ object JazzerLauncher {
     private fun initClustersMapping(
         directoryPath: Path,
         stacktraceFiles: List<Path>,
-        clusters: List<Int>
+        clusters: List<Int>,
     ): MutableMap<Int, Path> {
-        val mapping = mutableMapOf<Int, Path>()
-
         val representativeFiles = directoryPath.listClusters()
         val representatives = representativeFiles.map { it.name.removePrefix("cluster-") }
 
+        val mapping = mutableMapOf<Int, Path>()
         for (representative in representatives) {
             val matchingFile = stacktraceFiles.find { it.name == representative } ?: continue
             val clusterIndex = stacktraceFiles.indexOf(matchingFile)
@@ -226,7 +225,6 @@ object JazzerLauncher {
 
         return mapping
     }
-
 
     private fun clusterCrashes(directoryPath: Path): Int {
         val stacktraceFiles = directoryPath.listStacktraces()

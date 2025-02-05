@@ -4,6 +4,7 @@ import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
 import java.lang.reflect.Method
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
@@ -11,7 +12,6 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
-import java.nio.file.Files
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -77,14 +77,15 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             .forEach { clusterDir ->
                 clusterDir.listStacktraces()
                     .forEach { stacktraceFile ->
-                        val crashFileName = "crash-" + stacktraceFile.name.removePrefix("stacktrace-")
+                        val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
                         val targetFile = clusterDir.resolve(crashFileName)
                         if (!targetFile.exists()) {
                             val crashFile = clusterDir.parent.resolve(crashFileName)
                             if (crashFile.exists()) {
                                 crashFile.copyTo(targetFile, overwrite = true)
-                                if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-")))
+                                if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                                     crashesForDeletion.add(crashFile)
+                                }
                             }
                         }
                     }
