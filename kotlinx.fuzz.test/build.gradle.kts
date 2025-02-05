@@ -22,6 +22,7 @@ fuzzConfig {
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds
     jacocoReports = setOf(HTML, CSV, XML)
+    logLevel = "debug"
 }
 
 kotlin {

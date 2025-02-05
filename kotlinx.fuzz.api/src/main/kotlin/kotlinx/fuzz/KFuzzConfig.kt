@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.seconds
 interface KFuzzConfig {
     val fuzzEngine: String
     val hooks: Boolean
-    val keepGoing: Int
+    val keepGoing: Long
     val instrument: List<String>
     val customHookExcludes: List<String>
     val maxSingleTargetFuzzTime: Duration
@@ -59,12 +59,12 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
-    override var keepGoing: Int by KFuzzConfigProperty(
+    override var keepGoing: Long by KFuzzConfigProperty(
         "kotlinx.fuzz.keepGoing",
         defaultValue = 1,
         validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
-        fromString = { it.toInt() },
+        fromString = { it.toLong() },
     )
     override var instrument: List<String> by KFuzzConfigProperty(
         "kotlinx.fuzz.instrument",

@@ -9,8 +9,8 @@ import com.code_intelligence.jazzer.utils.Log
 import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
+import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.*
@@ -30,6 +30,17 @@ object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
+
+    init {
+        val codeLocation = this::class.java.protectionDomain.codeSource.location
+        val libsLocation = codeLocation.toURI()
+            .toPath()
+            .toFile()
+            .parentFile
+        System.load("$libsLocation/${System.mapLibraryName("casr_adapter")}")
+    }
+
+    private external fun parseAndClusterStackTraces(rawStacktraces: List<String>): List<Int>
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -81,8 +92,13 @@ object JazzerLauncher {
         return newThrowable
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     fun runTarget(instance: Any, method: Method): Throwable? {
+        val reproducerPath =
+            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
+        if (!reproducerPath.exists()) {
+            reproducerPath.createDirectories()
+        }
+
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
@@ -103,12 +119,8 @@ object JazzerLauncher {
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingHandlerForJUnit { bytes, finding ->
-            atomicFinding.set(finding)
-            val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
-            val file = Paths.get(Opt.reproducerPath.get(), "stacktrace-$hash")
-            if (!file.exists()) {
-                file.createFile()
-                file.writeText(finding.filter().stackTraceToString())
+            if (isTerminalFinding(bytes, finding, reproducerPath)) {
+                atomicFinding.set(finding)
             }
         }
 
@@ -118,6 +130,17 @@ object JazzerLauncher {
         return atomicFinding.get()
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
+    private fun isTerminalFinding(bytes: ByteArray, finding: Throwable, reproducerPath: Path): Boolean {
+        val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+        val file = reproducerPath.absolute().resolve("stacktrace-$hash")
+        if (!file.exists()) {
+            file.createFile()
+            file.writeText(finding.filter().stackTraceToString())
+        }
+        return clusterCrashes(reproducerPath) >= Opt.keepGoing.get()
+    }
+
     fun initJazzer() {
         Log.fixOutErr(System.out, System.err)
 
@@ -125,6 +148,7 @@ object JazzerLauncher {
         Opt.instrumentationIncludes.setIfDefault(config.instrument)
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
+        Opt.keepGoing.setIfDefault(config.keepGoing)
 
         AgentInstaller.install(Opt.hooks.get())
 
@@ -132,6 +156,57 @@ object JazzerLauncher {
             JazzerTarget::fuzzTargetOne.javaMethod,
             LifecycleMethodsInvoker.noop(JazzerTarget),
         )
+    }
+
+    private fun convertToJavaStyleStackTrace(kotlinStackTrace: String): String {
+        val lines = kotlinStackTrace.lines()
+        if (lines.isEmpty()) {
+            return kotlinStackTrace
+        }
+
+        val firstLine = lines.first()
+        val updatedFirstLine = if (firstLine.startsWith("Exception in thread \"main\"")) {
+            firstLine
+        } else {
+            "Exception in thread \"main\" $firstLine"
+        }
+
+        return listOf(updatedFirstLine).plus(lines.drop(1)).joinToString("\n")
+    }
+
+    private fun clusterCrashes(directoryPath: Path): Int {
+        val stacktraceFiles = directoryPath.listDirectoryEntries("stacktrace-*")
+
+        val rawStackTraces = mutableListOf<String>()
+
+        stacktraceFiles.forEach { file ->
+            val lines = convertToJavaStyleStackTrace(Files.readString(file))
+            rawStackTraces.add(lines)
+        }
+
+        val clusters = parseAndClusterStackTraces(rawStackTraces)
+        val mapping = mutableMapOf<Int, Path>()
+
+        clusters.forEachIndexed { index, cluster ->
+            val stacktraceSrc = stacktraceFiles[index]
+            val isOld = mapping.containsKey(cluster)
+
+            if (!mapping.containsKey(cluster)) {
+                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.readLines().first().trim()}")
+            }
+
+            val clusterDir = directoryPath.resolve(mapping[cluster]!!)
+            if (!clusterDir.exists()) {
+                clusterDir.createDirectory()
+            }
+
+            stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.fileName), overwrite = true)
+            if (isOld) {
+                stacktraceSrc.deleteExisting()
+            }
+        }
+
+        return clusters.max()
     }
 }
 
