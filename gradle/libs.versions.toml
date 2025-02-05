@@ -2,6 +2,7 @@
 kotlin = "2.0.21"
 diktat = "2.0.0"
 jazzer = "0.22.1"
+plan-jazzer = "0.0.2"
 
 junit-platform = "1.11.4"
 junit-jupiter = "5.11.4"
@@ -30,6 +31,9 @@ diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin",
 jazzer = { module = "com.code-intelligence:jazzer", version.ref = "jazzer" }
 jazzer-junit = { module = "com.code-intelligence:jazzer-junit", version.ref = "jazzer" }
 jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazzer" }
+plan-jazzer = { module = "org.jetbrains:jazzer", version.ref = "plan-jazzer" }
+plan-jazzer-junit = { module = "org.jetbrains:jazzer-junit", version.ref = "plan-jazzer" }
+plan-jazzer-api = { module = "org.jetbrains:jazzer-api", version.ref = "plan-jazzer" }
 
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 
