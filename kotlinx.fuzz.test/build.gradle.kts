@@ -22,7 +22,7 @@ dependencies {
 
 fuzzConfig {
     keepGoing = 10
-    runModes = setOf(RunMode.REGRESSION)
+    runModes = setOf(RunMode.FUZZING)
     instrument = listOf("kotlinx.fuzz.test.**")
     maxSingleTargetFuzzTime = 10.seconds
     jacocoReports = setOf(HTML, CSV, XML)

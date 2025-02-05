@@ -21,6 +21,7 @@ import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
+import kotlinx.fuzz.log.warn
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -70,10 +71,16 @@ object JazzerLauncher {
 
         libFuzzerArgs += currentCorpus.toString()
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
-        libFuzzerArgs += "-artifact_prefix=${reproducerPath.toAbsolutePath()}/"
+        libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
 
         var keepGoing = when (RunMode.REGRESSION) {
-            in config.runModes -> reproducerPath.listCrashes().size.toLong()
+            in config.runModes -> {
+                val crashCount = reproducerPath.listCrashes().size
+                if (crashCount == 0) {
+                    log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
+                }
+                crashCount.toLong()
+            }
             else -> 0
         }
         if (config.runModes.contains(RunMode.FUZZING)) {

@@ -117,7 +117,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
 
-internal fun Path.listCrashes() = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
+internal fun Path.listCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
 
 /**
  * Reads a Throwable from the specified [path].
