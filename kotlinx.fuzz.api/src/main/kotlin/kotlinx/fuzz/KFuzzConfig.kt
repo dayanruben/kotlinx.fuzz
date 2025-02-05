@@ -15,7 +15,7 @@ import kotlin.time.Duration.Companion.seconds
  *
  * @param fuzzEngine - name of engine to be used. Default: "jazzer"
  * @param hooks - apply fuzzing instrumentation. Default: true
- * @param keepGoing - how many bugs to discover before finishing fuzzing. Default: 1
+ * @param keepGoing - how many bugs to discover before finishing fuzzing. Value of 0 will mean that there are no limitations. Default: 1
  * @param instrument - glob patterns matching names of classes that should be instrumented for fuzzing
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
  * @param workDir - Directory where the all fuzzing results will be stored. Default: `build/fuzz`
@@ -65,7 +65,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var keepGoing: Long by KFuzzConfigProperty(
         "kotlinx.fuzz.keepGoing",
         defaultValue = 1,
-        validate = { require(it > 0) { "'keepGoing' must be positive" } },
+        validate = { require(it >= 0) { "'keepGoing' must be non-negative" } },
         toString = { it.toString() },
         fromString = { it.toLong() },
     )
