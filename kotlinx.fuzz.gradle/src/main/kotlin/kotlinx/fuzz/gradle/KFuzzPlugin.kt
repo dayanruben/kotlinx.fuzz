@@ -22,7 +22,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
 
         project.tasks.withType<Test>().configureEach {
-            configureLogging(project)
+            configureLogging()
 
             if (this is FuzzTask) {
                 return@configureEach
@@ -47,22 +47,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
     }
 
-    /**
-     * Configures logging as in kotlinx.fuzz.gradle/build.gradle.kts and in buildSrc/src/main/kotlin/kotlinx.fuzz.src-module.gradle.kts
-     * If changed, consider changing there as well
-     */
-    private fun Test.configureLogging(@Suppress("UNUSED_PARAMETER") project: Project) {
-        // val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
-        // val projectLogLevel = project.gradle.startParameter.logLevel
-        // 
-        // systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
-        // userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
-        // projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
-        // else -> projectLogLevel.name
-        // }
-
-        // systemProperties[KLoggerFactory.LOGGER_IMPLEMENTATION_PROPERTY] = GradleLogger::class.qualifiedName
-
+    private fun Test.configureLogging() {
         testLogging {
             events("passed", "skipped", "failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
