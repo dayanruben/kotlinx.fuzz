@@ -148,6 +148,7 @@ object JazzerLauncher {
         Opt.instrumentationIncludes.setIfDefault(config.instrument)
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
+        Opt.reproducerPath.setIfDefault(config.reproducersDir.absolutePathString())
         Opt.keepGoing.setIfDefault(config.keepGoing)
 
         AgentInstaller.install(Opt.hooks.get())

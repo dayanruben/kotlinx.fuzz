@@ -11,6 +11,7 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
+import java.nio.file.Files
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -23,6 +24,9 @@ internal val KFuzzConfig.logsDir: Path
 
 internal val KFuzzConfig.exceptionsDir: Path
     get() = workDir.resolve("exceptions")
+
+internal val KFuzzConfig.reproducersDir: Path
+    get() = workDir.resolve("reproducers")
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
@@ -66,6 +70,37 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     override fun finishExecution() {
         collectStatistics()
+        clusterCrashes()
+    }
+
+    private fun clusterCrashes() {
+        Files.walk(config.reproducersDir)
+            .filter { it.isDirectory() && it.name.startsWith("cluster-") }
+            .forEach { clusterDir ->
+                clusterDir.listDirectoryEntries("stacktrace-*")
+                    .forEach { stacktraceFile ->
+                        val crashFileName = "crash-" + stacktraceFile.name.removePrefix("stacktrace-")
+                        val crashFile = config.reproducersDir.resolve(crashFileName)
+                        if (crashFile.exists()) {
+                            crashFile.copyTo(clusterDir.resolve(crashFileName), overwrite = true)
+
+                            val isStacktracePresent = config.reproducersDir
+                                .listDirectoryEntries("stacktrace-*")
+                                .any { it.name == stacktraceFile.name }
+                            if (!isStacktracePresent) {
+                                crashFile.deleteIfExists()
+                            }
+                        }
+                    }
+            }
+    }
+
+    private fun collectStatistics() {
+        val statsDir = config.workDir.resolve("stats").createDirectories()
+        config.logsDir.listDirectoryEntries("*.err").forEach { file ->
+            val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
+            statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
+        }
     }
 
     private fun ProcessBuilder.executeAndSaveLogs(stdout: String, stderr: String): Int {
@@ -101,14 +136,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                     log(line)
                 }
             }
-        }
-    }
-
-    private fun collectStatistics() {
-        val statsDir = config.workDir.resolve("stats").createDirectories()
-        config.logsDir.listDirectoryEntries("*.err").forEach { file ->
-            val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
-            statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
         }
     }
 }
