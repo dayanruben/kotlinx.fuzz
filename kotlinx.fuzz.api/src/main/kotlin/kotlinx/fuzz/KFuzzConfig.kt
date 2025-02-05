@@ -43,6 +43,9 @@ interface KFuzzConfig {
 
     companion object {
         fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl.fromSystemProperties()
+
+        fun fromPropertiesMap(properties: Map<String, String>): KFuzzConfig =
+            KFuzzConfigImpl.fromPropertiesMap(properties)
     }
 }
 
@@ -129,33 +132,47 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
             // string for compatibility with annotations
             const val MAX_SINGLE_TARGET_FUZZ_TIME_STRING = "1m"
         }
-        fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = KFuzzConfigImpl().apply {
-            block()
-            assertAllSet()
-            validate()
-        }
 
-        internal fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl().apply {
-            configProperties().forEach { it.setFromSystemProperty() }
-            assertAllSet()
-            validate()
-        }
-
-        internal fun fromAnotherConfig(config: KFuzzConfig, edit: KFuzzConfigImpl.() -> Unit): KFuzzConfig =
+        fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = wrapConfigErrors {
             KFuzzConfigImpl().apply {
-                fuzzEngine = config.fuzzEngine
-                hooks = config.hooks
-                keepGoing = config.keepGoing
-                instrument = config.instrument
-                customHookExcludes = config.customHookExcludes
-                maxSingleTargetFuzzTime = config.maxSingleTargetFuzzTime
-                workDir = config.workDir
-                dumpCoverage = config.dumpCoverage
-
-                edit()
+                block()
+                assertAllSet()
+                validate()
             }
+        }
+
+        internal fun fromSystemProperties(): KFuzzConfig = wrapConfigErrors {
+            KFuzzConfigImpl().apply {
+                configProperties().forEach { it.setFromSystemProperty() }
+                assertAllSet()
+                validate()
+            }
+        }
+
+        internal fun fromPropertiesMap(properties: Map<String, String>): KFuzzConfigImpl = wrapConfigErrors {
+            KFuzzConfigImpl().apply {
+                configProperties().forEach {
+                    val propertyKey = it.systemProperty
+                    it.setFromString(properties[propertyKey] ?: error("map missing property $propertyKey"))
+                }
+                assertAllSet()
+                validate()
+            }
+        }
+
+        internal fun fromAnotherConfig(
+            config: KFuzzConfig,
+            edit: KFuzzConfigImpl.() -> Unit,
+        ): KFuzzConfig = wrapConfigErrors {
+            fromPropertiesMap(config.toPropertiesMap()).apply { edit() }
+        }
     }
 }
+
+class ConfigurationException(
+    override val message: String?,
+    override val cause: Throwable? = null,
+) : IllegalArgumentException()
 
 /**
  * A delegate property class that manages a configuration option for KFuzz.
@@ -204,6 +221,11 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
         } ?: error("System property '$systemProperty' is not set")
     }
 
+    internal fun setFromString(stringValue: String) {
+        assertCanSet()
+        cachedValue = fromString(stringValue)
+    }
+
     private fun assertCanSet() {
         cachedValue?.let {
             error("Property '$name' is already set")
@@ -220,3 +242,13 @@ private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzz
 private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
     KFuzzConfigImpl::class.memberProperties
         .map { it.asKFuzzConfigProperty(this) }
+
+private inline fun <T : KFuzzConfig> wrapConfigErrors(buildConfig: () -> T) = try {
+    buildConfig()
+} catch (e: Throwable) {
+    if (e is ConfigurationException) {
+        throw e
+    } else {
+        throw ConfigurationException("cannot create config", e)
+    }
+}

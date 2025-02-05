@@ -27,10 +27,6 @@ annotation class KFuzzTest(
     val dumpCoverage: Boolean = KFuzzConfigImpl.Companion.Defaults.DUMP_COVERAGE,
 )
 
-fun KFuzzTest.preValidate() {
-    runCatching { Duration.parse(maxFuzzTime) }.onFailure { error("invalid duration '$maxFuzzTime'") }
-}
-
 fun KFuzzConfig.addAnnotationParams(annotation: KFuzzTest): KFuzzConfig = KFuzzConfigImpl.fromAnotherConfig(this) {
     keepGoing = newUnlessDefault(
         old = this@addAnnotationParams.keepGoing,

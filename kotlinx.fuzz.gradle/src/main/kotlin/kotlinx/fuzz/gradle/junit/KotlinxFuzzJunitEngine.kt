@@ -84,7 +84,6 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                descriptor.kfuzzAnnotation.preValidate()
                 // Assuming `config` defines all properties. Hence, target-specific props do not leak into next targets
                 val methodConfig = config.addAnnotationParams(descriptor.kfuzzAnnotation)
                 methodConfig.toPropertiesMap().forEach { (k, v) -> System.setProperty(k, v) }
