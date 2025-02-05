@@ -19,6 +19,7 @@ jsoup = "1.18.1"
 rgxgen = "2.0"
 
 gradle-publish = "1.2.1"
+jacoco = "0.8.12"
 
 slf4j = "2.0.16"
 
@@ -47,10 +48,13 @@ commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" 
 
 junit-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit-platform" }
 junit-platform-testkit = { module = "org.junit.platform:junit-platform-testkit", version.ref = "junit-platform" }
-junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter"}
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 rgxgen = { module = "com.github.curious-odd-man:rgxgen", version.ref = "rgxgen" }
 
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+
+jacoco-core = { module = "org.jacoco:org.jacoco.core", version.ref = "jacoco" }
+jacoco-report = { module = "org.jacoco:org.jacoco.report", version.ref = "jacoco" }
 
 [plugins]
 gradle-publish = { id = "com.gradle.plugin-publish", version.ref = "gradle-publish" }

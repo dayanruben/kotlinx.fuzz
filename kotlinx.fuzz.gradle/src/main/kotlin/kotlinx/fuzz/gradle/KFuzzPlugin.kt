@@ -1,12 +1,16 @@
 package kotlinx.fuzz.gradle
 
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.logging.Logging
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Internal
+import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
@@ -86,6 +90,13 @@ abstract class KFuzzPlugin : Plugin<Project> {
 }
 
 abstract class FuzzTask : Test() {
+    @Option(
+        option = "fullClasspathReport",
+        description = "Report on the whole classpath (not just the project classes).",
+    )
+    @get:Input
+    var reportWithAllClasspath: Boolean = false
+
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
@@ -97,6 +108,25 @@ abstract class FuzzTask : Test() {
     private fun overallStats() {
         val workDir = fuzzConfig.workDir
         overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
+
+        if (fuzzConfig.dumpCoverage) {
+            val coverageMerged = workDir.resolve("merged-coverage.exec")
+            jacocoMerge(workDir.resolve("coverage"), coverageMerged)
+
+            val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
+            val runtimeClasspath = project.configurations["runtimeClasspath"].files
+
+            val projectClasspath = mainSourceSet.output.files
+            val sourceDirectories = mainSourceSet.allSource.sourceDirectories.files
+
+            jacocoReport(
+                execFile = coverageMerged,
+                classPath = if (!reportWithAllClasspath) projectClasspath else projectClasspath + runtimeClasspath,
+                sourceDirectories = sourceDirectories,
+                reportDir = workDir.resolve("jacoco-report").createDirectories(),
+                reports = fuzzConfig.jacocoReports,
+            )
+        }
     }
 }
 
