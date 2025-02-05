@@ -34,33 +34,7 @@ gradlePlugin {
     }
 }
 
-//val logLevelProperty = "kotlinx.fuzz.logging.level"
-//val loggerImplementationProperty = "kotlinx.fuzz.logger.implementation"
-//val gradleLogger = "kotlinx.fuzz.gradle.GradleLogger"
-
-/**
- * Configures logging as in kotlinx.fuzz.gradle/src/main/kotlin/kotlinx/fuzz/gradle/KFuzzPlugin.kt
- * If changed, consider changing there as well
- */
 tasks.test {
-//    val property = System.getProperty(logLevelProperty)
-//    systemProperties[logLevelProperty] = when {
-//        property?.uppercase() in LogLevel.values().map { it.name } -> property
-//        gradle.startParameter.logLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
-//        else -> gradle.startParameter.logLevel.name
-//    }
-//
-//    val hasLogging = try {
-//        URLClassLoader(classpath.map { it.toURI().toURL() }.toTypedArray()).loadClass(gradleLogger)
-//        true
-//    } catch (_: ClassNotFoundException) {
-//        false
-//    }
-//    if (hasLogging) {
-//        System.setProperty(loggerImplementationProperty, gradleLogger)
-//        systemProperties[loggerImplementationProperty] = gradleLogger
-//    }
-
     useJUnitPlatform {
         excludeEngines("kotlinx.fuzz")
     }

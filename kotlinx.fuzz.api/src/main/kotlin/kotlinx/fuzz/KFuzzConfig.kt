@@ -21,6 +21,7 @@ import kotlin.time.Duration.Companion.seconds
  * @param customHookExcludes - Glob patterns matching names of classes that should not be instrumented with hooks
  * @param workDir - Directory where the all fuzzing results will be stored. Default: `build/fuzz`
  * @param dumpCoverage - Whether fuzzer will generate jacoco .exec files.
+ * @param logLevel - Logging level enabled for kotlinx.fuzz
  * Default: true
  * (custom and built-in).
  * Default: empty list
@@ -35,6 +36,7 @@ interface KFuzzConfig {
     val maxSingleTargetFuzzTime: Duration
     val workDir: Path
     val dumpCoverage: Boolean
+    val logLevel: String
     val jacocoReports: Set<JacocoReport>
 
     fun toPropertiesMap(): Map<String, String>
@@ -91,6 +93,13 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         defaultValue = true,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
+    )
+    override var logLevel: String by KFuzzConfigProperty(
+        "kotlinx.fuzz.log.level",
+        defaultValue = "WARN",
+        validate = { require(it.uppercase() in listOf("TRACE", "INFO", "DEBUG", "WARN", "ERROR")) },
+        toString = { it },
+        fromString = { it },
     )
     override var jacocoReports: Set<JacocoReport> by KFuzzConfigProperty(
         "kotlinx.fuzz.jacocoReportTypes",

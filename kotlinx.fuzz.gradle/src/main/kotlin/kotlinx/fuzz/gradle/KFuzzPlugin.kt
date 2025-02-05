@@ -19,14 +19,14 @@ abstract class KFuzzPlugin : Plugin<Project> {
     val log = Logging.getLogger(KFuzzPlugin::class.java)!!
 
     override fun apply(project: Project) {
-        val pluginVersion = "0.0.6"
+        val pluginVersion = "0.1.0"
         project.dependencies {
             add("testImplementation", "org.jetbrains:kotlinx.fuzz.api:$pluginVersion")
             add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle:$pluginVersion")
         }
 
         project.tasks.withType<Test>().configureEach {
-            configureLogging(project)
+            configureLogging()
 
             if (this is FuzzTask) {
                 return@configureEach
@@ -41,7 +41,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
-
             outputs.upToDateWhen { false }  // so the task will run on every invocation
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
@@ -52,23 +51,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
     }
 
-    /**
-     * Configures logging as in kotlinx.fuzz.gradle/build.gradle.kts and in buildSrc/src/main/kotlin/kotlinx.fuzz.src-module.gradle.kts
-     * If changed, consider changing there as well
-     */
-    private fun Test.configureLogging(@Suppress("UNUSED_PARAMETER") project: Project) {
-        // val userLoggingLevel = System.getProperty(GradleLogger.LOG_LEVEL_PROPERTY)
-        // val projectLogLevel = project.gradle.startParameter.logLevel
-        // 
-        // systemProperties[GradleLogger.LOG_LEVEL_PROPERTY] = when {
-        // userLoggingLevel?.uppercase() in LogLevel.values().map { it.name } -> userLoggingLevel
-        // projectLogLevel == LogLevel.LIFECYCLE -> LogLevel.WARN.name
-        // else -> projectLogLevel.name
-        // }
-
-        // systemProperties[KLoggerFactory.LOGGER_IMPLEMENTATION_PROPERTY] =
-        // GradleLogger::class.qualifiedName
-
+    private fun Test.configureLogging() {
         testLogging {
             events("passed", "skipped", "failed")
             exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
@@ -96,12 +79,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
             ?: run {
                 log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
-                log.warn(
-                    """tasks.withType<FuzzTask>().configureEach {
-                            classpath = TODO()
-                            testClassesDirs = TODO()
-                    }
-                    """.trimIndent(),
+                log.warn("""
+                    tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }""".trimIndent(),
                 )
                 project.files() to project.files()
             }
