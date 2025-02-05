@@ -25,9 +25,6 @@ internal val KFuzzConfig.logsDir: Path
 internal val KFuzzConfig.exceptionsDir: Path
     get() = workDir.resolve("exceptions")
 
-internal val KFuzzConfig.reproducersDir: Path
-    get() = workDir.resolve("reproducers")
-
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
@@ -74,25 +71,25 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     private fun clusterCrashes() {
-        Files.walk(config.reproducersDir)
+        val crashesForDeletion = mutableListOf<Path>()
+        Files.walk(config.reproducerPath)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .forEach { clusterDir ->
                 clusterDir.listDirectoryEntries("stacktrace-*")
                     .forEach { stacktraceFile ->
                         val crashFileName = "crash-" + stacktraceFile.name.removePrefix("stacktrace-")
-                        val crashFile = config.reproducersDir.resolve(crashFileName)
-                        if (crashFile.exists()) {
-                            crashFile.copyTo(clusterDir.resolve(crashFileName), overwrite = true)
-
-                            val isStacktracePresent = config.reproducersDir
-                                .listDirectoryEntries("stacktrace-*")
-                                .any { it.name == stacktraceFile.name }
-                            if (!isStacktracePresent) {
-                                crashFile.deleteIfExists()
+                        val targetFile = clusterDir.resolve(crashFileName)
+                        if (!targetFile.exists()) {
+                            val crashFile = clusterDir.parent.resolve(crashFileName)
+                            if (crashFile.exists()) {
+                                crashFile.copyTo(targetFile, overwrite = true)
+                                if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-")))
+                                    crashesForDeletion.add(crashFile)
                             }
                         }
                     }
             }
+        crashesForDeletion.forEach { it.deleteIfExists() }
     }
 
     private fun collectStatistics() {

@@ -180,7 +180,6 @@ object JazzerLauncher {
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
         Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
-        Opt.keepGoing.setIfDefault(config.keepGoing)
 
         AgentInstaller.install(Opt.hooks.get())
 
@@ -206,6 +205,28 @@ object JazzerLauncher {
         return listOf(updatedFirstLine).plus(lines.drop(1)).joinToString("\n")
     }
 
+    private fun initClustersMapping(
+        directoryPath: Path,
+        stacktraceFiles: List<Path>,
+        clusters: List<Int>
+    ): MutableMap<Int, Path> {
+        val mapping = mutableMapOf<Int, Path>()
+
+        val representativeFiles = directoryPath.listDirectoryEntries("cluster-*")
+        val representatives = representativeFiles.map { it.name.removePrefix("cluster-") }
+
+        for (representative in representatives) {
+            val matchingFile = stacktraceFiles.find { it.name == representative } ?: continue
+            val clusterIndex = stacktraceFiles.indexOf(matchingFile)
+            val clusterId = clusters[clusterIndex]
+
+            mapping[clusterId] = directoryPath.resolve("cluster-$representative")
+        }
+
+        return mapping
+    }
+
+
     private fun clusterCrashes(directoryPath: Path): Int {
         val stacktraceFiles = directoryPath.listDirectoryEntries("stacktrace-*")
 
@@ -217,14 +238,13 @@ object JazzerLauncher {
         }
 
         val clusters = parseAndClusterStackTraces(rawStackTraces)
-        val mapping = mutableMapOf<Int, Path>()
+        val mapping = initClustersMapping(directoryPath, stacktraceFiles, clusters)
 
         clusters.forEachIndexed { index, cluster ->
             val stacktraceSrc = stacktraceFiles[index]
-            val isOld = mapping.containsKey(cluster)
 
             if (!mapping.containsKey(cluster)) {
-                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.readLines().first().trim()}")
+                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.name}")
             }
 
             val clusterDir = directoryPath.resolve(mapping[cluster]!!)
@@ -232,8 +252,8 @@ object JazzerLauncher {
                 clusterDir.createDirectory()
             }
 
-            stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.fileName), overwrite = true)
-            if (isOld) {
+            stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.name), overwrite = true)
+            if (mapping[cluster]!!.name.removePrefix("cluster-") != stacktraceSrc.name) {
                 stacktraceSrc.deleteExisting()
             }
         }
