@@ -106,6 +106,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             outputStream.bufferedWriter().use { writer ->
                 var line: String?
                 while (reader.readLine().also { line = it } != null) {
+                    writer.appendLine(line)
                     log(line)
                 }
             }
