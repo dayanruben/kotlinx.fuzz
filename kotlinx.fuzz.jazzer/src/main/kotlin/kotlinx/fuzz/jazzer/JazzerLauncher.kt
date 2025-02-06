@@ -169,7 +169,8 @@ object JazzerLauncher {
             file.writeText(finding.filter().stackTraceToString())
         }
 
-        return clusterCrashes(reproducerPath) - oldRepresentatives!! >= config.keepGoing && config.keepGoing != 0L
+        val currentRepresentatives = clusterCrashes(reproducerPath)
+        return config.keepGoing != 0L && currentRepresentatives - oldRepresentatives!! >= config.keepGoing
     }
 
     fun initJazzer() {

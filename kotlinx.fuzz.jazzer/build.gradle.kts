@@ -6,10 +6,6 @@ plugins {
     id("kotlinx.fuzz.src-module")
 }
 
-repositories {
-    mavenLocal()
-}
-
 dependencies {
     implementation(project(":kotlinx.fuzz.engine"))
     implementation(project(":kotlinx.fuzz.api"))
@@ -20,7 +16,11 @@ dependencies {
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
-    commandLine = listOf("cargo", "build", "--release")
+    commandLine = listOf("/usr/bin/env", "cargo", "build", "--release")
+}
+
+fun File.listDLLs(): Array<File>? = listFiles { file ->
+    file.name.endsWith(".dylib") || file.name.endsWith(".so") || file.name.endsWith(".dll")
 }
 
 tasks.register("linkRustLib") {
@@ -37,9 +37,7 @@ tasks.register("linkRustLib") {
             throw GradleException("Source directory $sourceDir does not exist")
         }
 
-        sourceDir.listFiles { file ->
-            file.name.endsWith(".dylib") || file.name.endsWith(".so") || file.name.endsWith(".dll")
-        }?.forEach { file ->
+        sourceDir.listDLLs()?.forEach { file ->
             val targetLink = targetDir.resolve(file.name)
             if (targetLink.exists()) {
                 targetLink.delete()
@@ -60,6 +58,21 @@ tasks.register("linkRustLib") {
 
 tasks.named("compileKotlin") {
     dependsOn("linkRustLib")
+}
+
+tasks.register<Exec>("cleanCargo") {
+    workingDir = file("$projectDir/CasrAdapter")
+    commandLine = listOf("/usr/bin/env", "cargo", "clean")
+}
+
+tasks.named("clean") {
+    dependsOn("cleanCargo")
+    doLast {
+        val targetDir = file(layout.buildDirectory.dir("libs"))
+        if (targetDir.exists()) {
+            targetDir.listDLLs()?.forEach { it.delete() }
+        }
+    }
 }
 
 configurePublishing()
