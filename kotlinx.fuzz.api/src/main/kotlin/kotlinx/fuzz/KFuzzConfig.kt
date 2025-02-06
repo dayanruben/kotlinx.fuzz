@@ -243,7 +243,7 @@ private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
     KFuzzConfigImpl::class.memberProperties
         .map { it.asKFuzzConfigProperty(this) }
 
-private inline fun <T : KFuzzConfig> wrapConfigErrors(buildConfig: () -> T) = try {
+private inline fun <T : KFuzzConfig> wrapConfigErrors(buildConfig: () -> T): T = try {
     buildConfig()
 } catch (e: Throwable) {
     if (e is ConfigurationException) {

@@ -25,9 +25,7 @@ internal class ClassTestDescriptor(
             { method -> AnnotationUtils.isAnnotated(method, KFuzzTest::class.java) },
             ReflectionUtils.HierarchyTraversalMode.TOP_DOWN,
         )
-            .map { method ->
-                MethodTestDescriptor(method, this)
-            }
+            .map { method -> MethodTestDescriptor(method, this) }
             .forEach { child: MethodTestDescriptor? -> this.addChild(child) }
     }
 
