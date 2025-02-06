@@ -17,11 +17,10 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.log.warn
+import kotlinx.fuzz.methodReproducerPath
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -72,31 +71,16 @@ object JazzerLauncher {
         libFuzzerArgs += currentCorpus.toString()
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
+        libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
 
-        var keepGoing = when (RunMode.REGRESSION) {
-            in config.runModes -> {
-                val crashCount = reproducerPath.listCrashes().size
-                if (crashCount == 0) {
-                    log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
-                }
-                crashCount.toLong()
-            }
-            else -> 0
-        }
-        if (config.runModes.contains(RunMode.FUZZING)) {
-            libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
-            keepGoing += config.keepGoing
-        }
-
-        Opt.keepGoing.setIfDefault(keepGoing)
+        Opt.keepGoing.setIfDefault(config.keepGoing)
 
         return libFuzzerArgs
     }
 
     @OptIn(ExperimentalPathApi::class)
     fun runTarget(instance: Any, method: Method): Throwable? {
-        val reproducerPath =
-            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
+        val reproducerPath = config.methodReproducerPath(method)
         if (!reproducerPath.exists()) {
             reproducerPath.createDirectories()
         }
@@ -109,16 +93,7 @@ object JazzerLauncher {
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
-
-        if (config.runModes.contains(RunMode.REGRESSION)) {
-            reproducerPath.listCrashes().forEach {
-                FuzzTargetRunner.runOne(it.readBytes())
-            }
-        }
-
-        if (config.runModes.contains(RunMode.FUZZING)) {
-            FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-        }
+        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
 
         return atomicFinding.get()
     }

@@ -6,6 +6,7 @@ import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
+import kotlinx.fuzz.regression.RegressionEngine
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
@@ -53,6 +54,18 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 includeEngines("kotlinx.fuzz")
             }
         }
+
+        project.tasks.register<RegressionTask>("regression") {
+            classpath = defaultCP
+            testClassesDirs = defaultTCD
+            outputs.upToDateWhen { false }
+            doFirst {
+                systemProperties(fuzzConfig.toPropertiesMap() + mapOf(RegressionEngine.REGRESSION_PROPERTY to "true"))
+            }
+            useJUnitPlatform {
+                includeEngines("kotlinx.fuzz")
+            }
+        }
     }
 
     private fun Test.configureLogging() {
@@ -81,10 +94,16 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
             .singleOrNull()
             ?: run {
-                log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
+                log.warn("'fuzz' and 'regression' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
                 log.warn("""
                     tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }""".trimIndent(),
+                )
+                log.warn("""
+                    tasks.withType<RegressionTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
                     }""".trimIndent(),
@@ -174,5 +193,22 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
 
     tasks.withType<FuzzTask>().forEach { task ->
         task.fuzzConfig = config
+    }
+}
+
+abstract class RegressionTask : Test() {
+    private val log = LoggerFacade.getLogger<RegressionTask>()
+
+    @get:Internal
+    internal lateinit var fuzzConfig: KFuzzConfig
+
+    @TaskAction
+    fun action() {
+        overallStats()
+    }
+
+    private fun overallStats() {
+        val workDir = fuzzConfig.workDir
+        overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
     }
 }

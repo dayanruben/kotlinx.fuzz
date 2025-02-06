@@ -7,6 +7,8 @@ import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
+import kotlinx.fuzz.regression.listCrashes
+import kotlinx.fuzz.regression.RegressionEngine
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -96,6 +98,24 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 }
                 request.engineExecutionListener.executionFinished(descriptor, result)
             }
+
+            is CrashTestDescriptor -> {
+                request.engineExecutionListener.executionStarted(descriptor)
+                val method = descriptor.testMethod
+                val instance = method.declaringClass.kotlin.testInstance()
+
+                val finding = RegressionEngine.runOneCrash(instance, method, descriptor.crashFile)
+                val result = when {
+                    finding == null -> TestExecutionResult.successful()
+                    method.isAnnotationPresent(IgnoreFailures::class.java) -> {
+                        log.info { "Test failed, but is ignored by @IgnoreFailures: $finding" }
+                        TestExecutionResult.successful()
+                    }
+
+                    else -> TestExecutionResult.failed(finding)
+                }
+                request.engineExecutionListener.executionFinished(descriptor, result)
+            }
         }
     }
 
@@ -103,7 +123,13 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         if (!method.isFuzzTarget()) {
             return
         }
-        engineDescriptor.addChild(MethodTestDescriptor(method, engineDescriptor))
+        if (System.getProperty(RegressionEngine.REGRESSION_PROPERTY)?.toBoolean() == true) {
+            config.methodReproducerPath(method).listCrashes().forEach { crashFile ->
+                engineDescriptor.addChild(CrashTestDescriptor(method, crashFile, engineDescriptor))
+            }
+        } else {
+            engineDescriptor.addChild(MethodTestDescriptor(method, engineDescriptor))
+        }
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {

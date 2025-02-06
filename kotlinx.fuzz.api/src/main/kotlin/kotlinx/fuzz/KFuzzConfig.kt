@@ -1,5 +1,6 @@
 package kotlinx.fuzz
 
+import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.properties.ReadWriteProperty
@@ -25,7 +26,6 @@ import kotlin.time.Duration.Companion.seconds
  * (custom and built-in).
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
- * @param runModes - Set of modes to be run: each element can be regression or fuzzing. Default: regression, fuzzing
  * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
  * @param jacocoReports - Set of Jacoco report formats to generate from fuzz execution. Default: `HTML`
  * @param jacocoReportIncludedDependencies - A set of dependencies (by id) to include in Jacoco reports. Default: empty set
@@ -39,7 +39,6 @@ interface KFuzzConfig {
     val maxSingleTargetFuzzTime: Duration
     val workDir: Path
     val dumpCoverage: Boolean
-    val runModes: Set<RunMode>
     val reproducerPath: Path
     val logLevel: String
     val jacocoReports: Set<JacocoReport>
@@ -100,13 +99,6 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
-    override var runModes: Set<RunMode> by KFuzzConfigProperty(
-        "kotlinx.fuzz.runModes",
-        defaultValue = setOf(RunMode.REGRESSION, RunMode.FUZZING),
-        validate = { require(it.isNotEmpty()) { "runModes should not be empty" } },
-        toString = { it.joinToString(",") },
-        fromString = { it.split(",").map { RunMode.valueOf(it.trim().uppercase()) }.toSet() },
-    )
     override var reproducerPath: Path by KFuzzConfigProperty(
         "kotlinx.fuzz.reproducerPath",
         toString = { it.absolutePathString() },
@@ -156,10 +148,6 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
             validate()
         }
     }
-}
-
-enum class RunMode {
-    FUZZING, REGRESSION
 }
 
 /**
@@ -225,3 +213,6 @@ private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzz
 private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
     KFuzzConfigImpl::class.memberProperties
         .map { it.asKFuzzConfigProperty(this) }
+
+fun KFuzzConfig.methodReproducerPath(method: Method): Path =
+    Path(reproducerPath.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
