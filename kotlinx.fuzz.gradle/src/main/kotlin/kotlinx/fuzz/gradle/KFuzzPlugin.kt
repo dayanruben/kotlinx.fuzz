@@ -41,7 +41,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
-        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.registerFuzzTask(defaultCP, defaultTCD)
@@ -49,6 +48,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
     }
 
     private fun Project.registerFuzzTask(defaultCP: FileCollection, defaultTCD: FileCollection) {
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
