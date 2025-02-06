@@ -27,6 +27,8 @@ import kotlin.time.Duration.Companion.seconds
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
  * @param runModes - Set of modes to be run: each element can be regression or fuzzing. Default: regression, fuzzing
  * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
+ * @param jacocoReports - Set of Jacoco report formats to generate from fuzz execution. Default: `HTML`
+ * @param jacocoReportIncludedDependencies - A set of dependencies (by id) to include in Jacoco reports. Default: empty set
  */
 interface KFuzzConfig {
     val fuzzEngine: String
