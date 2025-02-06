@@ -169,6 +169,7 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     val defaultWorkDir = buildDir.dir("fuzz").asFile.toPath()
     val config = KFuzzConfigBuilder.build {
         workDir = defaultWorkDir
+        reproducerPath = defaultWorkDir.resolve("reproducers")
         block()
     }
 
