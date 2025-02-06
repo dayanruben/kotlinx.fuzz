@@ -5,7 +5,6 @@ import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.outputStream
-import kotlinx.fuzz.JacocoReport
 import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
 import org.jacoco.core.tools.ExecFileLoader

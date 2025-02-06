@@ -40,12 +40,15 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
+            jacocoConfig = jacocoConfigExtension
+
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }
@@ -106,6 +109,9 @@ abstract class FuzzTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
+    @get:Internal
+    lateinit var jacocoConfig: JacocoConfig
+
     @TaskAction
     fun action() {
         overallStats()
@@ -125,7 +131,7 @@ abstract class FuzzTask : Test() {
     }
 
     private fun jacocoReport(execFile: Path, workDir: Path) {
-        val extraDeps = getDependencies(fuzzConfig.jacocoReportIncludedDependencies)
+        val extraDeps = getDependencies(jacocoConfig.includeDependencies)
         val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
         val runtimeClasspath = project.configurations["runtimeClasspath"].files
 
@@ -140,7 +146,7 @@ abstract class FuzzTask : Test() {
             classPath = jacocoClassPath,
             sourceDirectories = sourceDirectories,
             reportDir = workDir.resolve("jacoco-report").createDirectories(),
-            reports = fuzzConfig.jacocoReports,
+            reports = jacocoConfig.reportTypes(),
         )
     }
 
