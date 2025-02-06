@@ -40,6 +40,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
+        project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
