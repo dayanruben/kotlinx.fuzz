@@ -204,6 +204,9 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
     }
 }
 
+fun KFuzzConfig.methodReproducerPath(method: Method): Path =
+    Path(reproducerPath.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
+
 private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzzConfigImpl): KFuzzConfigProperty<*> {
     this.isAccessible = true
     return this.getDelegate(delegate)!! as KFuzzConfigProperty<*>
@@ -213,6 +216,3 @@ private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzz
 private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
     KFuzzConfigImpl::class.memberProperties
         .map { it.asKFuzzConfigProperty(this) }
-
-fun KFuzzConfig.methodReproducerPath(method: Method): Path =
-    Path(reproducerPath.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()

@@ -9,7 +9,7 @@ import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.ClassSource
 
 internal class ClassTestDescriptor(
-    private val testClass: Class<*>, parent: TestDescriptor, private val config: KFuzzConfig
+    private val testClass: Class<*>, parent: TestDescriptor, private val config: KFuzzConfig,
 ) : AbstractTestDescriptor(
     parent.uniqueId.append("class", testClass.getName()),
     testClass.getSimpleName(),

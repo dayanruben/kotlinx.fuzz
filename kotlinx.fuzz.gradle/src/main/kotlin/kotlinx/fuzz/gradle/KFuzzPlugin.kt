@@ -33,16 +33,19 @@ abstract class KFuzzPlugin : Plugin<Project> {
         project.tasks.withType<Test>().configureEach {
             configureLogging()
 
-            if (this is FuzzTask || this is RegressionTask) {
-                return@configureEach
-            }
-
-            useJUnitPlatform {
-                excludeEngines("kotlinx.fuzz")
+            if (this !is FuzzTask && this !is RegressionTask) {
+                useJUnitPlatform {
+                    excludeEngines("kotlinx.fuzz")
+                }
             }
         }
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
+        project.registerFuzzTask(defaultCP, defaultTCD)
+        project.registerRegressionTask(defaultCP, defaultTCD)
+    }
+
+    private fun Project.registerFuzzTask(defaultCP: FileCollection, defaultTCD: FileCollection) {
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
@@ -54,7 +57,9 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 includeEngines("kotlinx.fuzz")
             }
         }
+    }
 
+    private fun Project.registerRegressionTask(defaultCP: FileCollection, defaultTCD: FileCollection) {
         project.tasks.register<RegressionTask>("regression") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
@@ -115,11 +120,6 @@ abstract class KFuzzPlugin : Plugin<Project> {
 abstract class FuzzTask : Test() {
     private val log = LoggerFacade.getLogger<FuzzTask>()
 
-    init {
-        description = "Runs fuzzing"
-        group = "verification"
-    }
-
     @Option(
         option = "fullClasspathReport",
         description = "Report on the whole classpath (not just the project classes).",
@@ -129,6 +129,11 @@ abstract class FuzzTask : Test() {
 
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
+
+    init {
+        description = "Runs fuzzing"
+        group = "verification"
+    }
 
     @TaskAction
     fun action() {
@@ -186,6 +191,16 @@ abstract class FuzzTask : Test() {
     }
 }
 
+abstract class RegressionTask : Test() {
+    @get:Internal
+    internal lateinit var fuzzConfig: KFuzzConfig
+
+    init {
+        description = "Runs regression tests"
+        group = "verification"
+    }
+}
+
 @Suppress("unused")
 fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     val buildDir = layout.buildDirectory.get()
@@ -201,15 +216,5 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     }
     tasks.withType<RegressionTask>().forEach { task ->
         task.fuzzConfig = config
-    }
-}
-
-abstract class RegressionTask : Test() {
-    @get:Internal
-    internal lateinit var fuzzConfig: KFuzzConfig
-
-    init {
-        description = "Runs regression tests"
-        group = "verification"
     }
 }

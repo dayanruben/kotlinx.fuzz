@@ -1,9 +1,9 @@
 package kotlinx.fuzz.regression
 
-import kotlinx.fuzz.KFuzzerImpl
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
+import kotlinx.fuzz.KFuzzerImpl
 
 object RegressionEngine {
     const val REGRESSION_PROPERTY = "kotlinx.fuzz.regression"

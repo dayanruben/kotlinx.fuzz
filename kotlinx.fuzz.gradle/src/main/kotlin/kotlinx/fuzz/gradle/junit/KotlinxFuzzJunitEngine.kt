@@ -90,19 +90,17 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
         when (descriptor) {
             is ClassTestDescriptor -> handleContainer(request, descriptor)
-            is MethodTestDescriptor -> {
-                if (isRegression()) {
-                    handleContainer(request, descriptor)
-                } else {
-                    log.debug { "Executing method ${descriptor.displayName}" }
-                    request.engineExecutionListener.executionStarted(descriptor)
-                    val method = descriptor.testMethod
-                    val instance = method.declaringClass.kotlin.testInstance()
+            is MethodTestDescriptor -> if (isRegression()) {
+                handleContainer(request, descriptor)
+            } else {
+                log.debug { "Executing method ${descriptor.displayName}" }
+                request.engineExecutionListener.executionStarted(descriptor)
+                val method = descriptor.testMethod
+                val instance = method.declaringClass.kotlin.testInstance()
 
-                    val finding = fuzzEngine.runTarget(instance, method)
-                    val result = handleFinding(finding, method)
-                    request.engineExecutionListener.executionFinished(descriptor, result)
-                }
+                val finding = fuzzEngine.runTarget(instance, method)
+                val result = handleFinding(finding, method)
+                request.engineExecutionListener.executionFinished(descriptor, result)
             }
 
             is CrashTestDescriptor -> {

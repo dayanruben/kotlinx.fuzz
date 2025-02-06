@@ -1,11 +1,11 @@
 package kotlinx.fuzz.gradle.junit
 
 import java.lang.reflect.Method
+import java.nio.file.Path
+import kotlin.io.path.name
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
-import java.nio.file.Path
-import kotlin.io.path.name
 
 internal class CrashTestDescriptor(
     val testMethod: Method, val crashFile: Path, parent: TestDescriptor,
