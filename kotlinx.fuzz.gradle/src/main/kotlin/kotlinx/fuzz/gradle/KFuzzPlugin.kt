@@ -33,12 +33,15 @@ abstract class KFuzzPlugin : Plugin<Project> {
         project.tasks.withType<Test>().configureEach {
             configureLogging()
 
-            if (this !is FuzzTask && this !is RegressionTask) {
-                useJUnitPlatform {
-                    excludeEngines("kotlinx.fuzz")
-                }
+            if (this is FuzzTask || this is RegressionTask) {
+                return@configureEach
+            }
+
+            useJUnitPlatform {
+                excludeEngines("kotlinx.fuzz")
             }
         }
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.registerFuzzTask(defaultCP, defaultTCD)
@@ -50,6 +53,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
             classpath = defaultCP
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
+            jacocoConfig = jacocoConfigExtension
+
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }
@@ -130,6 +135,9 @@ abstract class FuzzTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
+    @get:Internal
+    lateinit var jacocoConfig: JacocoConfig
+
     init {
         description = "Runs fuzzing"
         group = "verification"
@@ -154,7 +162,7 @@ abstract class FuzzTask : Test() {
     }
 
     private fun jacocoReport(execFile: Path, workDir: Path) {
-        val extraDeps = getDependencies(fuzzConfig.jacocoReportIncludedDependencies)
+        val extraDeps = getDependencies(jacocoConfig.includeDependencies)
         val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
         val runtimeClasspath = project.configurations["runtimeClasspath"].files
 
@@ -169,7 +177,7 @@ abstract class FuzzTask : Test() {
             classPath = jacocoClassPath,
             sourceDirectories = sourceDirectories,
             reportDir = workDir.resolve("jacoco-report").createDirectories(),
-            reports = fuzzConfig.jacocoReports,
+            reports = jacocoConfig.reportTypes(),
         )
     }
 
