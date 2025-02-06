@@ -24,10 +24,17 @@ dependencies {
 fuzzConfig {
     keepGoing = 10
     runModes = setOf(RunMode.FUZZING)
-    instrument = listOf("kotlinx.fuzz.test.**", "kotlinx.collections.immutable.**")
+    instrument = listOf(
+        "kotlinx.fuzz.test.**",
+        "kotlinx.collections.immutable.**",
+        "kotlinx.serialization.**",
+    )
     maxSingleTargetFuzzTime = 10.seconds
     jacocoReports = setOf(HTML, CSV, XML)
-    jacocoReportIncludedDependencies = setOf("org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm")
+    jacocoReportIncludedDependencies = setOf(
+        "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm",
+        "org.jetbrains.kotlinx:kotlinx-serialization-protobuf-jvm",
+    )
 }
 
 kotlin {
