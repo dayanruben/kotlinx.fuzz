@@ -17,15 +17,24 @@ repositories {
 dependencies {
     testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
 }
 
 fuzzConfig {
     keepGoing = 10
     runModes = setOf(RunMode.FUZZING)
-    instrument = listOf("kotlinx.fuzz.test.**")
+    instrument = listOf(
+        "kotlinx.fuzz.test.**",
+        "kotlinx.collections.immutable.**",
+        "kotlinx.serialization.**",
+    )
     maxSingleTargetFuzzTime = 10.seconds
     jacocoReports = setOf(HTML, CSV, XML)
+    jacocoReportIncludedDependencies = setOf(
+        "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm",
+        "org.jetbrains.kotlinx:kotlinx-serialization-protobuf-jvm",
+    )
 }
 
 kotlin {
