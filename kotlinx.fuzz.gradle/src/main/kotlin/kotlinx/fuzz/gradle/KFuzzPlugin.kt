@@ -110,23 +110,22 @@ abstract class FuzzTask : Test() {
     fun action() {
         overallStats()
         if (fuzzConfig.dumpCoverage) {
-            jacoco(fuzzConfig.workDir)
+            val workDir = fuzzConfig.workDir
+
+            val coverageMerged = workDir.resolve("merged-coverage.exec")
+            jacocoMerge(workDir.resolve("coverage"), coverageMerged)
+
+            jacocoReport(coverageMerged, workDir)
         }
     }
 
     private fun overallStats() {
         val workDir = fuzzConfig.workDir
         overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
-
-        jacoco(workDir)
     }
 
-    private fun jacoco(workDir: Path) {
-        val coverageMerged = workDir.resolve("merged-coverage.exec")
-        jacocoMerge(workDir.resolve("coverage"), coverageMerged)
-
-        val extraDeps: Set<File> = getDependencies(fuzzConfig.jacocoReportIncludedDependencies)
-
+    private fun jacocoReport(execFile: Path, workDir: Path) {
+        val extraDeps = getDependencies(fuzzConfig.jacocoReportIncludedDependencies)
         val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
         val runtimeClasspath = project.configurations["runtimeClasspath"].files
 
@@ -137,7 +136,7 @@ abstract class FuzzTask : Test() {
             projectClasspath + extraDeps + if (reportWithAllClasspath) runtimeClasspath else emptySet()
 
         jacocoReport(
-            execFile = coverageMerged,
+            execFile = execFile,
             classPath = jacocoClassPath,
             sourceDirectories = sourceDirectories,
             reportDir = workDir.resolve("jacoco-report").createDirectories(),
