@@ -33,7 +33,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         project.tasks.withType<Test>().configureEach {
             configureLogging()
 
-            if (this is FuzzTask) {
+            if (this is FuzzTask || this is RegressionTask) {
                 return@configureEach
             }
 
@@ -194,21 +194,12 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     tasks.withType<FuzzTask>().forEach { task ->
         task.fuzzConfig = config
     }
+    tasks.withType<RegressionTask>().forEach { task ->
+        task.fuzzConfig = config
+    }
 }
 
 abstract class RegressionTask : Test() {
-    private val log = LoggerFacade.getLogger<RegressionTask>()
-
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
-
-    @TaskAction
-    fun action() {
-        overallStats()
-    }
-
-    private fun overallStats() {
-        val workDir = fuzzConfig.workDir
-        overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
-    }
 }

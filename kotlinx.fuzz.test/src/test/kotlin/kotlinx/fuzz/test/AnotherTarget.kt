@@ -20,4 +20,12 @@ class AnotherTarget {
             error("Expected failure")
         }
     }
+
+    @KFuzzTest
+    fun `test with two fails`(data: KFuzzer) {
+        if (data.boolean()) {
+            if (data.boolean()) error("Expected failure")
+            else throw NullPointerException()
+        }
+    }
 }

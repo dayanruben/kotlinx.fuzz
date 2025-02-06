@@ -10,7 +10,7 @@ import kotlin.io.path.name
 internal class CrashTestDescriptor(
     val testMethod: Method, val crashFile: Path, parent: TestDescriptor,
 ) : AbstractTestDescriptor(
-    parent.uniqueId.append("crash", testMethod.name),
+    parent.uniqueId.append("crash", crashFile.name),
     displayName(testMethod, crashFile),
     MethodSource.from(testMethod),
 ) {
@@ -22,7 +22,7 @@ internal class CrashTestDescriptor(
 
     companion object {
         private fun displayName(testField: Method, crash: Path): String = try {
-            "${testField}: ${crash.name}"
+            "${testField.name}: ${crash.name}"
         } catch (_: IllegalAccessException) {
             "no name"
         }
