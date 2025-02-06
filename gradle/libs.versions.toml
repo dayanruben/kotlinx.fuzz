@@ -2,7 +2,7 @@
 kotlin = "2.0.21"
 diktat = "2.0.0"
 jazzer = "0.22.1"
-plan-jazzer = "0.0.2"
+plan-jazzer = "0.0.3"
 
 junit-platform = "1.11.4"
 junit-jupiter = "5.11.4"
