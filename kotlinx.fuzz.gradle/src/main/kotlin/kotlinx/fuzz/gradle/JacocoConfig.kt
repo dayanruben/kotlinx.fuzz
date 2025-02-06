@@ -1,8 +1,7 @@
 package kotlinx.fuzz.gradle
 
-import kotlinx.fuzz.JacocoReport
 
-open class JacocoConfig(
+abstract class JacocoConfig(
     var html: Boolean = true,
     var xml: Boolean = false,
     var csv: Boolean = false,
