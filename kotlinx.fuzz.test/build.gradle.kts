@@ -1,4 +1,3 @@
-import kotlinx.fuzz.JacocoReport.*
 import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.gradle.fuzzConfig
 import kotlin.time.Duration.Companion.seconds
@@ -30,11 +29,6 @@ fuzzConfig {
         "kotlinx.serialization.**",
     )
     maxSingleTargetFuzzTime = 10.seconds
-    jacocoReports = setOf(HTML, CSV, XML)
-    jacocoReportIncludedDependencies = setOf(
-        "org.jetbrains.kotlinx:kotlinx-collections-immutable-jvm",
-        "org.jetbrains.kotlinx:kotlinx-serialization-protobuf-jvm",
-    )
 }
 
 jacocoReport {

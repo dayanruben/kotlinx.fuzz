@@ -1,8 +1,5 @@
 package kotlinx.fuzz.gradle
 
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
@@ -17,6 +14,9 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
@@ -40,13 +40,15 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
-        project.extensions.create<JacocoConfig>("jacocoReport")
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
+            jacocoConfig = jacocoConfigExtension
+
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }
@@ -84,7 +86,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
             ?: run {
                 log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
-                log.warn("""
+                log.warn(
+                    """
                     tasks.withType<FuzzTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
@@ -107,6 +110,9 @@ abstract class FuzzTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
+    @get:Internal
+    lateinit var jacocoConfig: JacocoConfig
+
     @TaskAction
     fun action() {
         overallStats()
@@ -126,7 +132,7 @@ abstract class FuzzTask : Test() {
     }
 
     private fun jacocoReport(execFile: Path, workDir: Path) {
-        val extraDeps = getDependencies(fuzzConfig.jacocoReportIncludedDependencies)
+        val extraDeps = getDependencies(jacocoConfig.includeDependencies)
         val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
         val runtimeClasspath = project.configurations["runtimeClasspath"].files
 
@@ -141,7 +147,7 @@ abstract class FuzzTask : Test() {
             classPath = jacocoClassPath,
             sourceDirectories = sourceDirectories,
             reportDir = workDir.resolve("jacoco-report").createDirectories(),
-            reports = fuzzConfig.jacocoReports,
+            reports = jacocoConfig.reportTypes(),
         )
     }
 
