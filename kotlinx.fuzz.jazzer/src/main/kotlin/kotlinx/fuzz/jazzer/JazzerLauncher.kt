@@ -136,7 +136,7 @@ object JazzerLauncher {
         val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
-        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { bytes, finding ->
+        FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
             val stopFuzzing = isTerminalFinding(bytes, finding, reproducerPath)
             if (stopFuzzing) {
                 atomicFinding.set(finding)
