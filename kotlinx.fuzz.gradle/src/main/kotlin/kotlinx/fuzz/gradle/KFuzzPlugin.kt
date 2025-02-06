@@ -115,6 +115,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
 abstract class FuzzTask : Test() {
     private val log = LoggerFacade.getLogger<FuzzTask>()
 
+    init {
+        description = "Runs fuzzing"
+        group = "verification"
+    }
+
     @Option(
         option = "fullClasspathReport",
         description = "Report on the whole classpath (not just the project classes).",
@@ -202,4 +207,9 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
 abstract class RegressionTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
+
+    init {
+        description = "Runs regression tests"
+        group = "verification"
+    }
 }
