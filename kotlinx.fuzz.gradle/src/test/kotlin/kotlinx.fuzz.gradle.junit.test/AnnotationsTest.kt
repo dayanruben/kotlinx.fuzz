@@ -60,7 +60,7 @@ class AnnotationsTest {
     fun testOverriddenConfig() {
         val result = runMethodFuzz(AnnotationsTest::overriddenConfig)
         assertEquals(TestExecutionResult.Status.FAILED, result.status)
-        val exception = result.throwable!!.get()  // no parent exception! TODO: should there be?
+        val exception = result.throwable!!.get()  // no parent exception
         assertEquals(
             "second error", exception.message!!,
             message = "wrong exception message\n${exception.stackTraceToString()}",
