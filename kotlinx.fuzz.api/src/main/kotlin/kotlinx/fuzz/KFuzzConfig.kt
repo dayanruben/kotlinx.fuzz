@@ -25,7 +25,7 @@ import kotlin.time.Duration.Companion.seconds
  * Default: true
  * (custom and built-in).
  * Default: empty list
- * @param maxSingleTargetFuzzTime - max time to fuzz a single target.
+ * @param maxSingleTargetFuzzTime - max time to fuzz a single target. Default: 1 minute
  */
 interface KFuzzConfig {
     val fuzzEngine: String
