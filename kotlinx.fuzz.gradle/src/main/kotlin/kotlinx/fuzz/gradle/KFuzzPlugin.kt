@@ -1,7 +1,11 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.warn
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
@@ -36,12 +40,15 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }  // so the task will run on every invocation
+            jacocoConfig = jacocoConfigExtension
+
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
             }
@@ -90,6 +97,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
 }
 
 abstract class FuzzTask : Test() {
+    private val log = LoggerFacade.getLogger<FuzzTask>()
+
     @Option(
         option = "fullClasspathReport",
         description = "Report on the whole classpath (not just the project classes).",
@@ -100,33 +109,62 @@ abstract class FuzzTask : Test() {
     @get:Internal
     internal lateinit var fuzzConfig: KFuzzConfig
 
+    @get:Internal
+    lateinit var jacocoConfig: JacocoConfig
+
     @TaskAction
     fun action() {
         overallStats()
+        if (fuzzConfig.dumpCoverage) {
+            val workDir = fuzzConfig.workDir
+
+            val coverageMerged = workDir.resolve("merged-coverage.exec")
+            jacocoMerge(workDir.resolve("coverage"), coverageMerged)
+
+            jacocoReport(coverageMerged, workDir)
+        }
     }
 
     private fun overallStats() {
         val workDir = fuzzConfig.workDir
         overallStats(workDir.resolve("stats"), workDir.resolve("overall-stats.csv"))
+    }
 
-        if (fuzzConfig.dumpCoverage) {
-            val coverageMerged = workDir.resolve("merged-coverage.exec")
-            jacocoMerge(workDir.resolve("coverage"), coverageMerged)
+    private fun jacocoReport(execFile: Path, workDir: Path) {
+        val extraDeps = getDependencies(jacocoConfig.includeDependencies)
+        val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
+        val runtimeClasspath = project.configurations["runtimeClasspath"].files
 
-            val mainSourceSet = project.extensions.getByType<SourceSetContainer>()["main"]
-            val runtimeClasspath = project.configurations["runtimeClasspath"].files
+        val projectClasspath = mainSourceSet.output.files
+        val sourceDirectories = mainSourceSet.allSource.sourceDirectories.files
 
-            val projectClasspath = mainSourceSet.output.files
-            val sourceDirectories = mainSourceSet.allSource.sourceDirectories.files
+        val jacocoClassPath =
+            projectClasspath + extraDeps + if (reportWithAllClasspath) runtimeClasspath else emptySet()
 
-            jacocoReport(
-                execFile = coverageMerged,
-                classPath = if (!reportWithAllClasspath) projectClasspath else projectClasspath + runtimeClasspath,
-                sourceDirectories = sourceDirectories,
-                reportDir = workDir.resolve("jacoco-report").createDirectories(),
-                reports = fuzzConfig.jacocoReports,
-            )
+        jacocoReport(
+            execFile = execFile,
+            classPath = jacocoClassPath,
+            sourceDirectories = sourceDirectories,
+            reportDir = workDir.resolve("jacoco-report").createDirectories(),
+            reports = jacocoConfig.reportTypes(),
+        )
+    }
+
+    private fun getDependencies(dependencies: Set<String>): Set<File> {
+        val configuration = project.configurations.findByName("runtimeClasspath") ?: run {
+            log.warn { "No 'runtimeClasspath' configuration found, skipping jacoco report generation" }
+            return emptySet()
         }
+
+        val deps = configuration.resolvedConfiguration.resolvedArtifacts.associate {
+            "${it.moduleVersion.id.group}:${it.moduleVersion.id.name}" to it.file.absoluteFile
+        }
+        return dependencies.mapNotNull { dependency ->
+            deps[dependency] ?: run {
+                log.warn { "Dependency '$dependency' not found in the classpath while generating jacoco report" }
+                null
+            }
+        }.toSet()
     }
 }
 
@@ -136,6 +174,7 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     val defaultWorkDir = buildDir.dir("fuzz").asFile.toPath()
     val config = KFuzzConfigBuilder.build {
         workDir = defaultWorkDir
+        reproducerPath = defaultWorkDir.resolve("reproducers")
         block()
     }
 

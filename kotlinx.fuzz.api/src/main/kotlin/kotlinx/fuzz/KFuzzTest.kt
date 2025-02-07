@@ -20,7 +20,7 @@ import org.junit.platform.commons.annotation.Testable
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 @Testable
 annotation class KFuzzTest(
-    val keepGoing: Int = KFuzzConfigImpl.Companion.Defaults.KEEP_GOING,
+    val keepGoing: Long = KFuzzConfigImpl.Companion.Defaults.KEEP_GOING,
     val maxFuzzTime: String = KFuzzConfigImpl.Companion.Defaults.MAX_SINGLE_TARGET_FUZZ_TIME_STRING,
     val instrument: Array<String> = [],
     val customHookExcludes: Array<String> = [],

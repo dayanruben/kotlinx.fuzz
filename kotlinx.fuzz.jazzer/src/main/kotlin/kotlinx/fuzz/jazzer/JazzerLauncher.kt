@@ -11,18 +11,17 @@ import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.io.path.ExperimentalPathApi
-import kotlin.io.path.absolute
-import kotlin.io.path.createDirectories
-import kotlin.io.path.outputStream
+import kotlin.io.path.*
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
+import kotlinx.fuzz.log.warn
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -55,8 +54,7 @@ object JazzerLauncher {
         exitProcess(0)
     }
 
-    @OptIn(ExperimentalPathApi::class)
-    fun runTarget(instance: Any, method: Method): Throwable? {
+    private fun configure(reproducerPath: Path, method: Method): List<String> {
         val libFuzzerArgs = mutableListOf("fake_argv0")
         val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
@@ -72,16 +70,55 @@ object JazzerLauncher {
         }
 
         libFuzzerArgs += currentCorpus.toString()
-        libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
+        libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
+
+        var keepGoing = when (RunMode.REGRESSION) {
+            in config.runModes -> {
+                val crashCount = reproducerPath.listCrashes().size
+                if (crashCount == 0) {
+                    log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
+                }
+                crashCount.toLong()
+            }
+            else -> 0
+        }
+        if (config.runModes.contains(RunMode.FUZZING)) {
+            libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
+            keepGoing += config.keepGoing
+        }
+
+        Opt.keepGoing.setIfDefault(keepGoing)
+
+        return libFuzzerArgs
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    fun runTarget(instance: Any, method: Method): Throwable? {
+        val reproducerPath =
+            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
+        if (!reproducerPath.exists()) {
+            reproducerPath.createDirectories()
+        }
+
+        val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
-        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { finding ->
+        FuzzTargetRunner.registerFatalFindingHandlerForJUnit { _, finding ->
             atomicFinding.set(finding)
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
-        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+
+        if (config.runModes.contains(RunMode.REGRESSION)) {
+            reproducerPath.listCrashes().forEach {
+                FuzzTargetRunner.runOne(it.readBytes())
+            }
+        }
+
+        if (config.runModes.contains(RunMode.FUZZING)) {
+            FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+        }
 
         return atomicFinding.get()
     }
@@ -93,6 +130,7 @@ object JazzerLauncher {
         Opt.instrumentationIncludes.setIfDefault(config.instrument)
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
+        Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())
 

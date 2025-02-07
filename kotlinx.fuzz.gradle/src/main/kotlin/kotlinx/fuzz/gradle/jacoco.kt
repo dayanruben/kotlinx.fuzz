@@ -5,7 +5,6 @@ import java.nio.file.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.outputStream
-import kotlinx.fuzz.JacocoReport
 import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
 import org.jacoco.core.tools.ExecFileLoader
@@ -32,7 +31,7 @@ private fun JacocoReport.toVisitor(reportDir: Path): IReportVisitor = when (this
  * @param execDir
  * @param result
  */
-fun jacocoMerge(execDir: Path, result: Path) {
+internal fun jacocoMerge(execDir: Path, result: Path) {
     // Use a single loader for merging. Each subsequent load() merges additional .exec data.
     val mergedLoader = ExecFileLoader()
     execDir.listDirectoryEntries("*.exec").forEach { execFile ->
@@ -52,7 +51,7 @@ fun jacocoMerge(execDir: Path, result: Path) {
  * @param reportDir Output directory where the coverage report will be generated
  * @param reports Jacoco reports to generate (xml, html, csv)
  */
-fun jacocoReport(
+internal fun jacocoReport(
     execFile: Path,
     classPath: Set<File>,
     sourceDirectories: Set<File>,
