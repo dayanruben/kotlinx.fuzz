@@ -55,7 +55,6 @@ class AnnotationsTest {
         )
     }
 
-    // TODO: enable once keepGoing works
     @Test
     fun testOverriddenConfig() {
         val result = runMethodFuzz(AnnotationsTest::overriddenConfig)
