@@ -20,7 +20,7 @@ import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.methodReproducerPath
+import kotlinx.fuzz.reproducerPathOf
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -76,9 +76,8 @@ object JazzerLauncher {
         return libFuzzerArgs
     }
 
-    @OptIn(ExperimentalPathApi::class)
-    fun runTarget(instance: Any, method: Method): Throwable? {
-        val reproducerPath = config.methodReproducerPath(method)
+    private fun runTarget(instance: Any, method: Method): Throwable? {
+        val reproducerPath = config.reproducerPathOf(method)
         if (!reproducerPath.exists()) {
             reproducerPath.createDirectories()
         }
@@ -96,7 +95,7 @@ object JazzerLauncher {
         return atomicFinding.get()
     }
 
-    fun initJazzer() {
+    private fun initJazzer() {
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.hooks)
