@@ -34,6 +34,9 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             else -> throw AssertionError("Unsupported fuzzer engine!")
         }
     }
+    private val isRegression: Boolean by lazy {
+        System.getProperty(RegressionEngine.REGRESSION_PROPERTY).toBooleanOrFalse()
+    }
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -90,9 +93,8 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
         when (descriptor) {
             is ClassTestDescriptor -> handleContainer(request, descriptor)
-            is MethodTestDescriptor -> if (isRegression()) {
-                handleContainer(request, descriptor)
-            } else {
+            is MethodRegressionTestDescriptor -> handleContainer(request, descriptor)
+            is MethodFuzzTestDescriptor -> {
                 log.debug { "Executing method ${descriptor.displayName}" }
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
@@ -120,23 +122,28 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         if (!method.isFuzzTarget()) {
             return
         }
-        engineDescriptor.addChild(MethodTestDescriptor(method, engineDescriptor, config))
+
+        if (isRegression) {
+            engineDescriptor.addChild(MethodRegressionTestDescriptor(method, engineDescriptor, config))
+        } else {
+            engineDescriptor.addChild(MethodFuzzTestDescriptor(method, engineDescriptor))
+        }
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
         ReflectionSupport.findAllClassesInClasspathRoot(uri, isKFuzzTestContainer) { true }
-            .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config) }
+            .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config, isRegression) }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
         ReflectionSupport.findAllClassesInPackage(packageName, isKFuzzTestContainer) { true }
-            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config) }
+            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config, isRegression) }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
 
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
-        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor, config))
+        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor, config, isRegression))
     }
 
     companion object {
@@ -156,5 +163,3 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
-
-internal fun isRegression() = System.getProperty(RegressionEngine.REGRESSION_PROPERTY)?.toBoolean() == true

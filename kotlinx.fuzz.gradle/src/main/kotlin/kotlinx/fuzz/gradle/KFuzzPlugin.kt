@@ -70,7 +70,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }
             doFirst {
-                systemProperties(fuzzConfig.toPropertiesMap() + mapOf(RegressionEngine.REGRESSION_PROPERTY to "true"))
+                systemProperties(fuzzConfig.toPropertiesMap() + (RegressionEngine.REGRESSION_PROPERTY to "true"))
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

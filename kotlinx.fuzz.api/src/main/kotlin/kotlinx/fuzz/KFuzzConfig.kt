@@ -1,6 +1,5 @@
 package kotlinx.fuzz
 
-import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.properties.ReadWriteProperty
@@ -187,9 +186,6 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
         }
     }
 }
-
-fun KFuzzConfig.methodReproducerPath(method: Method): Path =
-    Path(reproducerPath.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
 
 private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzzConfigImpl): KFuzzConfigProperty<*> {
     this.isAccessible = true
