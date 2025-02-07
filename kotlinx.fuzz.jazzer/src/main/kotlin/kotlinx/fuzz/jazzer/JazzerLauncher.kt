@@ -73,8 +73,6 @@ object JazzerLauncher {
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
         libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
 
-        Opt.keepGoing.setIfDefault(config.keepGoing)
-
         return libFuzzerArgs
     }
 
@@ -105,6 +103,7 @@ object JazzerLauncher {
         Opt.instrumentationIncludes.setIfDefault(config.instrument)
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
+        Opt.keepGoing.setIfDefault(config.keepGoing)
         Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())

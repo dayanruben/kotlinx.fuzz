@@ -31,6 +31,17 @@ object EngineTest {
         @KFuzzTest
         fun `success test`(@Suppress("UNUSED_PARAMETER", "unused") data: KFuzzer) {
         }
+
+        @KFuzzTest
+        fun `two failure test`(data: KFuzzer) {
+            if (data.boolean()) {
+                if (data.boolean()) {
+                    error("Expected failure 1")
+                } else {
+                    throw RuntimeException("Expected failure 2")
+                }
+            }
+        }
     }
 
     @BeforeEach
@@ -40,12 +51,13 @@ object EngineTest {
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             reproducerPath = workDir.resolve("reproducers")
+            keepGoing = 2
         }
     }
 
     @Test
     fun `one pass one fail`() {
-        val successTests = 2L
+        val successTests = 3L
         val failedTests = 1L
         val startedTests = successTests + failedTests
 

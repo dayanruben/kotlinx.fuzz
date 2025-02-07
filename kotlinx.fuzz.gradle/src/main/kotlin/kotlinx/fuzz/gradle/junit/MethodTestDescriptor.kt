@@ -24,7 +24,7 @@ internal class MethodTestDescriptor(
         }
     }
 
-    override fun getType(): TestDescriptor.Type = TestDescriptor.Type.CONTAINER_AND_TEST
+    override fun getType(): TestDescriptor.Type = if (isRegression()) TestDescriptor.Type.CONTAINER else TestDescriptor.Type.TEST
 
     companion object {
         private fun displayName(testField: Method): String = try {
