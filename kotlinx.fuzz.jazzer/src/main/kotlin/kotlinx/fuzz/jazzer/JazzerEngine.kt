@@ -3,6 +3,7 @@ package kotlinx.fuzz.jazzer
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
+import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.concurrent.thread
@@ -12,7 +13,6 @@ import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
-import java.lang.management.ManagementFactory
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -31,21 +31,13 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
 
-    companion object {
-        private const val PORT = "5005"
-        private const val DEBUG_SETUP_STRING =
-            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:$PORT"
-    }
-
     override fun initialise() {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
     }
 
-    private fun isDebugMode(): Boolean {
-        return ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
-    }
+    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
 
     override fun runTarget(instance: Any, method: Method): Throwable? {
         // spawn subprocess, redirect output to log and err files
@@ -55,7 +47,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         val debugOptions = if (isDebugMode()) {
             log.debug { "Connect Remote JVM Debugger (port $PORT) or attach to process with name \"kotlinx.fuzz.jazzer.JazzerLauncher\"" }
-            listOf(DEBUG_SETUP_STRING)
+            listOf(SETUP_DEBUG_STRING)
         } else {
             emptyList()
         }
@@ -130,6 +122,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
             }
         }
+    }
+
+    companion object {
+        private const val PORT = "5005"
+        private const val SETUP_DEBUG_STRING =
+            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:$PORT"
     }
 }
 
