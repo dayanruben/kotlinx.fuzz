@@ -15,7 +15,6 @@ repositories {
 
 dependencies {
     testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
-    testImplementation("org.junit.platform:junit-platform-testkit:1.11.4")
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")

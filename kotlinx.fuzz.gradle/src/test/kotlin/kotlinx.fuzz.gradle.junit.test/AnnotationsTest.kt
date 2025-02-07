@@ -7,8 +7,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.ConfigurationException
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.RunMode
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
@@ -18,9 +18,11 @@ class AnnotationsTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            maxSingleTargetFuzzTime = 5.seconds
+            maxSingleTargetFuzzTime = 10.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
+            reproducerPath = workDir.resolve("reproducers")
+            runModes = setOf(RunMode.REGRESSION, RunMode.FUZZING)
         }
     }
 
@@ -34,10 +36,10 @@ class AnnotationsTest {
         // A _hacky_ way to test if config params are actually overridden.
         // It's based on probability of fuzzer finding the second exception before first being basically 0.
         // If keepGoing=2 is not set, we will only get the first error.
-        if (data.boolean()) {
+        if (!data.boolean()) {
             error("first error")
         }
-        if (data.int() * data.int() == 25) {
+        if (data.int() * 5 == 25) {
             error("second error")
         }
     }
@@ -54,7 +56,6 @@ class AnnotationsTest {
     }
 
     // TODO: enable once keepGoing works
-    @Disabled
     @Test
     fun testOverriddenConfig() {
         val result = runMethodFuzz(AnnotationsTest::overriddenConfig)
