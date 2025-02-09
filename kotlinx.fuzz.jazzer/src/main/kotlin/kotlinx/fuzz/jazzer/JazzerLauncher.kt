@@ -68,7 +68,7 @@ object JazzerLauncher {
         }
 
         libFuzzerArgs += currentCorpus.absolutePathString()
-        libFuzzerArgs += "${reproducerPath.absolute()}"
+        libFuzzerArgs += reproducerPath.absolutePathString()
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
         libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
