@@ -101,7 +101,3 @@ You can see more examples of `kotlinz.fuzz` usage in [`kotlinx.fuzz.test`](kotli
 ## Trophy list
 
 Trophy list can be found [here](docs/Trophy%20list.md)
-
-## Additional information
-### Debugging fuzzing process
-In order to run debug in fuzzing mode you need to connect remote debugger. It can be done either by going to `Run -> Attach to Process -> kotlinx.fuzz.jazzer.JazzerLauncher` or you need to create a new configuration `Remote JVM Debug` select a port 5005 and run it. Both approaches should be run after starting debug of your original test

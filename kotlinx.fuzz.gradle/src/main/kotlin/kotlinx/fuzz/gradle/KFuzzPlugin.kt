@@ -18,6 +18,8 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY = "idea.debugger.dispatch.port"
+
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
     val log = Logging.getLogger(KFuzzPlugin::class.java)!!
@@ -51,6 +53,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

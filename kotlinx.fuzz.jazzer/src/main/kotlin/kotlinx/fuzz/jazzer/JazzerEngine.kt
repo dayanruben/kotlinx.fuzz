@@ -1,18 +1,22 @@
 package kotlinx.fuzz.jazzer
 
+import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
 import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
+import java.net.ServerSocket
+import java.net.Socket
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
+
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY = "idea.debugger.dispatch.port"
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -39,6 +43,22 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
 
+    private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
+        val port = ServerSocket(0).use { it.localPort }
+        Socket("127.0.0.1", intellijDebuggerDispatchPort).use { socket ->
+            DataOutputStream(socket.getOutputStream()).use { output ->
+                output.writeUTF("Gradle JVM")
+                output.writeUTF("Jazzer Run Target: ${method.name}")
+                output.writeUTF("DEBUG_SERVER_PORT=$port")
+                output.flush()
+
+                socket.inputStream.read()
+            }
+        }
+
+        return listOf("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=$port")
+    }
+
     override fun runTarget(instance: Any, method: Method): Throwable? {
         // spawn subprocess, redirect output to log and err files
         val classpath = System.getProperty("java.class.path")
@@ -46,8 +66,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
-            log.debug { "Connect Remote JVM Debugger (port $PORT) or attach to process with name \"kotlinx.fuzz.jazzer.JazzerLauncher\"" }
-            listOf(SETUP_DEBUG_STRING)
+            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY).toInt(), method)
         } else {
             emptyList()
         }
@@ -122,12 +141,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
             }
         }
-    }
-
-    companion object {
-        private const val PORT = "5005"
-        private const val SETUP_DEBUG_STRING =
-            "-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=localhost:$PORT"
     }
 }
 
