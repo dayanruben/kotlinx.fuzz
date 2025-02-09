@@ -63,12 +63,12 @@ object JazzerLauncher {
                 .resolve("coverage")
                 .createDirectories()
                 .resolve("${method.fullName}.exec")
-                .absolute()
-                .toString()
+                .absolutePathString()
             Opt.coverageDump.setIfDefault(coverageFile)
         }
 
-        libFuzzerArgs += currentCorpus.toString()
+        libFuzzerArgs += currentCorpus.absolutePathString()
+        libFuzzerArgs += "${reproducerPath.absolute()}"
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
         libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
