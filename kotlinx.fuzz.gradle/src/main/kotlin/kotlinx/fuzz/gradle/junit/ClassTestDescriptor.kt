@@ -30,10 +30,9 @@ internal class ClassTestDescriptor(
             ReflectionUtils.HierarchyTraversalMode.TOP_DOWN,
         )
             .map { method ->
-                if (isRegression) {
-                    MethodRegressionTestDescriptor(method, this, config)
-                } else {
-                    MethodFuzzTestDescriptor(method, this)
+                when {
+                    isRegression -> MethodRegressionTestDescriptor(method, this, config)
+                    else -> MethodFuzzTestDescriptor(method, this)
                 }
             }
             .forEach { child -> this.addChild(child) }

@@ -123,11 +123,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             return
         }
 
-        if (isRegression) {
-            engineDescriptor.addChild(MethodRegressionTestDescriptor(method, engineDescriptor, config))
-        } else {
-            engineDescriptor.addChild(MethodFuzzTestDescriptor(method, engineDescriptor))
-        }
+        engineDescriptor.addChild(
+            when {
+                isRegression -> MethodRegressionTestDescriptor(method, engineDescriptor, config)
+                else -> MethodFuzzTestDescriptor(method, engineDescriptor)
+            }
+        )
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
