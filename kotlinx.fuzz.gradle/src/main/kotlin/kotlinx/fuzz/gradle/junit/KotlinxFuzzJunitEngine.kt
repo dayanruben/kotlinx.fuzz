@@ -127,7 +127,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
             when {
                 isRegression -> MethodRegressionTestDescriptor(method, engineDescriptor, config)
                 else -> MethodFuzzTestDescriptor(method, engineDescriptor)
-            }
+            },
         )
     }
 
