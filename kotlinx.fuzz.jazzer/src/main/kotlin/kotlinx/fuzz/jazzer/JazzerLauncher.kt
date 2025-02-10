@@ -29,7 +29,7 @@ object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
-    private var oldRepresentatives: Int? = null
+    private var oldRepresentatives: Int? = null // Number of clusters initially, so that keepGoing will depend inly on new findings
         set(value) {
             require(field == null && value != null) { "Number of old representatives should be set only once to a non-null value" }
             field = value
@@ -72,28 +72,12 @@ object JazzerLauncher {
         exitProcess(0)
     }
 
-    private fun Throwable.filter(): Throwable {
-        val filteredCause = cause?.filter()
-        val oldStackTrace = stackTrace
+    private fun Throwable.removeInnerFrames() {
+        cause?.removeInnerFrames()
 
-        val newThrowable = (when {
-            message == null && filteredCause == null -> this::class.java.getConstructor().newInstance()
-
-            message == null && filteredCause != null -> this::class.java.getConstructor(Throwable::class.java)
-                .newInstance(filteredCause)
-
-            message != null && filteredCause == null -> this::class.java.getConstructor(String::class.java)
-                .newInstance(message)
-
-            else -> this::class.java.getConstructor(String::class.java, Throwable::class.java)
-                .newInstance(message, filteredCause)
-        }).apply {
-            stackTrace = oldStackTrace.takeWhile {
-                it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
-            }.toTypedArray()
-        }
-
-        return newThrowable
+        stackTrace = stackTrace.takeWhile {
+            it.className != JazzerTarget::class.qualifiedName && it.methodName != JazzerTarget::fuzzTargetOne.name
+        }.toTypedArray()
     }
 
     private fun configure(reproducerPath: Path, method: Method): List<String> {
@@ -124,7 +108,7 @@ object JazzerLauncher {
         return libFuzzerArgs
     }
 
-    fun runTarget(instance: Any, method: Method): Throwable? {
+    private fun runTarget(instance: Any, method: Method): Throwable? {
         val reproducerPath =
             Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
         if (!reproducerPath.exists()) {
@@ -166,14 +150,15 @@ object JazzerLauncher {
 
         if (!file.exists()) {
             file.createFile()
-            file.writeText(finding.filter().stackTraceToString())
+            finding.removeInnerFrames()
+            file.writeText(finding.stackTraceToString())
         }
 
         val currentRepresentatives = clusterCrashes(reproducerPath)
         return config.keepGoing != 0L && currentRepresentatives - oldRepresentatives!! >= config.keepGoing
     }
 
-    fun initJazzer() {
+    private fun initJazzer() {
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.hooks)
