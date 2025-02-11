@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.SystemProperties
+import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
 import org.gradle.api.Plugin
@@ -57,12 +57,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
-                systemProperties[SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT] =
-                    System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT)
-                systemProperties[SystemProperties.JAZZER_ENABLE_LOGGING] =
-                    System.getProperty(SystemProperties.JAZZER_ENABLE_LOGGING)
-                systemProperties[SystemProperties.JAZZER_LIBFUZZERARGS_RSS_LIMIT_MB] =
-                    System.getProperty(SystemProperties.JAZZER_LIBFUZZERARGS_RSS_LIMIT_MB)
+                for (property in SystemProperty.values()) {
+                    if (property.get() != null) {
+                        systemProperties[property.name] = property.get()
+                    }
+                }
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -76,13 +75,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }
             doFirst {
-                systemProperties(fuzzConfig.toPropertiesMap() + (SystemProperties.REGRESSION to "true"))
-                systemProperties[SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT] =
-                    System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT)
-                systemProperties[SystemProperties.JAZZER_ENABLE_LOGGING] =
-                    System.getProperty(SystemProperties.JAZZER_ENABLE_LOGGING)
-                systemProperties[SystemProperties.JAZZER_LIBFUZZERARGS_RSS_LIMIT_MB] =
-                    System.getProperty(SystemProperties.JAZZER_LIBFUZZERARGS_RSS_LIMIT_MB)
+                systemProperties(fuzzConfig.toPropertiesMap() + (SystemProperty.REGRESSION.name to "true"))
+                for (property in SystemProperty.values()) {
+                    if (property.get() != null) {
+                        systemProperties[property.name] = property.get()
+                    }
+                }
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

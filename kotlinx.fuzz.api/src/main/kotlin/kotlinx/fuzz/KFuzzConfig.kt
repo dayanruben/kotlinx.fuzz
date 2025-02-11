@@ -51,60 +51,60 @@ interface KFuzzConfig {
 
 class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var fuzzEngine: String by KFuzzConfigProperty(
-        SystemProperties.ENGINE,
+        SystemProperty.ENGINE,
         defaultValue = "jazzer",
         fromString = { it },
         toString = { it },
     )
     override var hooks: Boolean by KFuzzConfigProperty(
-        SystemProperties.HOOKS,
+        SystemProperty.HOOKS,
         defaultValue = Defaults.HOOKS,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var keepGoing: Long by KFuzzConfigProperty(
-        SystemProperties.KEEP_GOING,
+        SystemProperty.KEEP_GOING,
         defaultValue = Defaults.KEEP_GOING,
         validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toLong() },
     )
     override var instrument: List<String> by KFuzzConfigProperty(
-        SystemProperties.INSTRUMENT,
+        SystemProperty.INSTRUMENT,
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
     override var customHookExcludes: List<String> by KFuzzConfigProperty(
-        SystemProperties.CUSTOM_HOOK_EXCLUDES,
+        SystemProperty.CUSTOM_HOOK_EXCLUDES,
         defaultValue = emptyList(),
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
     override var maxSingleTargetFuzzTime: Duration by KFuzzConfigProperty(
-        SystemProperties.MAX_SINGLE_TARGET_FUZZ_TIME,
+        SystemProperty.MAX_SINGLE_TARGET_FUZZ_TIME,
         defaultValue = Duration.parse(Defaults.MAX_SINGLE_TARGET_FUZZ_TIME_STRING),
         validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
     )
     override var workDir: Path by KFuzzConfigProperty(
-        SystemProperties.WORK_DIR,
+        SystemProperty.WORK_DIR,
         toString = { it.toString() },
         fromString = { Path(it).absolute() },
     )
     override var dumpCoverage: Boolean by KFuzzConfigProperty(
-        SystemProperties.DUMP_COVERAGE,
+        SystemProperty.DUMP_COVERAGE,
         defaultValue = Defaults.DUMP_COVERAGE,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
-        SystemProperties.REPRODUCER_PATH,
+        SystemProperty.REPRODUCER_PATH,
         toString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
     override var logLevel: String by KFuzzConfigProperty(
-        SystemProperties.LOG_LEVEL,
+        SystemProperty.LOG_LEVEL,
         defaultValue = "WARN",
         validate = { require(it.uppercase() in listOf("TRACE", "INFO", "DEBUG", "WARN", "ERROR")) },
         toString = { it },
@@ -112,7 +112,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
-        .associate { it.systemProperty to it.stringValue }
+        .associate { it.systemProperty.name to it.stringValue }
 
     private fun assertAllSet() {
         configProperties().forEach { it.assertIsSet() }
@@ -151,7 +151,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         internal fun fromPropertiesMap(properties: Map<String, String>): KFuzzConfigImpl = wrapConfigErrors {
             KFuzzConfigImpl().apply {
                 configProperties().forEach {
-                    val propertyKey = it.systemProperty
+                    val propertyKey = it.systemProperty.name
                     it.setFromString(properties[propertyKey] ?: error("map missing property $propertyKey"))
                 }
                 assertAllSet()
@@ -186,13 +186,13 @@ class ConfigurationException(
  * @param fromString a function that converts a string value to the property value type
  */
 internal class KFuzzConfigProperty<T : Any> internal constructor(
-    val systemProperty: String,
+    val systemProperty: SystemProperty,
     val defaultValue: T? = null,
     private val validate: (T) -> Unit = {},
     private val toString: (T) -> String,
     private val fromString: (String) -> T,
 ) : ReadWriteProperty<Any, T> {
-    private val name: String = systemProperty.substringAfterLast('.')
+    private val name: String = systemProperty.name.substringAfterLast('.')
     private var cachedValue: T? = null
     val stringValue: String get() = toString(get())
 
@@ -215,7 +215,7 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
 
     internal fun setFromSystemProperty() {
         assertCanSet()
-        System.getProperty(systemProperty)?.let {
+        systemProperty.get()?.let {
             cachedValue = fromString(it)
         } ?: error("System property '$systemProperty' is not set")
     }
