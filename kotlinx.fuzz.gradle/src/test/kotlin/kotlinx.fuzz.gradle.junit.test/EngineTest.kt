@@ -62,7 +62,7 @@ object EngineTest {
     }
 }
 
-private fun writeToSystemProperties(block: KFuzzConfigBuilder.() -> Unit) {
+fun writeToSystemProperties(block: KFuzzConfigBuilder.() -> Unit) {
     KFuzzConfigBuilder.build(block).toPropertiesMap()
         .forEach { (key, value) -> System.setProperty(key, value) }
 }

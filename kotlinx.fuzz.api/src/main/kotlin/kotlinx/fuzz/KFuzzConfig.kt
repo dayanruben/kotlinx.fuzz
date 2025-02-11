@@ -24,7 +24,7 @@ import kotlin.time.Duration.Companion.seconds
  * Default: true
  * (custom and built-in).
  * Default: empty list
- * @param maxSingleTargetFuzzTime - max time to fuzz a single target in seconds
+ * @param maxSingleTargetFuzzTime - max time to fuzz a single target. Default: 1 minute
  * @param runModes - Set of modes to be run: each element can be regression or fuzzing. Default: regression, fuzzing
  * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
  */
@@ -45,6 +45,9 @@ interface KFuzzConfig {
 
     companion object {
         fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl.fromSystemProperties()
+
+        fun fromPropertiesMap(properties: Map<String, String>): KFuzzConfig =
+            KFuzzConfigImpl.fromPropertiesMap(properties)
     }
 }
 
@@ -57,13 +60,13 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var hooks: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.hooks",
-        defaultValue = true,
+        defaultValue = Defaults.HOOKS,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var keepGoing: Long by KFuzzConfigProperty(
         "kotlinx.fuzz.keepGoing",
-        defaultValue = 1,
+        defaultValue = Defaults.KEEP_GOING,
         validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toLong() },
@@ -81,6 +84,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var maxSingleTargetFuzzTime: Duration by KFuzzConfigProperty(
         "kotlinx.fuzz.maxSingleTargetFuzzTime",
+        defaultValue = Duration.parse(Defaults.MAX_SINGLE_TARGET_FUZZ_TIME_STRING),
         validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
@@ -92,7 +96,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
     override var dumpCoverage: Boolean by KFuzzConfigProperty(
         "kotlinx.fuzz.dumpCoverage",
-        defaultValue = true,
+        defaultValue = Defaults.DUMP_COVERAGE,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
@@ -128,19 +132,55 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     }
 
     companion object {
-        fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = KFuzzConfigImpl().apply {
-            block()
-            assertAllSet()
-            validate()
+        internal object Defaults {
+            const val KEEP_GOING = 1L
+            const val HOOKS = true
+            const val DUMP_COVERAGE = true
+
+            // string for compatibility with annotations
+            const val MAX_SINGLE_TARGET_FUZZ_TIME_STRING = "1m"
         }
 
-        internal fun fromSystemProperties(): KFuzzConfig = KFuzzConfigImpl().apply {
-            configProperties().forEach { it.setFromSystemProperty() }
-            assertAllSet()
-            validate()
+        fun build(block: KFuzzConfigImpl.() -> Unit): KFuzzConfig = wrapConfigErrors {
+            KFuzzConfigImpl().apply {
+                block()
+                assertAllSet()
+                validate()
+            }
+        }
+
+        internal fun fromSystemProperties(): KFuzzConfig = wrapConfigErrors {
+            KFuzzConfigImpl().apply {
+                configProperties().forEach { it.setFromSystemProperty() }
+                assertAllSet()
+                validate()
+            }
+        }
+
+        internal fun fromPropertiesMap(properties: Map<String, String>): KFuzzConfigImpl = wrapConfigErrors {
+            KFuzzConfigImpl().apply {
+                configProperties().forEach {
+                    val propertyKey = it.systemProperty
+                    it.setFromString(properties[propertyKey] ?: error("map missing property $propertyKey"))
+                }
+                assertAllSet()
+                validate()
+            }
+        }
+
+        internal fun fromAnotherConfig(
+            config: KFuzzConfig,
+            edit: KFuzzConfigImpl.() -> Unit,
+        ): KFuzzConfig = wrapConfigErrors {
+            fromPropertiesMap(config.toPropertiesMap()).apply { edit() }
         }
     }
 }
+
+class ConfigurationException(
+    override val message: String?,
+    override val cause: Throwable? = null,
+) : IllegalArgumentException()
 
 enum class RunMode {
     FUZZING, REGRESSION
@@ -193,6 +233,11 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
         } ?: error("System property '$systemProperty' is not set")
     }
 
+    internal fun setFromString(stringValue: String) {
+        assertCanSet()
+        cachedValue = fromString(stringValue)
+    }
+
     private fun assertCanSet() {
         cachedValue?.let {
             error("Property '$name' is already set")
@@ -209,3 +254,12 @@ private fun KProperty1<KFuzzConfigImpl, *>.asKFuzzConfigProperty(delegate: KFuzz
 private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
     KFuzzConfigImpl::class.memberProperties
         .map { it.asKFuzzConfigProperty(this) }
+
+private inline fun <T : KFuzzConfig> wrapConfigErrors(buildConfig: () -> T): T = try {
+    buildConfig()
+} catch (e: Throwable) {
+    throw when (e) {
+        is ConfigurationException -> e
+        else -> ConfigurationException("cannot create config", e)
+    }
+}
