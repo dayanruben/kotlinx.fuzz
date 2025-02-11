@@ -29,7 +29,7 @@ object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
-    private var oldRepresentatives: Int? = null // Number of clusters initially, so that keepGoing will depend inly on new findings
+    private var oldRepresentatives: Int? = null  // Number of clusters initially, so that keepGoing will depend inly on new findings
         set(value) {
             require(field == null && value != null) { "Number of old representatives should be set only once to a non-null value" }
             field = value
