@@ -1,15 +1,20 @@
 package kotlinx.fuzz.jazzer
 
+import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
+import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
+import java.net.ServerSocket
+import java.net.Socket
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.SystemProperties
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
@@ -37,6 +42,24 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.exceptionsDir.createDirectories()
     }
 
+    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
+
+    private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
+        val port = ServerSocket(0).use { it.localPort }
+        Socket("127.0.0.1", intellijDebuggerDispatchPort).use { socket ->
+            DataOutputStream(socket.getOutputStream()).use { output ->
+                output.writeUTF("Gradle JVM")
+                output.writeUTF("Jazzer Run Target: ${method.name}")
+                output.writeUTF("DEBUG_SERVER_PORT=$port")
+                output.flush()
+
+                socket.inputStream.read()
+            }
+        }
+
+        return listOf("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=$port")
+    }
+
     override fun runTarget(instance: Any, method: Method): Throwable? {
         // spawn subprocess, redirect output to log and err files
         val classpath = System.getProperty("java.class.path")
@@ -47,9 +70,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
+        val debugOptions = if (isDebugMode()) {
+            getDebugSetup(System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT).toInt(), method)
+        } else {
+            emptyList()
+        }
+
         val exitCode = ProcessBuilder(
             javaCommand,
             "-classpath", classpath,
+            *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
