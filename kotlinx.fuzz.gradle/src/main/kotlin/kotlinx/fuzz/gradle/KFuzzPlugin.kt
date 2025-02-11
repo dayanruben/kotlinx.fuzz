@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.SystemProperties
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
@@ -57,6 +58,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
+                systemProperties[SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT] =
+                    System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

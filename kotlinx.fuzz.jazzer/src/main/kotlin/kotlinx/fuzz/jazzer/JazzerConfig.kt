@@ -1,5 +1,7 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.SystemProperties
+
 /**
  * Jazzer specific configuration properties
  *
@@ -12,8 +14,8 @@ data class JazzerConfig(
 ) {
     companion object {
         fun fromSystemProperties(): JazzerConfig = JazzerConfig(
-            libFuzzerRssLimit = System.getProperty("kotlinx.fuzz.jazzer.libFuzzerArgs.rssLimitMb", "0").toInt(),
-            enableLogging = System.getProperty("kotlinx.fuzz.jazzer.enableLogging", "false").toBooleanStrict(),
+            libFuzzerRssLimit = System.getProperty(SystemProperties.JAZZER_LIBFUZZERARGS_RSS_LIMIT_MB, "0").toInt(),
+            enableLogging = System.getProperty(SystemProperties.JAZZER_ENABLE_LOGGING, "false").toBooleanStrict(),
         )
     }
 }
