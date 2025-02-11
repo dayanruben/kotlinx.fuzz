@@ -1,3 +1,5 @@
+cargo install cross --git https://github.com/cross-rs/cross
+
 git clone https://github.com/cross-rs/cross
 cd cross
 git submodule update --init --remote
