@@ -14,4 +14,4 @@ object RegressionEngine {
     }
 }
 
-fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("crash-*") else emptyList()
+fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()
