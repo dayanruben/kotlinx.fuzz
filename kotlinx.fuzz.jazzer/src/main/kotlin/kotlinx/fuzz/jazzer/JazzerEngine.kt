@@ -13,6 +13,8 @@ import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
 
@@ -63,7 +65,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         // spawn subprocess, redirect output to log and err files
         val classpath = System.getProperty("java.class.path")
         val javaCommand = System.getProperty("java.home") + "/bin/java"
-        val properties = System.getProperties().map { (property, value) -> "-D$property=$value" }
+
+        // TODO: pass the config explicitly rather than through system properties
+        val config = KFuzzConfig.fromSystemProperties()
+        val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
+        val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
             getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY).toInt(), method)
@@ -75,7 +81,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             javaCommand,
             "-classpath", classpath,
             *debugOptions.toTypedArray(),
-            *properties.toTypedArray(),
+            *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
         ).executeAndSaveLogs(
