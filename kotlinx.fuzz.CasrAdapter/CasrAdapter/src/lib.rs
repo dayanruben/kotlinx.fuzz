@@ -7,7 +7,7 @@ use libcasr::java::JavaStacktrace;
 use libcasr::stacktrace::{cluster_stacktraces, ParseStacktrace};
 
 #[no_mangle]
-pub extern "C" fn Java_kotlinx_fuzz_jazzer_JazzerLauncher_parseAndClusterStackTraces(
+pub extern "C" fn Java_kotlinx_fuzz_CasrAdapter_parseAndClusterStackTraces(
     mut env: JNIEnv,
     _: JObject,
     raw_stacktraces: jobject, // List<String>

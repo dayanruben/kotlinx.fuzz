@@ -24,6 +24,7 @@ import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
 import kotlinx.fuzz.log.warn
+import kotlinx.fuzz.CasrAdapter
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -34,17 +35,6 @@ object JazzerLauncher {
             require(field == null && value != null) { "Number of old representatives should be set only once to a non-null value" }
             field = value
         }
-
-    init {
-        val codeLocation = this::class.java.protectionDomain.codeSource.location
-        val libsLocation = codeLocation.toURI()
-            .toPath()
-            .toFile()
-            .parentFile
-        System.load("$libsLocation/${System.mapLibraryName("casr_adapter")}")
-    }
-
-    private external fun parseAndClusterStackTraces(rawStacktraces: List<String>): List<Int>
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -222,7 +212,7 @@ object JazzerLauncher {
             rawStackTraces.add(lines)
         }
 
-        val clusters = parseAndClusterStackTraces(rawStackTraces)
+        val clusters = CasrAdapter.parseAndClusterStackTraces(rawStackTraces)
         val mapping = initClustersMapping(directoryPath, stacktraceFiles, clusters)
 
         clusters.forEachIndexed { index, cluster ->
