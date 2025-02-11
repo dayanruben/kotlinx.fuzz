@@ -258,9 +258,8 @@ private fun KFuzzConfigImpl.configProperties(): List<KFuzzConfigProperty<*>> =
 private inline fun <T : KFuzzConfig> wrapConfigErrors(buildConfig: () -> T): T = try {
     buildConfig()
 } catch (e: Throwable) {
-    if (e is ConfigurationException) {
-        throw e
-    } else {
-        throw ConfigurationException("cannot create config", e)
+    throw when (e) {
+        is ConfigurationException -> e
+        else -> ConfigurationException("cannot create config", e)
     }
 }
