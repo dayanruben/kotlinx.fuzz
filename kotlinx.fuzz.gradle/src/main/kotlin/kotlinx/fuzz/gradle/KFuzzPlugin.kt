@@ -58,7 +58,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
                 for (property in SystemProperty.values()) {
-                    if (property.get() != null) {
+                    property.get()?.let {
                         systemProperties[property.name] = property.get()
                     }
                 }
@@ -77,7 +77,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap() + (SystemProperty.REGRESSION.name to "true"))
                 for (property in SystemProperty.values()) {
-                    if (property.get() != null) {
+                    property.get()?.let {
                         systemProperties[property.name] = property.get()
                     }
                 }
