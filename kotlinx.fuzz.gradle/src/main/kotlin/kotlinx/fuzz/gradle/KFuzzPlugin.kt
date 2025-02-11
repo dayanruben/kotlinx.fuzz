@@ -89,8 +89,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             ?: run {
                 log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
-                log.warn(
-                    """
+                log.warn("""
                     tasks.withType<FuzzTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()

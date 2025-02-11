@@ -6,7 +6,7 @@ object SystemProperties {
     const val KEEP_GOING = "kotlinx.fuzz.keepGoing"
     const val INSTRUMENT = "kotlinx.fuzz.instrument"
     const val CUSTOM_HOOK_EXCLUDES = "kotlinx.fuzz.customHookExcludes"
-    const val MAX_SINGLE_TARGET_FUZZ_TIME= "kotlinx.fuzz.maxSingleTargetFuzzTime"
+    const val MAX_SINGLE_TARGET_FUZZ_TIME = "kotlinx.fuzz.maxSingleTargetFuzzTime"
     const val WORK_DIR = "kotlinx.fuzz.workDir"
     const val DUMP_COVERAGE = "kotlinx.fuzz.dumpCoverage"
     const val RUN_MODES = "kotlinx.fuzz.runModes"
