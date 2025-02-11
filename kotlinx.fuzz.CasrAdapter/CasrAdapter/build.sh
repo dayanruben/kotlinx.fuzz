@@ -21,3 +21,5 @@ echo "Windows ARM"
 cross build --release --target aarch64-pc-windows-msvc
 echo "Windows x86"
 cross build --release --target x86_64-pc-windows-gnu
+
+rm -rf cross

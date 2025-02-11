@@ -9,7 +9,25 @@ object CasrAdapter {
             .toPath()
             .toFile()
             .parentFile
-        System.load("$libsLocation/${System.mapLibraryName("casr_adapter")}")
+
+        val osName = System.getProperty("os.name").lowercase()
+        val arch = System.getProperty("os.arch").lowercase()
+
+        val platform = when {
+            osName.contains("win") -> "x86_64-pc-windows-gnu"
+            osName.contains("mac") && arch.contains("aarch64") -> "aarch64-apple-darwin"
+            osName.contains("mac") -> "x86_64-apple-darwin"
+            osName.contains("nix") || osName.contains("nux") -> if (arch.contains("aarch64")) {
+                "aarch64-unknown-linux-gnu"
+            } else {
+                "x86_64-unknown-linux-gnu"
+            }
+            else -> throw UnsupportedOperationException("Unsupported OS: $osName")
+        }
+
+        val libName = System.mapLibraryName("casr_adapter")
+
+        System.load("$libsLocation/$platform-$libName")
     }
 
     external fun parseAndClusterStackTraces(rawStacktraces: List<String>): List<Int>
