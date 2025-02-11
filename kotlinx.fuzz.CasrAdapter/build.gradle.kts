@@ -5,21 +5,13 @@ plugins {
     id("kotlinx.fuzz.src-module")
 }
 
-dependencies {
-    implementation(project(":kotlinx.fuzz.api"))
-    implementation(libs.rgxgen)
-    implementation(libs.slf4j.api)
-
-    testRuntimeOnly(libs.junit.jupiter)
-}
-
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
     commandLine = listOf("/usr/bin/env", "cargo", "build", "--release")
 }
 
-fun File.listDLLs(): Array<File>? = listFiles { file ->
-    file.name.endsWith(".dylib") || file.name.endsWith(".so") || file.name.endsWith(".dll")
+fun File.listSharedLibs(): Array<File>? = listFiles { file ->
+    file.extension in setOf("dylib", "so", "dll")
 }
 
 tasks.register("linkRustLib") {
@@ -36,7 +28,7 @@ tasks.register("linkRustLib") {
             throw GradleException("Source directory $sourceDir does not exist")
         }
 
-        sourceDir.listDLLs()?.forEach { file ->
+        sourceDir.listSharedLibs()?.forEach { file ->
             val targetLink = targetDir.resolve(file.name)
             if (targetLink.exists()) {
                 targetLink.delete()
@@ -69,7 +61,7 @@ tasks.named("clean") {
     doLast {
         val targetDir = file(layout.buildDirectory.dir("libs"))
         if (targetDir.exists()) {
-            targetDir.listDLLs()?.forEach { it.delete() }
+            targetDir.listSharedLibs()?.forEach { it.delete() }
         }
     }
 }
