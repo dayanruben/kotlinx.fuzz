@@ -17,6 +17,8 @@ fun String?.toBooleanOrFalse(): Boolean = this?.toBoolean() == true
 fun KFuzzConfig.reproducerPathOf(method: Method): Path =
     Path(reproducerPath.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
 
+fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()
+
 internal fun String.asList(separator: String = ",") =
     this.split(separator)
         .map(String::trim)
@@ -55,5 +57,3 @@ internal fun RegexConfiguration.asRegexProperties(): RgxGenProperties {
     )
     return properties
 }
-
-fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()
