@@ -21,6 +21,7 @@ import kotlin.system.exitProcess
 import kotlinx.fuzz.CasrAdapter
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.RunMode
+import kotlinx.fuzz.listCrashes
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
@@ -91,7 +92,7 @@ object JazzerLauncher {
             libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
         }
 
-        if (RunMode.REGRESSION in config.runModes && reproducerPath.listAllCrashes().isEmpty()) {
+        if (RunMode.REGRESSION in config.runModes && reproducerPath.listCrashes().isEmpty()) {
             log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
         }
 
@@ -121,7 +122,7 @@ object JazzerLauncher {
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
 
         if (config.runModes.contains(RunMode.REGRESSION)) {
-            reproducerPath.listAllCrashes().forEach {
+            reproducerPath.listCrashes().forEach {
                 FuzzTargetRunner.runOne(it.readBytes())
             }
         }

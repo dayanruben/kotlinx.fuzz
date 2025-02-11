@@ -177,8 +177,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
 
-internal fun Path.listAllCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
-
 internal fun Path.listStacktraces(): List<Path> = listDirectoryEntries("stacktrace-*")
 
 internal fun Path.listClusters(): List<Path> = listDirectoryEntries("cluster-*")

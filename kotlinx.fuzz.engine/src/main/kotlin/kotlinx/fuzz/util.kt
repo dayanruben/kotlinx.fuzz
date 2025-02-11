@@ -7,9 +7,13 @@ import com.github.curiousoddman.rgxgen.model.SymbolRange
 import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import com.github.curiousoddman.rgxgen.util.chars.CharList
 import kotlinx.fuzz.KFuzzer.RegexConfiguration
+import java.nio.file.Path
+import kotlin.io.path.listDirectoryEntries
 
 internal fun String?.toBooleanOrTrue(): Boolean = this?.toBoolean() != false
 internal fun String?.toBooleanOrFalse(): Boolean = this?.toBoolean() == true
+
+fun Path.listCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
 
 internal fun String.asList(separator: String = ",") =
     this.split(separator)
