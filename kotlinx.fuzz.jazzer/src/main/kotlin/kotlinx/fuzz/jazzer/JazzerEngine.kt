@@ -14,11 +14,10 @@ import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.SystemProperties
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
-
-private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY = "idea.debugger.dispatch.port"
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -72,7 +71,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
-            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_PROPERTY).toInt(), method)
+            getDebugSetup(System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT).toInt(), method)
         } else {
             emptyList()
         }

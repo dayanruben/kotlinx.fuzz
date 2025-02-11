@@ -53,67 +53,67 @@ interface KFuzzConfig {
 
 class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var fuzzEngine: String by KFuzzConfigProperty(
-        "kotlinx.fuzz.engine",
+        SystemProperties.ENGINE,
         defaultValue = "jazzer",
         fromString = { it },
         toString = { it },
     )
     override var hooks: Boolean by KFuzzConfigProperty(
-        "kotlinx.fuzz.hooks",
+        SystemProperties.HOOKS,
         defaultValue = Defaults.HOOKS,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var keepGoing: Long by KFuzzConfigProperty(
-        "kotlinx.fuzz.keepGoing",
+        SystemProperties.KEEP_GOING,
         defaultValue = Defaults.KEEP_GOING,
         validate = { require(it > 0) { "'keepGoing' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toLong() },
     )
     override var instrument: List<String> by KFuzzConfigProperty(
-        "kotlinx.fuzz.instrument",
+        SystemProperties.INSTRUMENT,
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
     override var customHookExcludes: List<String> by KFuzzConfigProperty(
-        "kotlinx.fuzz.customHookExcludes",
+        SystemProperties.CUSTOM_HOOK_EXCLUDES,
         defaultValue = emptyList(),
         toString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
     override var maxSingleTargetFuzzTime: Duration by KFuzzConfigProperty(
-        "kotlinx.fuzz.maxSingleTargetFuzzTime",
+        SystemProperties.MAX_SINGLE_TARGET_FUZZ_TIME,
         defaultValue = Duration.parse(Defaults.MAX_SINGLE_TARGET_FUZZ_TIME_STRING),
         validate = { require(it.inWholeSeconds > 0) { "'maxSingleTargetFuzzTime' must be at least 1 second" } },
         toString = { it.inWholeSeconds.toString() },
         fromString = { it.toInt().seconds },
     )
     override var workDir: Path by KFuzzConfigProperty(
-        "kotlinx.fuzz.workDir",
+        SystemProperties.WORK_DIR,
         toString = { it.toString() },
         fromString = { Path(it).absolute() },
     )
     override var dumpCoverage: Boolean by KFuzzConfigProperty(
-        "kotlinx.fuzz.dumpCoverage",
+        SystemProperties.DUMP_COVERAGE,
         defaultValue = Defaults.DUMP_COVERAGE,
         toString = { it.toString() },
         fromString = { it.toBooleanStrict() },
     )
     override var runModes: Set<RunMode> by KFuzzConfigProperty(
-        "kotlinx.fuzz.runModes",
+        SystemProperties.RUN_MODES,
         defaultValue = setOf(RunMode.REGRESSION, RunMode.FUZZING),
         validate = { require(it.isNotEmpty()) { "runModes should not be empty" } },
         toString = { it.joinToString(",") },
         fromString = { it.split(",").map { RunMode.valueOf(it.trim().uppercase()) }.toSet() },
     )
     override var reproducerPath: Path by KFuzzConfigProperty(
-        "kotlinx.fuzz.reproducerPath",
+        SystemProperties.REPRODUCER_PATH,
         toString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
     override var logLevel: String by KFuzzConfigProperty(
-        "kotlinx.fuzz.log.level",
+        SystemProperties.LOG_LEVEL,
         defaultValue = "WARN",
         validate = { require(it.uppercase() in listOf("TRACE", "INFO", "DEBUG", "WARN", "ERROR")) },
         toString = { it },
