@@ -35,7 +35,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         }
     }
     private val isRegression: Boolean by lazy {
-        System.getProperty(RegressionEngine.REGRESSION_PROPERTY).toBooleanOrFalse()
+        System.getProperty(SystemProperties.REGRESSION).toBooleanOrFalse()
     }
 
     override fun getId(): String = "kotlinx.fuzz"

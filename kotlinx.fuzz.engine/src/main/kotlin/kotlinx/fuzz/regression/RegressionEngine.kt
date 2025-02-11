@@ -6,8 +6,6 @@ import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzerImpl
 
 object RegressionEngine {
-    const val REGRESSION_PROPERTY = "kotlinx.fuzz.regression"
-
     fun runOneCrash(instance: Any, method: Method, crash: Path): Throwable? = try {
         method.invoke(instance, KFuzzerImpl(crash.readBytes()))
         null
