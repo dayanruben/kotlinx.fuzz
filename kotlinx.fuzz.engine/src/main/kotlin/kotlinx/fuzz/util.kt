@@ -55,3 +55,5 @@ internal fun RegexConfiguration.asRegexProperties(): RgxGenProperties {
     )
     return properties
 }
+
+fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()
