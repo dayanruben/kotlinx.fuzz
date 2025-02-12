@@ -1,6 +1,6 @@
 package kotlinx.fuzz.log
 
-import kotlinx.fuzz.SystemProperties
+import kotlinx.fuzz.SystemProperty
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -9,7 +9,8 @@ import org.slf4j.event.Level
  * Custom logger facade that uses slf4j service provider if available and falls back to StdoutLogger if not
  */
 object LoggerFacade {
-    val LOG_LEVEL = System.getProperty(SystemProperties.LOG_LEVEL, Level.WARN.toString()).uppercase()
+    val LOG_LEVEL = SystemProperty.LOG_LEVEL.get(Level.WARN.toString())
+        .uppercase()
         .let { levelName -> Level.entries.first { it.toString() == levelName } }
     private val isSlf4jAvailable: Boolean by lazy {
         val slf4jProviders = this::class.java.classLoader.getResource("org.slf4j.spi.SLF4JServiceProvider")

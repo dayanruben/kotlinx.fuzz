@@ -7,6 +7,7 @@ import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
+import kotlinx.fuzz.regression.RegressionEngine
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -32,6 +33,9 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
             else -> throw AssertionError("Unsupported fuzzer engine!")
         }
+    }
+    private val isRegression: Boolean by lazy {
+        SystemProperty.REGRESSION.get().toBooleanOrFalse()
     }
 
     override fun getId(): String = "kotlinx.fuzz"
@@ -67,33 +71,48 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         fuzzEngine.finishExecution()
     }
 
+    private fun handleContainer(request: ExecutionRequest, descriptor: TestDescriptor) {
+        request.engineExecutionListener.executionStarted(descriptor)
+        descriptor.children.forEach { child -> executeImpl(request, child) }
+        request.engineExecutionListener.executionFinished(
+            descriptor,
+            TestExecutionResult.successful(),
+        )
+    }
+
+    private fun handleFinding(finding: Throwable?, method: Method) = when {
+        finding == null -> TestExecutionResult.successful()
+        method.isAnnotationPresent(IgnoreFailures::class.java) -> {
+            log.info { "Test failed, but is ignored by @IgnoreFailures: $finding" }
+            TestExecutionResult.successful()
+        }
+
+        else -> TestExecutionResult.failed(finding)
+    }
+
     private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
         when (descriptor) {
-            is ClassTestDescriptor -> {
-                request.engineExecutionListener.executionStarted(descriptor)
-                descriptor.children.forEach { child -> executeImpl(request, child) }
-                request.engineExecutionListener.executionFinished(
-                    descriptor,
-                    TestExecutionResult.successful(),
-                )
-            }
-
-            is MethodTestDescriptor -> {
+            is ClassTestDescriptor -> handleContainer(request, descriptor)
+            is MethodRegressionTestDescriptor -> handleContainer(request, descriptor)
+            is MethodFuzzTestDescriptor -> {
                 log.debug { "Executing method ${descriptor.displayName}" }
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
                 val finding = fuzzEngine.runTarget(instance, method)
-                val result = when {
-                    finding == null -> TestExecutionResult.successful()
-                    method.isAnnotationPresent(IgnoreFailures::class.java) -> {
-                        log.info { "Test failed, but is ignored by @IgnoreFailures: $finding" }
-                        TestExecutionResult.successful()
-                    }
+                val result = handleFinding(finding, method)
+                request.engineExecutionListener.executionFinished(descriptor, result)
+            }
 
-                    else -> TestExecutionResult.failed(finding)
-                }
+            is CrashTestDescriptor -> {
+                log.debug { "Executing crash ${descriptor.displayName}" }
+                request.engineExecutionListener.executionStarted(descriptor)
+                val method = descriptor.testMethod
+                val instance = method.declaringClass.kotlin.testInstance()
+
+                val finding = RegressionEngine.runOneCrash(instance, method, descriptor.crashFile)
+                val result = handleFinding(finding, method)
                 request.engineExecutionListener.executionFinished(descriptor, result)
             }
         }
@@ -103,23 +122,29 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         if (!method.isFuzzTarget()) {
             return
         }
-        engineDescriptor.addChild(MethodTestDescriptor(method, engineDescriptor))
+
+        engineDescriptor.addChild(
+            when {
+                isRegression -> MethodRegressionTestDescriptor(method, engineDescriptor, config)
+                else -> MethodFuzzTestDescriptor(method, engineDescriptor)
+            },
+        )
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
         ReflectionSupport.findAllClassesInClasspathRoot(uri, isKFuzzTestContainer) { true }
-            .map { klass -> ClassTestDescriptor(klass, engineDescriptor) }
+            .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config, isRegression) }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
         ReflectionSupport.findAllClassesInPackage(packageName, isKFuzzTestContainer) { true }
-            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor) }
+            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config, isRegression) }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
 
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
-        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor))
+        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor, config, isRegression))
     }
 
     companion object {

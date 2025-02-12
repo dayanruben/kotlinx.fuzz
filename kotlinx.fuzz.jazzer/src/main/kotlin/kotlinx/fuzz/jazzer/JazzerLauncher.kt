@@ -20,12 +20,11 @@ import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.CasrAdapter
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.listCrashes
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.log.warn
+import kotlinx.fuzz.reproducerPathOf
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -85,23 +84,17 @@ object JazzerLauncher {
             Opt.coverageDump.setIfDefault(coverageFile)
         }
 
-        libFuzzerArgs += currentCorpus.toString()
+        libFuzzerArgs += currentCorpus.absolutePathString()
+        libFuzzerArgs += reproducerPath.absolutePathString()
         libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
-        if (RunMode.FUZZING in config.runModes) {
-            libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
-        }
-
-        if (RunMode.REGRESSION in config.runModes && reproducerPath.listCrashes().isEmpty()) {
-            log.warn { "No crashes found for regression mode at ${reproducerPath.absolute()}" }
-        }
+        libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
 
         return libFuzzerArgs
     }
 
     private fun runTarget(instance: Any, method: Method): Throwable? {
-        val reproducerPath =
-            Path(Opt.reproducerPath.get(), method.declaringClass.simpleName, method.name).absolute()
+        val reproducerPath = config.reproducerPathOf(method)
         if (!reproducerPath.exists()) {
             reproducerPath.createDirectories()
         }
@@ -120,16 +113,7 @@ object JazzerLauncher {
         }
 
         JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
-
-        if (config.runModes.contains(RunMode.REGRESSION)) {
-            reproducerPath.listCrashes().forEach {
-                FuzzTargetRunner.runOne(it.readBytes())
-            }
-        }
-
-        if (config.runModes.contains(RunMode.FUZZING)) {
-            FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-        }
+        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
 
         return atomicFinding.get()
     }
@@ -156,8 +140,8 @@ object JazzerLauncher {
         Opt.instrumentationIncludes.setIfDefault(config.instrument)
         Opt.customHookIncludes.setIfDefault(config.instrument)
         Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
+        Opt.keepGoing.setIfDefault(config.keepGoing)
         Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
-        Opt.keepGoing.setIfDefault(0)
 
         AgentInstaller.install(Opt.hooks.get())
 

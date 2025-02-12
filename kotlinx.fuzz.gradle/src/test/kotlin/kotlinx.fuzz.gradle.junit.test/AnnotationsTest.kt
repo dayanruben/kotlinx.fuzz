@@ -7,7 +7,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.ConfigurationException
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.RunMode
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
@@ -22,7 +21,6 @@ class AnnotationsTest {
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             reproducerPath = workDir.resolve("reproducers")
-            runModes = setOf(RunMode.REGRESSION, RunMode.FUZZING)
         }
     }
 

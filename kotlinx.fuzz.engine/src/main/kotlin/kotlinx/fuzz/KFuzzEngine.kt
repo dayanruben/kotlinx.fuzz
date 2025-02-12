@@ -9,7 +9,9 @@ interface KFuzzEngine {
     fun initialise()
 
     /**
-     * Runs engine on the specified target
+     * Runs engine on the specified target. Crashes should be saved in "<reproducerPath>/<class name>/<method name>".
+     * Each crash should be represented as file with name that starts with "crash-", "timeout-" or "slow-unit- and contain byte array
+     * that can be passed as input to KFuzzerImpl to reproduce the crash
      *
      * @param instance - instance of a class that contains method under fuzzing (harness)
      * @param method - harness itself
