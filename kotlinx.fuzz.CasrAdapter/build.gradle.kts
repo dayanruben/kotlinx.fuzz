@@ -1,23 +1,41 @@
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import kotlinx.fuzz.configurePublishing
+import org.gradle.internal.os.OperatingSystem
 
 plugins {
     id("kotlinx.fuzz.src-module")
 }
 
-val rustTargets = listOf(
-    "x86_64-unknown-linux-gnu",
-    "aarch64-unknown-linux-gnu",
-    "x86_64-apple-darwin",
-    "aarch64-apple-darwin",
-    "x86_64-pc-windows-gnu",
-    "aarch64-pc-windows-msvc"
-)
+fun isArm() = System.getProperty("os.arch").contains("aarch") || System.getProperty("os.arch").contains("arm")
+fun isX86() = System.getProperty("os.arch").contains("x86")
+
+fun getRustTargets(): List<String> = when {
+    gradle.startParameter.taskNames.any { it.contains("publish") } -> listOf(
+        "x86_64-unknown-linux-gnu",
+        "aarch64-unknown-linux-gnu",
+        "x86_64-apple-darwin",
+        "aarch64-apple-darwin",
+        "x86_64-pc-windows-gnu",
+        "aarch64-pc-windows-msvc"
+    )
+
+    OperatingSystem.current().isLinux && isX86() -> listOf("x86_64-unknown-linux-gnu")
+    OperatingSystem.current().isLinux && isArm() -> listOf("aarch64-unknown-linux-gnu")
+    OperatingSystem.current().isMacOsX && isX86() -> listOf("x86_64-apple-darwin")
+    OperatingSystem.current().isMacOsX && isArm() -> listOf("aarch64-apple-darwin")
+    OperatingSystem.current().isWindows && isX86() -> listOf("x86_64-pc-windows-gnu")
+    OperatingSystem.current().isWindows && isArm() -> listOf("aarch64-pc-windows-msvc")
+    else -> throw IllegalStateException(
+        "Unsupported combination of os: ${OperatingSystem.current()} and architecture: ${System.getProperty("os.arch")}"
+    )
+}
+
+val rustTargets = getRustTargets()
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
-    commandLine = listOf("bash", "build.sh")
+    commandLine = listOf("bash", "build.sh") + rustTargets
     outputs.upToDateWhen {
         rustTargets.all { file("$projectDir/CasrAdapter/target/$it/release").exists() }
     }
