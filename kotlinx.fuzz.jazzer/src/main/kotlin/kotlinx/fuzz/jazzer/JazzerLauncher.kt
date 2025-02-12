@@ -188,17 +188,11 @@ object JazzerLauncher {
         stacktraceFiles: List<Path>,
         clusters: List<Int>,
     ): MutableMap<Int, Path> {
-        val representatives = directoryPath.listClusters().map { it.name.removePrefix("cluster-") }
-
         val mapping = mutableMapOf<Int, Path>()
-        for (representative in representatives) {
-            val matchingFile = stacktraceFiles.find { it.name.endsWith(representative) } ?: continue
-            val clusterIndex = stacktraceFiles.indexOf(matchingFile)
-            val clusterId = clusters[clusterIndex]
-
-            mapping[clusterId] = directoryPath.resolve("cluster-$representative")
+        directoryPath.listClusters().map { it.name.removePrefix("cluster-") }.forEach { hash ->
+            val clusterId = clusters[stacktraceFiles.indexOfFirst { it.name.endsWith(hash) }]
+            mapping[clusterId] = directoryPath.resolve("cluster-$hash")
         }
-
         return mapping
     }
 

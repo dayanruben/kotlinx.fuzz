@@ -48,6 +48,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Docker
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y docker.io
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            choco install docker-cli
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install --cask docker
+          fi
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
 
