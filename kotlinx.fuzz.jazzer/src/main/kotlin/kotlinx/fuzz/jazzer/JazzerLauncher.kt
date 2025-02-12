@@ -20,7 +20,6 @@ import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.CasrAdapter
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.listCrashes
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
