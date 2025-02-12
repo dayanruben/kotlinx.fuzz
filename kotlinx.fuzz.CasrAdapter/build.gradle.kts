@@ -10,7 +10,7 @@ plugins {
 fun isArm() = System.getProperty("os.arch").contains("aarch") || System.getProperty("os.arch").contains("arm")
 fun isX86() = System.getProperty("os.arch").contains("x86")
 
-fun getRustTargets(): List<String> = when {
+val rustTargets = when {
     gradle.startParameter.taskNames.any { it.contains("publish") } -> listOf(
         "x86_64-unknown-linux-gnu",
         "aarch64-unknown-linux-gnu",
@@ -30,8 +30,6 @@ fun getRustTargets(): List<String> = when {
         "Unsupported combination of os: ${OperatingSystem.current()} and architecture: ${System.getProperty("os.arch")}"
     )
 }
-
-val rustTargets = getRustTargets()
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
