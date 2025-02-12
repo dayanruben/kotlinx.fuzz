@@ -188,12 +188,11 @@ object JazzerLauncher {
         stacktraceFiles: List<Path>,
         clusters: List<Int>,
     ): MutableMap<Int, Path> {
-        val representativeFiles = directoryPath.listClusters()
-        val representatives = representativeFiles.map { it.name.removePrefix("cluster-") }
+        val representatives = directoryPath.listClusters().map { it.name.removePrefix("cluster-") }
 
         val mapping = mutableMapOf<Int, Path>()
         for (representative in representatives) {
-            val matchingFile = stacktraceFiles.find { it.name == representative } ?: continue
+            val matchingFile = stacktraceFiles.find { it.name.endsWith(representative) } ?: continue
             val clusterIndex = stacktraceFiles.indexOf(matchingFile)
             val clusterId = clusters[clusterIndex]
 
@@ -220,7 +219,7 @@ object JazzerLauncher {
             val stacktraceSrc = stacktraceFiles[index]
 
             if (!mapping.containsKey(cluster)) {
-                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.name}")
+                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.name.removePrefix("stacktrace-")}")
             }
 
             val clusterDir = directoryPath.resolve(mapping[cluster]!!)
@@ -229,7 +228,7 @@ object JazzerLauncher {
             }
 
             stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.name), overwrite = true)
-            if (mapping[cluster]!!.name.removePrefix("cluster-") != stacktraceSrc.name) {
+            if (mapping[cluster]!!.name.removePrefix("cluster-") != stacktraceSrc.name.removePrefix("stacktrace-")) {
                 stacktraceSrc.deleteExisting()
             }
         }

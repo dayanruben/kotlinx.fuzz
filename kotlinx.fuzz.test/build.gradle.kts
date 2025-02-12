@@ -21,7 +21,7 @@ dependencies {
 }
 
 fuzzConfig {
-    keepGoing = 2
+    keepGoing = 3
     runModes = setOf(RunMode.FUZZING)
     instrument = listOf(
         "kotlinx.fuzz.test.**",
