@@ -14,7 +14,7 @@ import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.SystemProperties
+import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
@@ -71,7 +71,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
-            getDebugSetup(System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT).toInt(), method)
+            getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
         } else {
             emptyList()
         }
@@ -151,8 +151,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
-
-internal fun Path.listCrashes(): List<Path> = listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}")
 
 /**
  * Reads a Throwable from the specified [path].

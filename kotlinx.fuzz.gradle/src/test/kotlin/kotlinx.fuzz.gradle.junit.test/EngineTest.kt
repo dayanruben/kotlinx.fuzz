@@ -4,7 +4,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.gradle.KFuzzConfigBuilder
 import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.BeforeEach
@@ -32,22 +31,33 @@ object EngineTest {
         @KFuzzTest
         fun `success test`(@Suppress("UNUSED_PARAMETER", "unused") data: KFuzzer) {
         }
+
+        @KFuzzTest
+        fun `two failure test`(data: KFuzzer) {
+            if (data.boolean()) {
+                if (data.boolean()) {
+                    error("Expected failure 1")
+                } else {
+                    throw RuntimeException("Expected failure 2")
+                }
+            }
+        }
     }
 
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            runModes = setOf(RunMode.FUZZING)
             maxSingleTargetFuzzTime = 5.seconds
             instrument = listOf("kotlinx.fuzz.test.**")
             workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             reproducerPath = workDir.resolve("reproducers")
+            keepGoing = 2
         }
     }
 
     @Test
     fun `one pass one fail`() {
-        val successTests = 2L
+        val successTests = 3L
         val failedTests = 1L
         val startedTests = successTests + failedTests
 

@@ -5,7 +5,7 @@ import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
 
-internal class MethodTestDescriptor(
+internal class MethodFuzzTestDescriptor(
     val testMethod: Method, parent: TestDescriptor,
 ) : AbstractTestDescriptor(
     parent.uniqueId.append("method", testMethod.name),

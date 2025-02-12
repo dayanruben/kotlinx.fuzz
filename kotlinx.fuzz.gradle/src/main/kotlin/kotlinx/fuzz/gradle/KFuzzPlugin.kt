@@ -4,7 +4,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.SystemProperties
+import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
 import org.gradle.api.Plugin
@@ -33,7 +33,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         project.tasks.withType<Test>().configureEach {
             configureLogging()
 
-            if (this is FuzzTask) {
+            if (this is FuzzTask || this is RegressionTask) {
                 return@configureEach
             }
 
@@ -41,9 +41,14 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 excludeEngines("kotlinx.fuzz")
             }
         }
-        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
 
         val (defaultCP, defaultTCD) = project.defaultTestParameters()
+        project.registerFuzzTask(defaultCP, defaultTCD)
+        project.registerRegressionTask(defaultCP, defaultTCD)
+    }
+
+    private fun Project.registerFuzzTask(defaultCP: FileCollection, defaultTCD: FileCollection) {
+        val jacocoConfigExtension = project.extensions.create<JacocoConfig>("jacocoReport")
         project.tasks.register<FuzzTask>("fuzz") {
             classpath = defaultCP
             testClassesDirs = defaultTCD
@@ -52,8 +57,30 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
-                systemProperties[SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT] =
-                    System.getProperty(SystemProperties.INTELLIJ_DEBUGGER_DISPATCH_PORT)
+                for (property in SystemProperty.values()) {
+                    property.get()?.let {
+                        systemProperties[property.name] = property.get()
+                    }
+                }
+            }
+            useJUnitPlatform {
+                includeEngines("kotlinx.fuzz")
+            }
+        }
+    }
+
+    private fun Project.registerRegressionTask(defaultCP: FileCollection, defaultTCD: FileCollection) {
+        project.tasks.register<RegressionTask>("regression") {
+            classpath = defaultCP
+            testClassesDirs = defaultTCD
+            outputs.upToDateWhen { false }
+            doFirst {
+                systemProperties(fuzzConfig.toPropertiesMap() + (SystemProperty.REGRESSION.name to "true"))
+                for (property in SystemProperty.values()) {
+                    property.get()?.let {
+                        systemProperties[property.name] = property.get()
+                    }
+                }
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -87,10 +114,16 @@ abstract class KFuzzPlugin : Plugin<Project> {
             }
             .singleOrNull()
             ?: run {
-                log.warn("'fuzz' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
+                log.warn("'fuzz' and 'regression' task was not able to inherit the 'classpath' and 'testClassesDirs' properties, as it found conflicting configurations")
                 log.warn("Please, specify them manually in your gradle config using the following syntax:")
                 log.warn("""
                     tasks.withType<FuzzTask>().configureEach {
+                        classpath = TODO()
+                        testClassesDirs = TODO()
+                    }""".trimIndent(),
+                )
+                log.warn("""
+                    tasks.withType<RegressionTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
                     }""".trimIndent(),
@@ -114,6 +147,11 @@ abstract class FuzzTask : Test() {
 
     @get:Internal
     lateinit var jacocoConfig: JacocoConfig
+
+    init {
+        description = "Runs fuzzing"
+        group = "verification"
+    }
 
     @TaskAction
     fun action() {
@@ -171,6 +209,16 @@ abstract class FuzzTask : Test() {
     }
 }
 
+abstract class RegressionTask : Test() {
+    @get:Internal
+    internal lateinit var fuzzConfig: KFuzzConfig
+
+    init {
+        description = "Runs regression tests"
+        group = "verification"
+    }
+}
+
 @Suppress("unused")
 fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     val buildDir = layout.buildDirectory.get()
@@ -182,6 +230,9 @@ fun Project.fuzzConfig(block: KFuzzConfigBuilder.() -> Unit) {
     }
 
     tasks.withType<FuzzTask>().forEach { task ->
+        task.fuzzConfig = config
+    }
+    tasks.withType<RegressionTask>().forEach { task ->
         task.fuzzConfig = config
     }
 }

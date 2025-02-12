@@ -1,4 +1,3 @@
-import kotlinx.fuzz.RunMode
 import kotlinx.fuzz.gradle.fuzzConfig
 import kotlin.time.Duration.Companion.seconds
 
@@ -22,7 +21,6 @@ dependencies {
 
 fuzzConfig {
     keepGoing = 10
-    runModes = setOf(RunMode.FUZZING)
     instrument = listOf(
         "kotlinx.fuzz.test.**",
         "kotlinx.collections.immutable.**",
