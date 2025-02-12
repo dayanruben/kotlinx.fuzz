@@ -8,7 +8,7 @@ plugins {
 }
 
 fun isArm() = System.getProperty("os.arch").contains("aarch") || System.getProperty("os.arch").contains("arm")
-fun isX86() = System.getProperty("os.arch").contains("x86")
+fun isX86() = System.getProperty("os.arch").contains("x86") || System.getProperty("os.arch").contains("amd64")
 
 val rustTargets = when {
     gradle.startParameter.taskNames.any { it.contains("publish") } -> listOf(
