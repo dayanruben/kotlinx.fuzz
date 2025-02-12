@@ -17,7 +17,7 @@ val rustTargets = listOf(
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
-    commandLine = listOf("./build.sh")
+    commandLine = listOf("bash", "build.sh")
     outputs.upToDateWhen {
         rustTargets.all { file("$projectDir/CasrAdapter/target/$it/release").exists() }
     }
