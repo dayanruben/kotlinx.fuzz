@@ -90,7 +90,7 @@ object EngineTest {
     @Test
     fun `passes and failures`() {
         val successTests = 3L
-        val failedTests = 3L
+        val failedTests = 4L
         val startedTests = successTests + failedTests
 
         EngineTestKit
