@@ -10,15 +10,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [ ubuntu-latest, windows-22, macos-latest ]
+        os: [ ubuntu-latest, windows-2022, macos-13 ]
         arch: [ x86_64, arm64 ]
         exclude:
           - os: ubuntu-latest # Because Jazzer doesn't support it
             arch: arm64
-          - os: macos-latest
+          - os: windows-2022
             arch: arm64
-          - os: macos-latest
-            arch: x86_64
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
