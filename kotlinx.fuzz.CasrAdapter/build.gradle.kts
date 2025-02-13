@@ -33,7 +33,10 @@ val rustTargets = when {
 
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
-    commandLine = listOf("bash", "build.sh") + rustTargets
+    commandLine = when {
+        gradle.startParameter.taskNames.any { it.contains("publish") } -> listOf("bash", "build.sh") + rustTargets
+        else -> listOf("/usr/bin/env", "cargo", "build", "--release", "--target", rustTargets[0])
+    }
     outputs.upToDateWhen {
         rustTargets.all { file("$projectDir/CasrAdapter/target/$it/release").exists() }
     }
