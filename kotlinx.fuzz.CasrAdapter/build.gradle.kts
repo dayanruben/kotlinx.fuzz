@@ -2,6 +2,7 @@ import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import kotlinx.fuzz.configurePublishing
 import org.gradle.internal.os.OperatingSystem
+import java.nio.charset.Charset
 
 plugins {
     id("kotlinx.fuzz.src-module")
@@ -31,11 +32,33 @@ val rustTargets = when {
     )
 }
 
+fun findCargoPath(): String? {
+    val command = if (System.getProperty("os.name").contains("Windows")) {
+        listOf("where", "cargo")
+    } else {
+        listOf("which", "cargo")
+    }
+
+    return try {
+        val process = ProcessBuilder(command)
+            .redirectErrorStream(true)
+            .start()
+        val output = process.inputStream.bufferedReader(Charset.defaultCharset()).readLine()
+        process.waitFor()
+
+        if (output.isNullOrBlank()) null else output
+    } catch (e: Exception) {
+        null
+    }
+}
+
+val cargoPath = findCargoPath()
+
 tasks.register<Exec>("buildRustLib") {
     workingDir = file("$projectDir/CasrAdapter")
     commandLine = when {
         gradle.startParameter.taskNames.any { it.contains("publish") } -> listOf("bash", "build.sh") + rustTargets
-        else -> listOf("/usr/bin/env", "cargo", "build", "--release", "--target", rustTargets[0])
+        else -> listOf(cargoPath, "build", "--release", "--target", rustTargets[0])
     }
     outputs.upToDateWhen {
         rustTargets.all { file("$projectDir/CasrAdapter/target/$it/release").exists() }
