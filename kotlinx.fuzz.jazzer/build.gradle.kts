@@ -7,8 +7,8 @@ plugins {
 dependencies {
     implementation(project(":kotlinx.fuzz.engine"))
     implementation(project(":kotlinx.fuzz.api"))
-    implementation(project(":kotlinx.fuzz.CasrAdapter"))
     implementation(kotlin("reflect"))
+    implementation(libs.casr.adapter)
     implementation(libs.plan.jazzer)
     implementation(libs.slf4j.api)
 }

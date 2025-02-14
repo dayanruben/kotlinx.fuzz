@@ -18,7 +18,7 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
-import kotlinx.fuzz.CasrAdapter
+import org.jetbrains.casr.adapter.CasrAdapter
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
