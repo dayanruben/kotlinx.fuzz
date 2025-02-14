@@ -18,12 +18,12 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
-import org.jetbrains.casr.adapter.CasrAdapter
 import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
 import kotlinx.fuzz.reproducerPathOf
+import org.jetbrains.casr.adapter.CasrAdapter
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
