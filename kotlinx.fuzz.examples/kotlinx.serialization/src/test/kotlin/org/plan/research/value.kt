@@ -275,7 +275,7 @@ data class ArrayValue(val value: Array<Value>) : Value() {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as org.plan.research.ArrayValue
+        other as ArrayValue
 
         return value.contentEquals(other.value)
     }

@@ -20,7 +20,7 @@ dependencies {
 }
 
 fuzzConfig {
-    keepGoing = 10
+    keepGoing = 3
     instrument = listOf(
         "kotlinx.fuzz.test.**",
         "kotlinx.collections.immutable.**",

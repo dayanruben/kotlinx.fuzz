@@ -2,7 +2,9 @@
 kotlin = "2.0.21"
 diktat = "2.0.0"
 jazzer = "0.22.1"
-plan-jazzer = "0.0.2"
+
+plan-jazzer = "0.0.3"
+casr-adapter = "1.0.5"
 
 junit-platform = "1.11.4"
 junit-jupiter = "5.11.4"
@@ -34,6 +36,8 @@ jazzer-api = { module = "com.code-intelligence:jazzer-api", version.ref = "jazze
 plan-jazzer = { module = "org.jetbrains:jazzer", version.ref = "plan-jazzer" }
 plan-jazzer-junit = { module = "org.jetbrains:jazzer-junit", version.ref = "plan-jazzer" }
 plan-jazzer-api = { module = "org.jetbrains:jazzer-api", version.ref = "plan-jazzer" }
+
+casr-adapter = { module = "org.jetbrains:casr-adapter", version.ref = "casr-adapter" }
 
 reflections = { module = "org.reflections:reflections", version.ref = "reflections" }
 
