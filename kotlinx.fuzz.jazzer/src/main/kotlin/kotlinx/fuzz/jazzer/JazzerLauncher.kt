@@ -9,7 +9,6 @@ import com.code_intelligence.jazzer.utils.Log
 import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
-import java.nio.file.Files
 import java.nio.file.Path
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicReference
@@ -185,7 +184,7 @@ object JazzerLauncher {
         val rawStackTraces = mutableListOf<String>()
 
         stacktraceFiles.forEach { file ->
-            val lines = convertToJavaStyleStackTrace(Files.readString(file))
+            val lines = convertToJavaStyleStackTrace(file.readText())
             rawStackTraces.add(lines)
         }
 
