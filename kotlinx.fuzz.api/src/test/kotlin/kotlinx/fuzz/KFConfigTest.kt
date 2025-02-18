@@ -1,5 +1,7 @@
 package kotlinx.fuzz
 
+import kotlinx.fuzz.config.KFConfig
+import kotlinx.fuzz.config.KFConfigBuilder
 import java.nio.file.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +14,7 @@ class KFConfigTest {
         val props = mapOf(
             "kotlinx.fuzz.workDir" to "tmp"
         )
-        val config = KFBuilder(props)
+        val config = KFConfigBuilder(props)
             .editFallback {
                 target.maxTime = Duration.parse("10s")
             }
@@ -27,10 +29,10 @@ class KFConfigTest {
             "kotlinx.fuzz.workDir" to "tmp",
             "kotlinx.fuzz.maxTime" to "10s",
         )
-        val config = KFBuilder(props)
+        val config = KFConfigBuilder(props)
             .editFallback { global.workDir = Path.of("bad") }
             .build()
-        val configClone = KFBuilder.fromAnotherConfig(config)
+        val configClone = KFConfig.fromAnotherConfig(config)
             .editOverride { target.maxTime = Duration.parse("5s") }
             .build()
         assertEquals("tmp", configClone.global.workDir.fileName.toString())
