@@ -22,7 +22,7 @@ jobs:
       uses: actions/setup-java@v4
       with:
         java-version: '8'
-        distribution: 'temurin'
+        distribution: 'zulu'
 
     # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
     # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
@@ -48,7 +48,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: '8'
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: Exclude kotlinx.fuzz.test from dependency injection
         run: sed -i 's/^includeBuild("kotlinx.fuzz.test")$/\/\/includeBuild("kotlinx.fuzz.test")/' settings.gradle.kts
