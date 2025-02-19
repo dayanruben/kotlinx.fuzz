@@ -9,7 +9,7 @@
 
 ## Requirements
 
-Currently, `kotlinx.fuzz` works only for JVM and requires JDK 17+ (will be updated to JDK 8+ in the future releases).
+Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8.
 
 ## Usage
 
