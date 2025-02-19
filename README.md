@@ -122,7 +122,18 @@ Both of these tasks extend built-in Gradle `test` task, so you can provide addit
 
 ## Configuration options
 
-TODO
+The plugin currently allows you to configure its parameters in the `fuzzConfig` section in `build.gradle.kts`. Here are the main configuration options:
+* `fuzzEngine` &mdash; fuzz engine to use, currently only `"Jazzer"` is supported
+* `instrument` &mdash; glob patterns matching names of classes that should be instrumented for fuzzing
+* `workDir` &mdash; directory where the all fuzzing results will be stored; default `"build/fuzz"`
+* `dumpCoverage` &mdash; flag to enable/disable JaCoCo `.exec` file generation, enabled by default; you can read a little bit more about logging in `kotlinx.fuzz` [here](docs/Logging.md)
+* `logLevel` &mdash; logging level enabled for `kotlinx.fuzz`; `warn` by default
+* `maxSingleTargetFuzzTime` &mdash; max time to fuzz a single target; default 1 minute
+* `reproducerPath` &mdash; path to store reproducers; default `"$workDir/reproducers"`
+
+These and some other options can also be set through the system properties. You can check system property names [here](kotlinx.fuzz.api/src/main/kotlin/kotlinx/fuzz/SystemProperty.kt).
+
+Design, implementation and default values of configuration properties are subject to change in the future releases.
 
 ## Differences from Jazzer
 
