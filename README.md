@@ -9,7 +9,7 @@
 
 ## Requirements
 
-Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8.
+Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8. Also, the library is built using Kotlin version 2.0.21, which adds additional requirements. This is a subject to change in the future.
 
 ## Usage
 
@@ -124,7 +124,7 @@ Both of these tasks extend built-in Gradle `test` task, so you can provide addit
 
 The plugin currently allows you to configure its parameters in the `fuzzConfig` section in `build.gradle.kts`. Here are the main configuration options:
 * `fuzzEngine` &mdash; fuzz engine to use, currently only `"Jazzer"` is supported
-* `instrument` &mdash; glob patterns matching names of classes that should be instrumented for fuzzing
+* `instrument` &mdash; glob patterns matching names of classes that should be instrumented for fuzzing, it determines what classes fuzzer will target during fuzzing; ideally it should be a class or a package that you want to fuzz
 * `workDir` &mdash; directory where the all fuzzing results will be stored; default `"build/fuzz"`
 * `dumpCoverage` &mdash; flag to enable/disable JaCoCo `.exec` file generation, enabled by default; you can read a little bit more about logging in `kotlinx.fuzz` [here](docs/Logging.md)
 * `logLevel` &mdash; logging level enabled for `kotlinx.fuzz`; `warn` by default
