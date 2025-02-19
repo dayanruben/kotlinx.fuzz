@@ -125,7 +125,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
 
     companion object {
         internal object Defaults {
-            const val KEEP_GOING = 1L
+            const val KEEP_GOING = 0L
             const val HOOKS = true
             const val DUMP_COVERAGE = true
 
