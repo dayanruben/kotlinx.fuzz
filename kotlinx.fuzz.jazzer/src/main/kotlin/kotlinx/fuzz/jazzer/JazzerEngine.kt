@@ -108,25 +108,35 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun clusterCrashes() {
         val crashesForDeletion = mutableListOf<Path>()
+        val reproducersForDeletion = mutableListOf<Path>()
         Files.walk(config.reproducerPath)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .map { it to it.listStacktraces() }
             .flatMap { (dir, files) -> files.stream().map { dir to it } }
             .forEach { (clusterDir, stacktraceFile) ->
                 val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
+                val reproducerFileName = "reproducer-${stacktraceFile.name.removePrefix("stacktrace-")}.kt"
                 val crashFile = clusterDir.parent.resolve(crashFileName)
-                val targetFile = clusterDir.resolve(crashFileName)
+                val reproducerFile = clusterDir.parent.resolve(reproducerFileName)
+                val targetCrashFile = clusterDir.resolve(crashFileName)
+                val targetReproducerFile = clusterDir.resolve(reproducerFileName)
 
-                if (targetFile.exists() || !crashFile.exists()) {
+                if (targetCrashFile.exists() || !crashFile.exists() ||
+                    targetReproducerFile.exists() || !reproducerFile.exists()) {
                     return@forEach
                 }
 
-                crashFile.copyTo(targetFile, overwrite = true)
+                crashFile.copyTo(targetCrashFile, overwrite = true)
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     crashesForDeletion.add(crashFile)
                 }
+                reproducerFile.copyTo(targetReproducerFile, overwrite = true)
+                if (!clusterDir.name.endsWith(reproducerFileName.removePrefix("reproducer-"))) {
+                    reproducersForDeletion.add(reproducerFile)
+                }
             }
         crashesForDeletion.forEach { it.deleteIfExists() }
+        reproducersForDeletion.forEach { it.deleteIfExists() }
     }
 
     private fun collectStatistics() {

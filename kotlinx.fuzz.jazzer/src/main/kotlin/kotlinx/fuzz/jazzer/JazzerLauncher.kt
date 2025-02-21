@@ -18,6 +18,7 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.crash_reproduction.CrashReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
@@ -91,6 +92,7 @@ object JazzerLauncher {
         return libFuzzerArgs
     }
 
+    @OptIn(ExperimentalStdlibApi::class)
     private fun runTarget(instance: Any, method: Method): Throwable? {
         val reproducerPath = config.reproducerPathOf(method)
         if (!reproducerPath.exists()) {
@@ -103,7 +105,9 @@ object JazzerLauncher {
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
-            val stopFuzzing = isTerminalFinding(bytes, finding, reproducerPath)
+            val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+            writeReproducer(instance, method, bytes, hash, reproducerPath)
+            val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
             if (stopFuzzing) {
                 atomicFinding.set(finding)
             }
@@ -116,9 +120,15 @@ object JazzerLauncher {
         return atomicFinding.get()
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun isTerminalFinding(bytes: ByteArray, finding: Throwable, reproducerPath: Path): Boolean {
-        val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+    private fun writeReproducer(instance: Any, method: Method, bytes: ByteArray, hash: String, reproducerPath: Path) {
+        val reproducerFile = reproducerPath.resolve("reproducer-$hash.kt")
+        if (!reproducerFile.exists()) {
+            reproducerFile.createFile()
+            CrashReproducer.writeReproducer(instance, method, bytes, reproducerFile)
+        }
+    }
+
+    private fun isTerminalFinding(hash: String, finding: Throwable, reproducerPath: Path): Boolean {
         val file = reproducerPath.absolute().resolve("stacktrace-$hash")
 
         if (!file.exists()) {
