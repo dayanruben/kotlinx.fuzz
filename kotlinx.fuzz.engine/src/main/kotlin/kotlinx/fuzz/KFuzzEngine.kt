@@ -1,5 +1,6 @@
 package kotlinx.fuzz
 
+import kotlinx.fuzz.crash_reproduction.CrashReproducer
 import java.lang.reflect.Method
 
 interface KFuzzEngine {
@@ -19,6 +20,11 @@ interface KFuzzEngine {
      * org.junit.platform.engine.TestExecutionResult) otherwise
      */
     fun runTarget(instance: Any, method: Method): Throwable?
+
+    /**
+     * Sets an instance to write reproducers
+     */
+    fun setReproducer(reproducer: CrashReproducer)
 
     /**
      * Runs any needed postwork, like rearranging crash files

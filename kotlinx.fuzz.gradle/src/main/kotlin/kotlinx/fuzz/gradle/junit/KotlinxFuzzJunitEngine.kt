@@ -4,6 +4,7 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
+import kotlinx.fuzz.crash_reproduction.ByteArrayReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -99,6 +100,8 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 request.engineExecutionListener.executionStarted(descriptor)
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
+
+                fuzzEngine.setReproducer(ByteArrayReproducer(JunitReproducerTemplate(instance, method), method))
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)

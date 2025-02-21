@@ -1,0 +1,31 @@
+package kotlinx.fuzz.gradle.junit
+
+import com.squareup.kotlinpoet.*
+import kotlinx.fuzz.crash_reproduction.ReproducerTemplate
+import java.lang.reflect.Method
+
+class JunitReproducerTemplate(private val instance: Any, private val method: Method) : ReproducerTemplate {
+    override fun buildReproducer(identifier: String, code: CodeBlock, imports: List<Pair<String, String>>): String {
+        val fullClassName = instance::class.java.name
+        val packageName = fullClassName.substringBeforeLast('.', missingDelimiterValue = "")
+
+        val testFunction = FunSpec.builder("`${method.name} reproducer ${identifier}`")
+            .addAnnotation(ClassName("org.junit.jupiter.api", "Test"))
+            .returns(Unit::class)
+            .addCode(code)
+            .build()
+
+        val objectSpec = TypeSpec.objectBuilder("Reproducer_${identifier}")
+            .addFunction(testFunction)
+            .build()
+
+        val fileSpec = FileSpec.builder(packageName, "")
+            .addType(objectSpec)
+
+        imports.forEach {
+            fileSpec.addImport(it.first, it.second)
+        }
+
+        return fileSpec.build().toString()
+    }
+}

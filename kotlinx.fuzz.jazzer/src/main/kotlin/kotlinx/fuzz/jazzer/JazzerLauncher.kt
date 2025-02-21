@@ -18,7 +18,6 @@ import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.crash_reproduction.CrashReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
@@ -106,7 +105,6 @@ object JazzerLauncher {
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
             val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
-            writeReproducer(instance, method, bytes, hash, reproducerPath)
             val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
             if (stopFuzzing) {
                 atomicFinding.set(finding)
@@ -118,14 +116,6 @@ object JazzerLauncher {
         FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
 
         return atomicFinding.get()
-    }
-
-    private fun writeReproducer(instance: Any, method: Method, bytes: ByteArray, hash: String, reproducerPath: Path) {
-        val reproducerFile = reproducerPath.resolve("reproducer-$hash.kt")
-        if (!reproducerFile.exists()) {
-            reproducerFile.createFile()
-            CrashReproducer.writeReproducer(instance, method, bytes, reproducerFile)
-        }
     }
 
     private fun isTerminalFinding(hash: String, finding: Throwable, reproducerPath: Path): Boolean {
