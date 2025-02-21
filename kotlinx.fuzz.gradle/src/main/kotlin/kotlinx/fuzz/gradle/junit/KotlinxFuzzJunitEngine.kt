@@ -4,11 +4,11 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
-import kotlinx.fuzz.reproduction.ByteArrayReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
 import kotlinx.fuzz.regression.RegressionEngine
+import kotlinx.fuzz.reproduction.ListAnyReproducer
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -101,7 +101,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                fuzzEngine.setReproducer(ByteArrayReproducer(JunitReproducerTemplate(instance, method), method))
+                fuzzEngine.setReproducer(ListAnyReproducer(JunitReproducerTemplate(instance, method), instance, method))
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)
