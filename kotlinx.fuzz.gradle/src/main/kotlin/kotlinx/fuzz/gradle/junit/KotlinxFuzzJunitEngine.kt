@@ -4,7 +4,7 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
-import kotlinx.fuzz.crash_reproduction.ByteArrayReproducer
+import kotlinx.fuzz.reproduction.ByteArrayReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info

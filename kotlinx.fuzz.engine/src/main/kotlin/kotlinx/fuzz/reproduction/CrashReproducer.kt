@@ -1,4 +1,4 @@
-package kotlinx.fuzz.crash_reproduction
+package kotlinx.fuzz.reproduction
 
 import java.nio.file.Path
 

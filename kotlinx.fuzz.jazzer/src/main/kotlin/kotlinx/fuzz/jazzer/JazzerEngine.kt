@@ -17,7 +17,7 @@ import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
-import kotlinx.fuzz.crash_reproduction.CrashReproducer
+import kotlinx.fuzz.reproduction.CrashReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
 
