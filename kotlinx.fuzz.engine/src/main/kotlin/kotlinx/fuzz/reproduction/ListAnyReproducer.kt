@@ -47,19 +47,15 @@ class ListAnyReproducer(
         val code = CodeBlock.builder()
             .addStatement(
                 "val values = mutableListOf<Any?>(${
-                    registerOutputs(
-                            instance,
-                            method,
-                            input,
-                        ).joinToString(", ") { executionResult ->
-                            executionResult.value?.let {
-                                if (executionResult.typeName.contains("Array")) {
-                                    arrayToString(executionResult)
-                                } else {
-                                    executionResult.value.toString()
-                                }
-                            } ?: "null"
-                        }
+                    registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
+                        executionResult.value?.let {
+                            if (executionResult.typeName.contains("Array")) {
+                                arrayToString(executionResult)
+                            } else {
+                                executionResult.value.toString()
+                            }
+                        } ?: "null"
+                    }
                 })",
             )
             .addStatement("var index = 0")
