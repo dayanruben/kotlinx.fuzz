@@ -17,9 +17,9 @@ import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
-import kotlinx.fuzz.reproduction.CrashReproducer
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
+import kotlinx.fuzz.reproduction.CrashReproducer
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -132,12 +132,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                     crashesForDeletion.add(crashFile)
                     crashReproducer.writeToFile(
                         crashFile.readBytes(),
-                        clusterDir.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt")
+                        clusterDir.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt"),
                     )
                 } else {
                     crashReproducer.writeToFile(
                         crashFile.readBytes(),
-                        clusterDir.parent.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt")
+                        clusterDir.parent.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt"),
                     )
                 }
             }

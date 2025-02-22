@@ -1,11 +1,11 @@
 package kotlinx.fuzz.reproduction
 
-import kotlinx.fuzz.*
 import java.nio.charset.Charset
+import kotlinx.fuzz.*
 
 data class ExecutionResult(val typeName: String, val value: Any?)
 
-class KFuzzerRegisteringImpl(data: ByteArray): KFuzzer {
+class KFuzzerRegisteringImpl(data: ByteArray) : KFuzzer {
     private val fuzzer = KFuzzerImpl(data)
     val values: MutableList<ExecutionResult> = mutableListOf()
 
