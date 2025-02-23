@@ -7,11 +7,9 @@ interface GlobalConfig {
     val workDir: Path
 }
 
-class GlobalConfigImpl internal constructor(
-    override val builder: KFConfigBuilder
-) : GlobalConfig, KFConfigHolder {
+class GlobalConfigImpl internal constructor(builder: KFConfigBuilder) : GlobalConfig {
 
-    override var workDir by kfProperty<Path>(
+    override var workDir by builder.KFPropProvider<Path>(
         nameSuffix = "workDir",
         fromString = { Path.of(it) },
         intoString = { it.absolutePathString() },

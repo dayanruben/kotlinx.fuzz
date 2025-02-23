@@ -14,6 +14,7 @@ package kotlinx.fuzz.config
 interface KFConfig {
     val global: GlobalConfig
     val target: TargetConfig
+    val engine: EngineConfig
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -24,21 +25,3 @@ interface KFConfig {
         val CONFIG_NAME_PREFIX = "kotlinx.fuzz."
     }
 }
-
-internal interface KFConfigHolder {
-    val builder: KFConfigBuilder
-}
-
-internal fun <T : Any> KFConfigHolder.kfProperty(
-    nameSuffix: String,
-    intoString: (T) -> String,
-    fromString: (String) -> T,
-    validate: (T) -> Unit = {},
-    default: T? = null,
-): KFConfigBuilder.KFProp<T> = builder.KFProp(
-    name = KFConfig.CONFIG_NAME_PREFIX + nameSuffix,
-    fromString = fromString,
-    intoString = intoString,
-    validate = validate,
-    default = default,
-)

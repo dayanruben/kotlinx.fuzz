@@ -29,6 +29,10 @@ fuzzConfig {
     maxSingleTargetFuzzTime = 10.seconds
 }
 
+fz {
+    maxTime = 3.seconds
+}
+
 /*
 
  - DSL in plugin should be separated from data classes
@@ -99,6 +103,14 @@ KFuzzConfigBuilder.loadFromSystemProperties()
     delegates.forEach { it.parse and validate() }
     return impl
  }
+
+
+- plugin config should be a facade for "normal" config declaration
+    - even though it has a different shape
+- exposing impl to plugin? exposed anyway
+- delegate to delegate?
+    - remove isBuilt check?
+    -
 
 
  */
