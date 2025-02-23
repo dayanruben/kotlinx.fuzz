@@ -15,6 +15,7 @@ interface KFConfig {
     val global: GlobalConfig
     val target: TargetConfig
     val engine: EngineConfig
+    val coverage: CoverageConfig
 
     fun toPropertiesMap(): Map<String, String>
 

@@ -1,6 +1,5 @@
 package kotlinx.fuzz.config
 
-import kotlinx.fuzz.*
 import kotlin.reflect.KProperty
 
 class KFConfigBuilder(
@@ -36,6 +35,14 @@ class KFConfigBuilder(
         }
     }
 
+    /**
+     * A fuzzing config property. The value is looked up with the following priority:
+     *
+     * 1) editOverride
+     * 2) property map
+     * 3) editFallback
+     * 4) default
+     */
     inner class KFProp<T : Any>(
         val name: String,
         private val fromString: (String) -> T,
@@ -47,7 +54,7 @@ class KFConfigBuilder(
         private val isBuilt get() = this@KFConfigBuilder.isBuilt
 
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
-            check(value != null) { "property '${name}' is not set yet" }
+            check(isBuilt) { "cannot get value, config is not built yet!" }
             return value!!
         }
 
@@ -82,6 +89,7 @@ class KFConfigBuilder(
     inner class KFConfigImpl internal constructor() : KFConfig {
         override val global = GlobalConfigImpl(this@KFConfigBuilder)
         override val target = TargetConfigImpl(this@KFConfigBuilder)
+        override val coverage = CoverageConfigImpl(this@KFConfigBuilder)
 
         // TODO: we have to know which engine to use before building the config...
         // Viable solution for future: build a stub config, check the engine, build a new config.
@@ -136,14 +144,7 @@ class KFConfigBuilder(
     }
 }
 
-/**
- * A fuzzing config property. The value is looked up with the following priority:
- *
- * 1) editOverride
- * 2) property map
- * 3) editFallback
- * 4) default
- */
+class ConfigurationException(cause: Throwable?) : IllegalArgumentException("cannot create config", cause)
 
 fun getSystemPropertiesMap(): Map<String, String> = buildMap {
     val properties = System.getProperties()

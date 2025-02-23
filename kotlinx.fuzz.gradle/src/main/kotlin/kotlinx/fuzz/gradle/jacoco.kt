@@ -1,5 +1,6 @@
 package kotlinx.fuzz.gradle
 
+import kotlinx.fuzz.config.CoverageReportType
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.inputStream
@@ -16,12 +17,12 @@ import org.jacoco.report.csv.CSVFormatter
 import org.jacoco.report.html.HTMLFormatter
 import org.jacoco.report.xml.XMLFormatter
 
-private fun JacocoReport.toVisitor(reportDir: Path): IReportVisitor = when (this) {
-    JacocoReport.HTML -> HTMLFormatter().createVisitor(FileMultiReportOutput(reportDir.toFile()))
-    JacocoReport.XML ->
+private fun CoverageReportType.toVisitor(reportDir: Path): IReportVisitor = when (this) {
+    CoverageReportType.HTML -> HTMLFormatter().createVisitor(FileMultiReportOutput(reportDir.toFile()))
+    CoverageReportType.XML ->
         XMLFormatter().createVisitor(reportDir.resolve("jacoco.xml").outputStream().buffered())
 
-    JacocoReport.CSV ->
+    CoverageReportType.CSV ->
         CSVFormatter().createVisitor(reportDir.resolve("jacoco.csv").outputStream().buffered())
 }
 
@@ -56,7 +57,7 @@ internal fun jacocoReport(
     classPath: Set<File>,
     sourceDirectories: Set<File>,
     reportDir: Path,
-    reports: Set<JacocoReport>,
+    reports: Set<CoverageReportType>,
 ) {
     val execLoader = ExecFileLoader()
     execFile.inputStream().buffered().use { execLoader.load(it) }

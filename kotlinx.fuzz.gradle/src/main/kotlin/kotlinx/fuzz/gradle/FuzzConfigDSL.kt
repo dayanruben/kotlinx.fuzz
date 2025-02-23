@@ -1,16 +1,59 @@
 package kotlinx.fuzz.gradle
 
-import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFConfig
 import kotlinx.fuzz.config.KFConfigBuilder
-import org.slf4j.event.Level
-import java.nio.file.Path
 import kotlin.reflect.KProperty
-import kotlin.time.Duration
 
 abstract class FuzzConfigDSL {
 
     private val builder by lazy { KFConfig.fromSystemProperties() }
+
+    // ========== global ==========
+    var workDir by KFConfigDelegate { global::workDir }
+    var reproducerDir by KFConfigDelegate { global::reproducerDir }
+    var hooks by KFConfigDelegate { global::hooks }
+    var logLevel by KFConfigDelegate { global::logLevel }
+    var regressionEnabled by KFConfigDelegate { global::regressionEnabled }
+
+    // ========== target ==========
+    var maxFuzzTimePerTarget by KFConfigDelegate { target::maxFuzzTime }
+    var keepGoing by KFConfigDelegate { target::keepGoing }
+    var instrument by KFConfigDelegate { target::instrument }
+    var customHookExcludes by KFConfigDelegate { target::customHookExcludes }
+    var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
+
+    // ========== engine ==========
+
+    sealed interface EngineConfigDSL
+
+    inner class JazzerConfigDSL : EngineConfigDSL {
+        var libFuzzerRssLimit by KFConfigDelegate { engine::libFuzzerRssLimitMb }
+        var enableLogging by KFConfigDelegate { engine::enableLogging }
+    }
+
+    /**
+     * TODO: no support for different engines yet. See [KFConfigBuilder.KFConfigImpl]
+     */
+    private val engineDSL = JazzerConfigDSL()
+
+    fun engine(block: JazzerConfigDSL.() -> Unit) {
+        engineDSL.block()
+    }
+
+    // ========== coverage ==========
+
+    inner class CoverageConfigDSL {
+        var reportTypes by KFConfigDelegate { coverage::reportTypes }
+        var includeDependencies by KFConfigDelegate { coverage::includeDependencies }
+    }
+
+    private val coverageDSL = CoverageConfigDSL()
+
+    fun coverage(block: CoverageConfigDSL.() -> Unit) {
+        coverageDSL.block()
+    }
+
+    // ========== internals ==========
 
     private inner class KFConfigDelegate<T : Any>(
         propertySelector: KFConfigBuilder.KFConfigImpl.() -> KProperty<T>
@@ -20,54 +63,11 @@ abstract class FuzzConfigDSL {
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T =
             kfProp.getValue(thisRef, property)
 
+        // because editFallback is necessary, getValue() is not possible before building
         operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
             builder.editFallback { kfProp.setValue(thisRef, property, value) }
         }
     }
 
-    // global
-    var workDir: Path by KFConfigDelegate { global::workDir }
-
-    // target
-    var maxTime: Duration by KFConfigDelegate { target::maxTime }
-
-    // engine
-
-//    var engine: EngineConfigDSL
-
-    // jacoco
-
-    fun JazzerEngine(jazzerConfig: JazzerConfigDSL.() -> Unit): EngineConfigDSL {
-        val jazzerConfigDsl = object : JazzerConfigDSL {
-            override var enableLogging = JazzerConfig.Defaults.ENABLE_LOGGING
-            override var libFuzzerRssLimit = JazzerConfig.Defaults.LIB_FUZZER_RSS_LIMIT
-        }
-        return jazzerConfigDsl.apply(jazzerConfig)
-    }
-
     fun build(): KFConfig = builder.build()
 }
-
-interface GlobalConfigDSL {
-    var workDir: Path
-    var reproducerPath: Path
-    var logLevel: Level
-    var applyHooks: Boolean
-}
-
-interface TargetConfigDSL {
-    var keepGoing: Long
-    var instrument: List<String>
-    var customHookExcludes: List<String>
-    var dumpCoverage: Boolean
-}
-
-interface EngineConfigDSL
-
-interface JazzerConfigDSL : EngineConfigDSL {
-    var libFuzzerRssLimit: Int
-    var enableLogging: Boolean
-}
-
-
-

@@ -4,6 +4,8 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.fuzz.*
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -23,20 +25,16 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
-    private val config: KFuzzConfig by lazy {
-        KFuzzConfig.fromSystemProperties()
+    private val config: KFConfig by lazy {
+        KFConfig.fromSystemProperties().build()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
-        when (config.fuzzEngine) {
-            "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
-                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
-
-            else -> throw AssertionError("Unsupported fuzzer engine!")
+        when (config.engine) {
+            is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+                .getConstructor(KFConfig::class.java).newInstance(config) as KFuzzEngine
         }
     }
-    private val isRegression: Boolean by lazy {
-        SystemProperty.REGRESSION.get().toBooleanOrFalse()
-    }
+    private val isRegression: Boolean by lazy { config.global.regressionEnabled }
 
     override fun getId(): String = "kotlinx.fuzz"
 
