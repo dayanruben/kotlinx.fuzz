@@ -8,7 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.time.Duration
 
 class KFuzzConfigTest {
-
     @Test
     fun testBasic() {
         val props = mapOf(
@@ -21,7 +20,8 @@ class KFuzzConfigTest {
                 target.maxFuzzTime = Duration.parse("10s")
             }
             .build()
-        assertEquals("tmp", config.global.workDir.fileName.toString())
+        val actualWorkDirString = config.global.workDir.fileName.toString()
+        assertEquals("tmp", actualWorkDirString)
         assertEquals(Duration.parse("10s"), config.target.maxFuzzTime)
     }
 
@@ -39,7 +39,8 @@ class KFuzzConfigTest {
         val configClone = KFuzzConfig.fromAnotherConfig(config)
             .editOverride { target.maxFuzzTime = Duration.parse("5s") }
             .build()
-        assertEquals("tmp", configClone.global.workDir.fileName.toString())
+        val actualWorkDirString = configClone.global.workDir.fileName.toString()
+        assertEquals("tmp", actualWorkDirString)
         assertEquals(Duration.parse("10s"), config.target.maxFuzzTime)
         assertEquals(Duration.parse("5s"), configClone.target.maxFuzzTime)
     }

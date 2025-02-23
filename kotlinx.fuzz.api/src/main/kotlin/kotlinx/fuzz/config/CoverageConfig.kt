@@ -10,9 +10,8 @@ class CoverageConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Cov
         nameSuffix = "coverage.reportTypes",
         intoString = { it.joinToString(",") },
         fromString = { it.split(",").map { CoverageReportType.valueOf(it) }.toSet() },
-        default = setOf(CoverageReportType.HTML)
+        default = setOf(CoverageReportType.HTML),
     )
-
     override var includeDependencies by builder.KFuzzPropProvider<Set<String>>(
         nameSuffix = "coverage.includeDependencies",
         intoString = { it.joinToString(",") },
@@ -22,5 +21,5 @@ class CoverageConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Cov
 }
 
 enum class CoverageReportType {
-    HTML, XML, CSV;
+    CSV, HTML, XML;
 }

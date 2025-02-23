@@ -8,7 +8,6 @@ interface JazzerConfig : EngineConfig {
 }
 
 class JazzerConfigImpl internal constructor(builder: KFuzzConfigBuilder) : JazzerConfig {
-
     override var libFuzzerRssLimitMb by builder.KFuzzPropProvider<Int>(
         "jazzer.libFuzzerArgs.rssLimitMb",
         intoString = { it.toString() },
@@ -16,7 +15,6 @@ class JazzerConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Jazze
         validate = { require(it >= 0) { "rssLimit must be positive!" } },
         default = 0,
     )
-
     override var enableLogging by builder.KFuzzPropProvider<Boolean>(
         "jazzer.enableLogging",
         intoString = { it.toString() },

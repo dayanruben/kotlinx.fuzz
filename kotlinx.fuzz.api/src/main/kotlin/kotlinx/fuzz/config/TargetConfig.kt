@@ -24,7 +24,6 @@ class TargetConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Targe
         validate = { require(it.isPositive()) { "maxTime must be positive" } },
         default = Duration.parse(TargetConfig.Defaults.MAX_FUZZ_TIME_STRING),
     )
-
     override var keepGoing by builder.KFuzzPropProvider<Long>(
         nameSuffix = "keepGoing",
         intoString = { it.toString() },
@@ -32,20 +31,17 @@ class TargetConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Targe
         validate = { require(it >= 0) { "keepGoing must be non-negative" } },
         default = TargetConfig.Defaults.KEEP_GOING,
     )
-
     override var instrument by builder.KFuzzPropProvider<List<String>>(
         nameSuffix = "instrument",
         intoString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
-
     override var customHookExcludes by builder.KFuzzPropProvider<List<String>>(
         nameSuffix = "customHookExcludes",
         intoString = { it.joinToString(",") },
         fromString = { it.split(",") },
         default = emptyList(),
     )
-
     override var dumpCoverage by builder.KFuzzPropProvider<Boolean>(
         nameSuffix = "dumpCoverage",
         intoString = { it.toString() },

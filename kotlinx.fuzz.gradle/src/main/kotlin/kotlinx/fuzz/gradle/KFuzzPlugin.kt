@@ -17,6 +17,12 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 
+private val Project.fuzzConfig: KFuzzConfig
+    get() {
+        val dsl = this.extensions.getByType<FuzzConfigDSL>()
+        return dsl.build()
+    }
+
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
     val log = Logging.getLogger(KFuzzPlugin::class.java)!!
@@ -120,14 +126,16 @@ abstract class KFuzzPlugin : Plugin<Project> {
                     tasks.withType<FuzzTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
-                    }""".trimIndent(),
+                    }
+                    """.trimIndent(),
                 )
                 log.warn(
                     """
                     tasks.withType<RegressionTask>().configureEach {
                         classpath = TODO()
                         testClassesDirs = TODO()
-                    }""".trimIndent(),
+                    }
+                    """.trimIndent(),
                 )
                 project.files() to project.files()
             }
@@ -210,9 +218,3 @@ abstract class RegressionTask : Test() {
         group = "verification"
     }
 }
-
-private val Project.fuzzConfig: KFuzzConfig
-    get() {
-        val dsl = this.extensions.getByType<FuzzConfigDSL>()
-        return dsl.build()
-    }

@@ -1,3 +1,5 @@
+@file:Suppress("EMPTY_BLOCK_STRUCTURE_ERROR")
+
 package kotlinx.fuzz.gradle.test
 
 import kotlinx.fuzz.config.KFuzzConfigBuilder
@@ -9,8 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
 
-object FuzzConfigDSLTest {
-
+object FuzzConfigDsltest {
     @Test
     fun basicTest() {
         val dsl = object : FuzzConfigDSL() {}
@@ -58,5 +59,4 @@ object FuzzConfigDSLTest {
             dsl.build()
         }
     }
-
 }

@@ -19,6 +19,8 @@ import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
 
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
+
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
 
@@ -30,8 +32,6 @@ internal val KFuzzConfig.logsDir: Path
 
 internal val KFuzzConfig.exceptionsDir: Path
     get() = global.workDir.resolve("exceptions")
-
-private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
@@ -108,7 +108,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     private fun collectStatistics() {
-        val statsDir = config.global.workDir.resolve("stats").createDirectories()
+        val statsDir = config.global.workDir.resolve("stats")
+            .createDirectories()
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
             val csvText = jazzerLogToCsv(file, config.target.maxFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)

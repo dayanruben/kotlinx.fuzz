@@ -6,32 +6,52 @@ class KFuzzConfigBuilder(
     private val propertiesMap: Map<String, String>,
 ) {
     private var isBuilt = false
+
     // FQN --> KFProp
     private val delegatesMap = mutableMapOf<String, KFuzzProperty<*>>()
-
     private val overrideSteps = mutableListOf<KFuzzConfigImpl.() -> Unit>()
     private val fallbackSteps = mutableListOf<KFuzzConfigImpl.() -> Unit>()
-
     private val configImpl = KFuzzConfigImpl()
 
-    inner class KFuzzPropProvider<T : Any>(
-        private val nameSuffix: String,
-        private val intoString: (T) -> String,
-        private val fromString: (String) -> T,
-        private val validate: (T) -> Unit = {},
-        private val default: T? = null,
-    ) {
-        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): KFuzzProperty<T> {
-            val kfuzzProperty = KFuzzProperty(
-                name = KFuzzConfig.CONFIG_NAME_PREFIX + nameSuffix,
-                fromString = fromString,
-                intoString = intoString,
-                validate = validate,
-                default = default,
-            )
-            delegatesMap[property.toString()] = kfuzzProperty
-            return kfuzzProperty
+    fun editOverride(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
+        overrideSteps.add(editor)
+    }
+
+    fun editFallback(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
+        fallbackSteps.add(editor)
+    }
+
+    fun build(): KFuzzConfig {
+        check(!isBuilt) { "config is already built!" }
+        try {
+            /*
+              To guarantee the priority in the following order...
+              1) editOverride
+              2) property map
+              3) editFallback
+              4) default
+              ...we can set values in backwards order.
+             */
+            val delegates = delegatesMap.values
+            delegates.forEach { it.setFromDefault() }
+            fallbackSteps.forEach { it.invoke(configImpl) }
+            delegates.forEach { it.setFromPropertiesMap() }
+            overrideSteps.forEach { it.invoke(configImpl) }
+
+            delegates.forEach { it.validate() }
+            isBuilt = true
+            return configImpl
+        } catch (e: Throwable) {
+            throw ConfigurationException(e)
         }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> getPropertyDelegate(propertySelector: KFuzzConfigImpl.() -> KProperty<T>): KFuzzProperty<T> {
+        val property = propertySelector(configImpl)
+
+        val kfuzzProperty = delegatesMap[property.toString()] ?: error("no KFProp found for property '${property.name}'")
+        return kfuzzProperty as KFuzzProperty<T>
     }
 
     /**
@@ -41,12 +61,14 @@ class KFuzzConfigBuilder(
      * 2) property map
      * 3) editFallback
      * 4) default
+     *
+     * @param default throws
      */
     inner class KFuzzProperty<T : Any>(
         val name: String,
         private val fromString: (String) -> T,
         private val intoString: (T) -> String,
-        private val validate: (T) -> Unit, // throws
+        private val validate: (T) -> Unit,
         private val default: T?,
     ) {
         private var value: T? = null
@@ -101,45 +123,24 @@ class KFuzzConfigBuilder(
         }
     }
 
-    fun editOverride(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
-        overrideSteps.add(editor)
-    }
-
-    fun editFallback(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
-        fallbackSteps.add(editor)
-    }
-
-    fun build(): KFuzzConfig {
-        check(!isBuilt) { "config is already built!" }
-        try {
-            /*
-              To guarantee the priority in the following order...
-              1) editOverride
-              2) property map
-              3) editFallback
-              4) default
-              ...we can set values in backwards order.
-             */
-            val delegates = delegatesMap.values
-            delegates.forEach { it.setFromDefault() }
-            fallbackSteps.forEach { it.invoke(configImpl) }
-            delegates.forEach { it.setFromPropertiesMap() }
-            overrideSteps.forEach { it.invoke(configImpl) }
-
-            delegates.forEach { it.validate() }
-            isBuilt = true
-            return configImpl
-        } catch (e: Throwable) {
-            throw ConfigurationException(e)
+    inner class KFuzzPropProvider<T : Any>(
+        private val nameSuffix: String,
+        private val intoString: (T) -> String,
+        private val fromString: (String) -> T,
+        private val validate: (T) -> Unit = {},
+        private val default: T? = null,
+    ) {
+        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): KFuzzProperty<T> {
+            val kfuzzProperty = KFuzzProperty(
+                name = KFuzzConfig.CONFIG_NAME_PREFIX + nameSuffix,
+                fromString = fromString,
+                intoString = intoString,
+                validate = validate,
+                default = default,
+            )
+            delegatesMap[property.toString()] = kfuzzProperty
+            return kfuzzProperty
         }
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <T : Any> getPropertyDelegate(propertySelector: KFuzzConfigImpl.() -> KProperty<T>): KFuzzProperty<T> {
-        val property = propertySelector(configImpl)
-
-        val kfuzzProperty = delegatesMap[property.toString()] ?: error("no KFProp found for property '${property.name}'")
-        return kfuzzProperty as KFuzzProperty<T>
     }
 }
 

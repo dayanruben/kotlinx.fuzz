@@ -8,9 +8,7 @@ package kotlinx.fuzz.config
  * NO!
  * It would still be great if we could but all those configs in different files, we have a lot of them.
  */
-
 // TODO
-
 interface KFuzzConfig {
     val global: GlobalConfig
     val target: TargetConfig
@@ -20,9 +18,8 @@ interface KFuzzConfig {
     fun toPropertiesMap(): Map<String, String>
 
     companion object {
+        val CONFIG_NAME_PREFIX = "kotlinx.fuzz."
         fun fromSystemProperties(): KFuzzConfigBuilder = KFuzzConfigBuilder(getSystemPropertiesMap())
         fun fromAnotherConfig(config: KFuzzConfig): KFuzzConfigBuilder = KFuzzConfigBuilder(config.toPropertiesMap())
-
-        val CONFIG_NAME_PREFIX = "kotlinx.fuzz."
     }
 }

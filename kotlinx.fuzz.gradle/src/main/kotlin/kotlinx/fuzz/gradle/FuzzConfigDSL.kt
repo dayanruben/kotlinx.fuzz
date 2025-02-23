@@ -4,8 +4,7 @@ import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlin.reflect.KProperty
 
-abstract class FuzzConfigDSL {
-
+open class FuzzConfigDSL {
     private val builder by lazy { KFuzzConfig.fromSystemProperties() }
 
     // ========== global ==========
@@ -22,6 +21,22 @@ abstract class FuzzConfigDSL {
     var customHookExcludes by KFConfigDelegate { target::customHookExcludes }
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
 
+    /**
+     * TODO: no support for different engines yet. See [KFuzzConfigBuilder.KFuzzConfigImpl]
+     */
+    private val engineDSL = JazzerConfigDSL()
+    private val coverageDSL = CoverageConfigDSL()
+
+    fun engine(block: JazzerConfigDSL.() -> Unit) {
+        engineDSL.block()
+    }
+
+    fun coverage(block: CoverageConfigDSL.() -> Unit) {
+        coverageDSL.block()
+    }
+
+    fun build(): KFuzzConfig = builder.build()
+
     // ========== engine ==========
 
     sealed interface EngineConfigDSL
@@ -31,32 +46,18 @@ abstract class FuzzConfigDSL {
         var enableLogging by KFConfigDelegate { engine::enableLogging }
     }
 
-    /**
-     * TODO: no support for different engines yet. See [KFuzzConfigBuilder.KFuzzConfigImpl]
-     */
-    private val engineDSL = JazzerConfigDSL()
-
-    fun engine(block: JazzerConfigDSL.() -> Unit) {
-        engineDSL.block()
-    }
-
     // ========== coverage ==========
 
+    @Suppress("USE_DATA_CLASS")
     inner class CoverageConfigDSL {
         var reportTypes by KFConfigDelegate { coverage::reportTypes }
         var includeDependencies by KFConfigDelegate { coverage::includeDependencies }
     }
 
-    private val coverageDSL = CoverageConfigDSL()
-
-    fun coverage(block: CoverageConfigDSL.() -> Unit) {
-        coverageDSL.block()
-    }
-
     // ========== internals ==========
 
     private inner class KFConfigDelegate<T : Any>(
-        propertySelector: KFuzzConfigBuilder.KFuzzConfigImpl.() -> KProperty<T>
+        propertySelector: KFuzzConfigBuilder.KFuzzConfigImpl.() -> KProperty<T>,
     ) {
         private val kfProp = builder.getPropertyDelegate(propertySelector)
 
@@ -68,6 +69,4 @@ abstract class FuzzConfigDSL {
             builder.editFallback { kfProp.setValue(thisRef, property, value) }
         }
     }
-
-    fun build(): KFuzzConfig = builder.build()
 }
