@@ -5,11 +5,6 @@ sealed interface EngineConfig
 interface JazzerConfig : EngineConfig {
     val libFuzzerRssLimitMb: Int
     val enableLogging: Boolean
-
-    object Defaults {
-        const val LIB_FUZZER_RSS_LIMIT = 0
-        const val ENABLE_LOGGING = false
-    }
 }
 
 class JazzerConfigImpl internal constructor(builder: KFuzzConfigBuilder) : JazzerConfig {

@@ -3,6 +3,7 @@ package kotlinx.fuzz.gradle.junit.test
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.ConfigurationException
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
@@ -13,7 +14,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.seconds
 
-class AnnotationsTest {
+object AnnotationsTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
@@ -63,6 +64,10 @@ class AnnotationsTest {
             message = "wrong exception message\n${exception.stackTraceToString()}",
         )
     }
+
+    @AfterAll
+    @JvmStatic
+    fun cleanup() = cleanupSystemProperties()
 
     private fun runMethodFuzz(method: KFunction<*>): TestExecutionResult {
         val methodFQN = "${AnnotationsTest::class.qualifiedName!!}#${method.name}(kotlinx.fuzz.KFuzzer)"

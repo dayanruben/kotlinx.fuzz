@@ -5,6 +5,7 @@ import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
@@ -46,7 +47,7 @@ object EngineTest {
 
     @BeforeEach
     fun setup() {
-       writeToSystemProperties {
+        writeToSystemProperties {
             // subtle check that getValue() works before build()
             global.workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             global.reproducerDir = global.workDir.resolve("reproducers")
@@ -71,6 +72,11 @@ object EngineTest {
                 it.started(startedTests).succeeded(successTests).failed(failedTests)
             }
     }
+
+    // without cleanup, KFuzzConfigTest fails hehe
+    @AfterAll
+    @JvmStatic
+    fun cleanup() = cleanupSystemProperties()
 }
 
 fun writeToSystemProperties(config: KFuzzConfigBuilder.KFuzzConfigImpl.() -> Unit) {
@@ -79,4 +85,13 @@ fun writeToSystemProperties(config: KFuzzConfigBuilder.KFuzzConfigImpl.() -> Uni
         .build()
         .toPropertiesMap()
         .forEach { (key, value) -> System.setProperty(key, value) }
+}
+
+fun cleanupSystemProperties() {
+    val needsCleanup = listOf(
+        "kotlinx.fuzz.workDir",
+        "kotlinx.fuzz.reproducerDir",
+        "kotlinx.fuzz.instrument",
+    )
+    needsCleanup.forEach { prop -> System.clearProperty(prop) }
 }
