@@ -1,6 +1,6 @@
 package kotlinx.fuzz.log
 
-import kotlinx.fuzz.config.KFConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.LogLevel
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -11,7 +11,7 @@ import org.slf4j.event.Level
  */
 object LoggerFacade {
     val LOG_LEVEL by lazy {
-        KFConfig.fromSystemProperties().build().global.logLevel.toSLF4JLevel()
+        KFuzzConfig.fromSystemProperties().build().global.logLevel.toSLF4JLevel()
     }
     private val isSlf4jAvailable: Boolean by lazy {
         val slf4jProviders = this::class.java.classLoader.getResource("org.slf4j.spi.SLF4JServiceProvider")

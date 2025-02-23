@@ -1,11 +1,11 @@
 package kotlinx.fuzz.gradle.junit
 
-import java.lang.reflect.Method
-import java.net.URI
-import kotlin.reflect.KClass
-import kotlinx.fuzz.*
+import kotlinx.fuzz.IgnoreFailures
+import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.JazzerConfig
-import kotlinx.fuzz.config.KFConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -19,19 +19,22 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import java.lang.reflect.Method
+import java.net.URI
+import kotlin.reflect.KClass
 
 internal class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
-    private val config: KFConfig by lazy {
-        KFConfig.fromSystemProperties().build()
+    private val config: KFuzzConfig by lazy {
+        KFuzzConfig.fromSystemProperties().build()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
         when (config.engine) {
             is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
-                .getConstructor(KFConfig::class.java).newInstance(config) as KFuzzEngine
+                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
         }
     }
     private val isRegression: Boolean by lazy { config.global.regressionEnabled }

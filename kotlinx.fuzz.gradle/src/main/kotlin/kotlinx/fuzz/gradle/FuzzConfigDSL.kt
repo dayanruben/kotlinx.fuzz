@@ -1,12 +1,12 @@
 package kotlinx.fuzz.gradle
 
-import kotlinx.fuzz.config.KFConfig
-import kotlinx.fuzz.config.KFConfigBuilder
+import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlin.reflect.KProperty
 
 abstract class FuzzConfigDSL {
 
-    private val builder by lazy { KFConfig.fromSystemProperties() }
+    private val builder by lazy { KFuzzConfig.fromSystemProperties() }
 
     // ========== global ==========
     var workDir by KFConfigDelegate { global::workDir }
@@ -32,7 +32,7 @@ abstract class FuzzConfigDSL {
     }
 
     /**
-     * TODO: no support for different engines yet. See [KFConfigBuilder.KFConfigImpl]
+     * TODO: no support for different engines yet. See [KFuzzConfigBuilder.KFuzzConfigImpl]
      */
     private val engineDSL = JazzerConfigDSL()
 
@@ -56,7 +56,7 @@ abstract class FuzzConfigDSL {
     // ========== internals ==========
 
     private inner class KFConfigDelegate<T : Any>(
-        propertySelector: KFConfigBuilder.KFConfigImpl.() -> KProperty<T>
+        propertySelector: KFuzzConfigBuilder.KFuzzConfigImpl.() -> KProperty<T>
     ) {
         private val kfProp = builder.getPropertyDelegate(propertySelector)
 
@@ -69,5 +69,5 @@ abstract class FuzzConfigDSL {
         }
     }
 
-    fun build(): KFConfig = builder.build()
+    fun build(): KFuzzConfig = builder.build()
 }

@@ -16,8 +16,8 @@ interface TargetConfig {
     }
 }
 
-class TargetConfigImpl internal constructor(builder: KFConfigBuilder) : TargetConfig {
-    override var maxFuzzTime by builder.KFPropProvider<Duration>(
+class TargetConfigImpl internal constructor(builder: KFuzzConfigBuilder) : TargetConfig {
+    override var maxFuzzTime by builder.KFuzzPropProvider<Duration>(
         nameSuffix = "maxFuzzTimePerTarget",
         intoString = { it.toString() },
         fromString = { Duration.parse(it) },
@@ -25,7 +25,7 @@ class TargetConfigImpl internal constructor(builder: KFConfigBuilder) : TargetCo
         default = Duration.parse(TargetConfig.Defaults.MAX_FUZZ_TIME_STRING),
     )
 
-    override var keepGoing by builder.KFPropProvider<Long>(
+    override var keepGoing by builder.KFuzzPropProvider<Long>(
         nameSuffix = "keepGoing",
         intoString = { it.toString() },
         fromString = { it.toLong() },
@@ -33,20 +33,20 @@ class TargetConfigImpl internal constructor(builder: KFConfigBuilder) : TargetCo
         default = TargetConfig.Defaults.KEEP_GOING,
     )
 
-    override var instrument by builder.KFPropProvider<List<String>>(
+    override var instrument by builder.KFuzzPropProvider<List<String>>(
         nameSuffix = "instrument",
         intoString = { it.joinToString(",") },
         fromString = { it.split(",") },
     )
 
-    override var customHookExcludes by builder.KFPropProvider<List<String>>(
+    override var customHookExcludes by builder.KFuzzPropProvider<List<String>>(
         nameSuffix = "customHookExcludes",
         intoString = { it.joinToString(",") },
         fromString = { it.split(",") },
         default = emptyList(),
     )
 
-    override var dumpCoverage by builder.KFPropProvider<Boolean>(
+    override var dumpCoverage by builder.KFuzzPropProvider<Boolean>(
         nameSuffix = "dumpCoverage",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },

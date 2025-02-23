@@ -1,15 +1,15 @@
 package kotlinx.fuzz.gradle.junit
 
-import kotlinx.fuzz.config.KFConfig
-import java.lang.reflect.Method
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.listCrashes
 import kotlinx.fuzz.reproducerPathOf
 import org.junit.platform.engine.TestDescriptor
 import org.junit.platform.engine.support.descriptor.AbstractTestDescriptor
 import org.junit.platform.engine.support.descriptor.MethodSource
+import java.lang.reflect.Method
 
 internal class MethodRegressionTestDescriptor(
-    private val testMethod: Method, parent: TestDescriptor, config: KFConfig,
+    private val testMethod: Method, parent: TestDescriptor, config: KFuzzConfig,
 ) : AbstractTestDescriptor(
     parent.uniqueId.append("method", testMethod.name),
     displayName(testMethod),

@@ -6,6 +6,12 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.debug
+import kotlinx.fuzz.log.error
+import kotlinx.fuzz.reproducerPathOf
 import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -16,16 +22,11 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.debug
-import kotlinx.fuzz.log.error
-import kotlinx.fuzz.reproducerPathOf
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
-    private val config = KFuzzConfig.fromSystemProperties()
-    private val jazzerConfig = JazzerConfig.fromSystemProperties()
+    private val config = KFuzzConfig.fromSystemProperties().build()
+    private val jazzerConfig = config.engine as JazzerConfig
 
     @JvmStatic
     fun main(args: Array<String>) {
@@ -58,8 +59,8 @@ object JazzerLauncher {
         val currentCorpus = config.corpusDir.resolve(method.fullName)
         currentCorpus.createDirectories()
 
-        if (config.dumpCoverage) {
-            val coverageFile = config.workDir
+        if (config.target.dumpCoverage) {
+            val coverageFile = config.global.workDir
                 .resolve("coverage")
                 .createDirectories()
                 .resolve("${method.fullName}.exec")
@@ -69,9 +70,9 @@ object JazzerLauncher {
 
         libFuzzerArgs += currentCorpus.absolutePathString()
         libFuzzerArgs += reproducerPath.absolutePathString()
-        libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimit}"
+        libFuzzerArgs += "-rss_limit_mb=${jazzerConfig.libFuzzerRssLimitMb}"
         libFuzzerArgs += "-artifact_prefix=${reproducerPath.absolute()}/"
-        libFuzzerArgs += "-max_total_time=${config.maxSingleTargetFuzzTime.inWholeSeconds}"
+        libFuzzerArgs += "-max_total_time=${config.target.maxFuzzTime.inWholeSeconds}"
 
         return libFuzzerArgs
     }
@@ -98,12 +99,12 @@ object JazzerLauncher {
     private fun initJazzer() {
         Log.fixOutErr(System.out, System.err)
 
-        Opt.hooks.setIfDefault(config.hooks)
-        Opt.instrumentationIncludes.setIfDefault(config.instrument)
-        Opt.customHookIncludes.setIfDefault(config.instrument)
-        Opt.customHookExcludes.setIfDefault(config.customHookExcludes)
-        Opt.keepGoing.setIfDefault(config.keepGoing)
-        Opt.reproducerPath.setIfDefault(config.reproducerPath.absolutePathString())
+        Opt.hooks.setIfDefault(config.global.hooks)
+        Opt.instrumentationIncludes.setIfDefault(config.target.instrument)
+        Opt.customHookIncludes.setIfDefault(config.target.instrument)
+        Opt.customHookExcludes.setIfDefault(config.target.customHookExcludes)
+        Opt.keepGoing.setIfDefault(config.target.keepGoing)
+        Opt.reproducerPath.setIfDefault(config.global.reproducerDir.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())
 

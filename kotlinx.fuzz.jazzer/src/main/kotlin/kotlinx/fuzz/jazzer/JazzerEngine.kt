@@ -1,5 +1,12 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
@@ -11,30 +18,25 @@ import java.net.Socket
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.SystemProperty
-import kotlinx.fuzz.addAnnotationParams
-import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.error
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
 
 internal val KFuzzConfig.corpusDir: Path
-    get() = workDir.resolve("corpus")
+    get() = global.workDir.resolve("corpus")
 
 internal val KFuzzConfig.logsDir: Path
-    get() = workDir.resolve("logs")
+    get() = global.workDir.resolve("logs")
 
 internal val KFuzzConfig.exceptionsDir: Path
-    get() = workDir.resolve("exceptions")
+    get() = global.workDir.resolve("exceptions")
+
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
-    private val jazzerConfig = JazzerConfig.fromSystemProperties()
+    private val jazzerConfig = config.engine as JazzerConfig
 
     override fun initialise() {
         config.corpusDir.createDirectories()
@@ -66,12 +68,13 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val javaCommand = System.getProperty("java.home") + "/bin/java"
 
         // TODO: pass the config explicitly rather than through system properties
-        val config = KFuzzConfig.fromSystemProperties()
+        val config = KFuzzConfig.fromSystemProperties().build()
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
-            getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
+            val intellijDebuggerDispatchPort = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)!!.toInt()
+            getDebugSetup(intellijDebuggerDispatchPort, method)
         } else {
             emptyList()
         }
@@ -105,9 +108,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     private fun collectStatistics() {
-        val statsDir = config.workDir.resolve("stats").createDirectories()
+        val statsDir = config.global.workDir.resolve("stats").createDirectories()
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
-            val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
+            val csvText = jazzerLogToCsv(file, config.target.maxFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
         }
     }

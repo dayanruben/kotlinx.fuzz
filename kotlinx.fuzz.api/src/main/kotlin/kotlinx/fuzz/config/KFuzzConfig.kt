@@ -11,7 +11,7 @@ package kotlinx.fuzz.config
 
 // TODO
 
-interface KFConfig {
+interface KFuzzConfig {
     val global: GlobalConfig
     val target: TargetConfig
     val engine: EngineConfig
@@ -20,8 +20,8 @@ interface KFConfig {
     fun toPropertiesMap(): Map<String, String>
 
     companion object {
-        fun fromSystemProperties(): KFConfigBuilder = KFConfigBuilder(getSystemPropertiesMap())
-        fun fromAnotherConfig(config: KFConfig): KFConfigBuilder = KFConfigBuilder(config.toPropertiesMap())
+        fun fromSystemProperties(): KFuzzConfigBuilder = KFuzzConfigBuilder(getSystemPropertiesMap())
+        fun fromAnotherConfig(config: KFuzzConfig): KFuzzConfigBuilder = KFuzzConfigBuilder(config.toPropertiesMap())
 
         val CONFIG_NAME_PREFIX = "kotlinx.fuzz."
     }

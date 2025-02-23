@@ -13,35 +13,35 @@ interface GlobalConfig {
     val regressionEnabled: Boolean
 }
 
-class GlobalConfigImpl internal constructor(builder: KFConfigBuilder) : GlobalConfig {
+class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : GlobalConfig {
 
-    override var workDir by builder.KFPropProvider<Path>(
+    override var workDir by builder.KFuzzPropProvider<Path>(
         nameSuffix = "workDir",
         fromString = { Path.of(it) },
         intoString = { it.absolutePathString() },
     )
 
-    override var logLevel by builder.KFPropProvider<LogLevel>(
+    override var logLevel by builder.KFuzzPropProvider<LogLevel>(
         nameSuffix = "logLevel",
         intoString = { it.toString() },
         fromString = { LogLevel.valueOf(it) },
         default = LogLevel.WARN,
     )
 
-    override var reproducerDir by builder.KFPropProvider<Path>(
+    override var reproducerDir by builder.KFuzzPropProvider<Path>(
         nameSuffix = "reproducerDir",
         intoString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
 
-    override var hooks by builder.KFPropProvider<Boolean>(
+    override var hooks by builder.KFuzzPropProvider<Boolean>(
         nameSuffix = "enableHooks",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },
         default = true,
     )
 
-    override var regressionEnabled by builder.KFPropProvider<Boolean>(
+    override var regressionEnabled by builder.KFuzzPropProvider<Boolean>(
         nameSuffix = "regression",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },

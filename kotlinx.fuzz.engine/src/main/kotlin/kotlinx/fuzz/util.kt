@@ -6,16 +6,16 @@ import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
 import com.github.curiousoddman.rgxgen.model.SymbolRange
 import com.github.curiousoddman.rgxgen.model.WhitespaceChar
 import com.github.curiousoddman.rgxgen.util.chars.CharList
+import kotlinx.fuzz.KFuzzer.RegexConfiguration
+import kotlinx.fuzz.config.KFuzzConfig
 import java.lang.reflect.Method
 import java.nio.file.Path
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzer.RegexConfiguration
-import kotlinx.fuzz.config.KFConfig
 
 fun String?.toBooleanOrTrue(): Boolean = this?.toBoolean() != false
 fun String?.toBooleanOrFalse(): Boolean = this?.toBoolean() == true
 
-fun KFConfig.reproducerPathOf(method: Method): Path =
+fun KFuzzConfig.reproducerPathOf(method: Method): Path =
     Path(global.reproducerDir.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
 
 fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()

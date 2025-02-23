@@ -2,36 +2,35 @@ package kotlinx.fuzz.config
 
 import kotlin.reflect.KProperty
 
-class KFConfigBuilder(
+class KFuzzConfigBuilder(
     private val propertiesMap: Map<String, String>,
 ) {
     private var isBuilt = false
     // FQN --> KFProp
-    private val delegatesMap = mutableMapOf<String, KFProp<*>>()
+    private val delegatesMap = mutableMapOf<String, KFuzzProperty<*>>()
 
-    private val overrideSteps = mutableListOf<KFConfigImpl.() -> Unit>()
-    private val fallbackSteps = mutableListOf<KFConfigImpl.() -> Unit>()
+    private val overrideSteps = mutableListOf<KFuzzConfigImpl.() -> Unit>()
+    private val fallbackSteps = mutableListOf<KFuzzConfigImpl.() -> Unit>()
 
-    private val configImpl = KFConfigImpl()
+    private val configImpl = KFuzzConfigImpl()
 
-    inner class KFPropProvider<T : Any>(
+    inner class KFuzzPropProvider<T : Any>(
         private val nameSuffix: String,
         private val intoString: (T) -> String,
         private val fromString: (String) -> T,
         private val validate: (T) -> Unit = {},
         private val default: T? = null,
     ) {
-        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): KFProp<T> {
-            val kfProp = KFProp(
-                name = KFConfig.CONFIG_NAME_PREFIX + nameSuffix,
+        operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): KFuzzProperty<T> {
+            val kfuzzProperty = KFuzzProperty(
+                name = KFuzzConfig.CONFIG_NAME_PREFIX + nameSuffix,
                 fromString = fromString,
                 intoString = intoString,
                 validate = validate,
                 default = default,
             )
-            delegatesMap[property.toString()] = kfProp
-            println("put for $property obj ${property.hashCode()}")
-            return kfProp
+            delegatesMap[property.toString()] = kfuzzProperty
+            return kfuzzProperty
         }
     }
 
@@ -43,7 +42,7 @@ class KFConfigBuilder(
      * 3) editFallback
      * 4) default
      */
-    inner class KFProp<T : Any>(
+    inner class KFuzzProperty<T : Any>(
         val name: String,
         private val fromString: (String) -> T,
         private val intoString: (T) -> String,
@@ -51,10 +50,10 @@ class KFConfigBuilder(
         private val default: T?,
     ) {
         private var value: T? = null
-        private val isBuilt get() = this@KFConfigBuilder.isBuilt
+        private val isBuilt get() = this@KFuzzConfigBuilder.isBuilt
 
         operator fun getValue(thisRef: Any?, property: KProperty<*>): T {
-            check(isBuilt) { "cannot get value, config is not built yet!" }
+            check(value != null) { "cannot get value, config is not built yet!" }
             return value!!
         }
 
@@ -86,15 +85,15 @@ class KFConfigBuilder(
         }
     }
 
-    inner class KFConfigImpl internal constructor() : KFConfig {
-        override val global = GlobalConfigImpl(this@KFConfigBuilder)
-        override val target = TargetConfigImpl(this@KFConfigBuilder)
-        override val coverage = CoverageConfigImpl(this@KFConfigBuilder)
+    inner class KFuzzConfigImpl internal constructor() : KFuzzConfig {
+        override val global = GlobalConfigImpl(this@KFuzzConfigBuilder)
+        override val target = TargetConfigImpl(this@KFuzzConfigBuilder)
+        override val coverage = CoverageConfigImpl(this@KFuzzConfigBuilder)
 
         // TODO: we have to know which engine to use before building the config...
         // Viable solution for future: build a stub config, check the engine, build a new config.
         // Will need to be careful with instantiating delegates, as they will get validated.
-        override val engine = JazzerConfigImpl(this@KFConfigBuilder)
+        override val engine = JazzerConfigImpl(this@KFuzzConfigBuilder)
 
         override fun toPropertiesMap(): Map<String, String> {
             check(isBuilt) { "cannot get properties map, config is not built yet!" }
@@ -102,15 +101,15 @@ class KFConfigBuilder(
         }
     }
 
-    fun editOverride(editor: KFConfigImpl.() -> Unit): KFConfigBuilder = this.also {
+    fun editOverride(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
         overrideSteps.add(editor)
     }
 
-    fun editFallback(editor: KFConfigImpl.() -> Unit): KFConfigBuilder = this.also {
+    fun editFallback(editor: KFuzzConfigImpl.() -> Unit): KFuzzConfigBuilder = this.also {
         fallbackSteps.add(editor)
     }
 
-    fun build(): KFConfig {
+    fun build(): KFuzzConfig {
         check(!isBuilt) { "config is already built!" }
         try {
             /*
@@ -136,11 +135,11 @@ class KFConfigBuilder(
     }
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : Any> getPropertyDelegate(propertySelector: KFConfigImpl.() -> KProperty<T>): KFProp<T> {
+    fun <T : Any> getPropertyDelegate(propertySelector: KFuzzConfigImpl.() -> KProperty<T>): KFuzzProperty<T> {
         val property = propertySelector(configImpl)
 
-        val kfProp = delegatesMap[property.toString()] ?: error("no KFProp found for property '${property.name}'")
-        return kfProp as KFProp<T>
+        val kfuzzProperty = delegatesMap[property.toString()] ?: error("no KFProp found for property '${property.name}'")
+        return kfuzzProperty as KFuzzProperty<T>
     }
 }
 

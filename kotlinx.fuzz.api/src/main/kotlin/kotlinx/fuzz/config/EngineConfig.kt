@@ -12,9 +12,9 @@ interface JazzerConfig : EngineConfig {
     }
 }
 
-class JazzerConfigImpl internal constructor(builder: KFConfigBuilder) : JazzerConfig {
+class JazzerConfigImpl internal constructor(builder: KFuzzConfigBuilder) : JazzerConfig {
 
-    override var libFuzzerRssLimitMb by builder.KFPropProvider<Int>(
+    override var libFuzzerRssLimitMb by builder.KFuzzPropProvider<Int>(
         "jazzer.libFuzzerArgs.rssLimitMb",
         intoString = { it.toString() },
         fromString = { it.toInt() },
@@ -22,7 +22,7 @@ class JazzerConfigImpl internal constructor(builder: KFConfigBuilder) : JazzerCo
         default = 0,
     )
 
-    override var enableLogging by builder.KFPropProvider<Boolean>(
+    override var enableLogging by builder.KFuzzPropProvider<Boolean>(
         "jazzer.enableLogging",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },

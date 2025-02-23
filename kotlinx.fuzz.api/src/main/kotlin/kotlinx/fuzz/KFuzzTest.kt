@@ -1,9 +1,9 @@
 package kotlinx.fuzz
 
-import kotlinx.fuzz.config.KFConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.TargetConfig
-import kotlin.time.Duration
 import org.junit.platform.commons.annotation.Testable
+import kotlin.time.Duration
 
 /**
  *  This annotation is used to mark targets for fuzzing.
@@ -29,7 +29,7 @@ annotation class KFuzzTest(
     val dumpCoverage: Boolean = TargetConfig.Defaults.DUMP_COVERAGE,
 )
 
-fun KFConfig.addAnnotationParams(annotation: KFuzzTest): KFConfig = KFConfig.fromAnotherConfig(this)
+fun KFuzzConfig.addAnnotationParams(annotation: KFuzzTest): KFuzzConfig = KFuzzConfig.fromAnotherConfig(this)
     .editOverride {
         target.keepGoing = newUnlessDefault(
             old = this@addAnnotationParams.target.keepGoing,

@@ -1,9 +1,6 @@
 package kotlinx.fuzz.gradle
 
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
-import kotlinx.fuzz.config.KFConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
 import org.gradle.api.Plugin
@@ -16,6 +13,9 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
@@ -76,7 +76,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }
             doFirst {
-                val regressionConfig = KFConfig.fromAnotherConfig(fuzzConfig).editOverride {
+                val regressionConfig = KFuzzConfig.fromAnotherConfig(fuzzConfig).editOverride {
                     global.regressionEnabled = true
                 }.build()
                 systemProperties(regressionConfig.toPropertiesMap())
@@ -211,7 +211,7 @@ abstract class RegressionTask : Test() {
     }
 }
 
-private val Project.fuzzConfig: KFConfig
+private val Project.fuzzConfig: KFuzzConfig
     get() {
         val dsl = this.extensions.getByType<FuzzConfigDSL>()
         return dsl.build()
