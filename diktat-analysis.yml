@@ -181,3 +181,5 @@
   enabled: false
 - name: EMPTY_BLOCK_STRUCTURE_ERROR
   enabled: false
+- name: KDOC_NO_CLASS_BODY_PROPERTIES_IN_HEADER
+  enabled: false

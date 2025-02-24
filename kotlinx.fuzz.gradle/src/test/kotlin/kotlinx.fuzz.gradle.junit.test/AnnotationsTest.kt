@@ -1,5 +1,9 @@
 package kotlinx.fuzz.gradle.junit.test
 
+import kotlin.reflect.KFunction
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.ConfigurationException
@@ -9,10 +13,6 @@ import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
 import org.junit.platform.testkit.engine.EngineTestKit
-import kotlin.reflect.KFunction
-import kotlin.test.assertEquals
-import kotlin.test.assertIs
-import kotlin.time.Duration.Companion.seconds
 
 object AnnotationsTest {
     @BeforeEach

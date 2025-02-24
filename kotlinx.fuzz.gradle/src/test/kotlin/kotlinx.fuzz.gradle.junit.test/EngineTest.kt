@@ -1,5 +1,7 @@
 package kotlinx.fuzz.gradle.junit.test
 
+import java.io.File
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -10,8 +12,6 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
-import java.io.File
-import kotlin.time.Duration.Companion.seconds
 
 object EngineTest {
     object SimpleFuzzTest {

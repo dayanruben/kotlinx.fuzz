@@ -1,11 +1,11 @@
 package kotlinx.fuzz.gradle.test
 
+import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertDoesNotThrow
 import org.junit.jupiter.api.assertThrows
-import kotlin.io.path.Path
-import kotlin.time.Duration.Companion.seconds
 
 object FuzzConfigBuilderTest {
     @Test

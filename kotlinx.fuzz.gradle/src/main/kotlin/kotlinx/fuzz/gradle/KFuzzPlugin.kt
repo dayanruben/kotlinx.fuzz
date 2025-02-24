@@ -1,5 +1,8 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
@@ -13,9 +16,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
 
 private val Project.fuzzConfig: KFuzzConfig
     get() {

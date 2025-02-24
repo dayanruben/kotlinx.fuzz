@@ -2,14 +2,14 @@
 
 package kotlinx.fuzz.gradle.test
 
-import kotlinx.fuzz.config.KFuzzConfigBuilder
-import kotlinx.fuzz.config.LogLevel
-import kotlinx.fuzz.gradle.FuzzConfigDSL
-import org.junit.jupiter.api.assertDoesNotThrow
 import kotlin.io.path.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.fuzz.config.KFuzzConfigBuilder
+import kotlinx.fuzz.config.LogLevel
+import kotlinx.fuzz.gradle.FuzzConfigDSL
+import org.junit.jupiter.api.assertDoesNotThrow
 
 object FuzzConfigDsltest {
     @Test
@@ -38,7 +38,6 @@ object FuzzConfigDsltest {
                 reproducerDir = Path(".")
                 hooks = true
                 logLevel = LogLevel.DEBUG
-                regressionEnabled = false
 
                 maxFuzzTimePerTarget = 1.seconds
                 keepGoing = 5

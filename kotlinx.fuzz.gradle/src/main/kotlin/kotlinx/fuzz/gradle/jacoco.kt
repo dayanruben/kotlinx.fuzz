@@ -1,5 +1,10 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.inputStream
+import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.outputStream
 import kotlinx.fuzz.config.CoverageReportType
 import org.jacoco.core.analysis.Analyzer
 import org.jacoco.core.analysis.CoverageBuilder
@@ -11,11 +16,6 @@ import org.jacoco.report.MultiReportVisitor
 import org.jacoco.report.csv.CSVFormatter
 import org.jacoco.report.html.HTMLFormatter
 import org.jacoco.report.xml.XMLFormatter
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.inputStream
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.outputStream
 
 private fun CoverageReportType.toVisitor(reportDir: Path): IReportVisitor = when (this) {
     CoverageReportType.HTML -> HTMLFormatter().createVisitor(FileMultiReportOutput(reportDir.toFile()))

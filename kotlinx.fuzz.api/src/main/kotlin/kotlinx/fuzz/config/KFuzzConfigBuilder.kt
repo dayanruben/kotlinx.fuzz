@@ -132,7 +132,7 @@ class KFuzzConfigBuilder(
     ) {
         operator fun provideDelegate(thisRef: Any?, property: KProperty<*>): KFuzzProperty<T> {
             val kfuzzProperty = KFuzzProperty(
-                name = KFuzzConfig.CONFIG_NAME_PREFIX + nameSuffix,
+                name = KFuzzConfig.PROPERTY_NAME_PREFIX + nameSuffix,
                 fromString = fromString,
                 intoString = intoString,
                 validate = validate,
