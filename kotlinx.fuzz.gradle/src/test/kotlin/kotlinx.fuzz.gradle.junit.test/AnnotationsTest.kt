@@ -26,7 +26,7 @@ object AnnotationsTest {
     }
 
     @KFuzzTest(maxFuzzTime = "not even a duration")
-    fun invalidConfig(data: KFuzzer) {
+    fun invalidConfig(@Suppress("UNUSED_PARAMETER", "unused") data: KFuzzer) {
         error("unreachable")
     }
 
