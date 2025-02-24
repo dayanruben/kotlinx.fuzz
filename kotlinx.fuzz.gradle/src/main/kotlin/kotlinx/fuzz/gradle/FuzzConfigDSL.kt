@@ -51,7 +51,8 @@ open class FuzzConfigDSL {
     var customHookExcludes by KFConfigDelegate { target::customHookExcludes }
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
 
-    fun build(): KFuzzConfig = builder.build()
+    private val builtConfig: KFuzzConfig by lazy { builder.build() }
+    fun build(): KFuzzConfig = builtConfig
 
     // ========== engine ==========
 
