@@ -1,9 +1,9 @@
 package kotlinx.fuzz
 
+import kotlin.time.Duration
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.TargetConfig
 import org.junit.platform.commons.annotation.Testable
-import kotlin.time.Duration
 
 /**
  *  This annotation is used to mark targets for fuzzing.

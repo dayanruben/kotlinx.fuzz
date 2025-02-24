@@ -1,11 +1,11 @@
 package kotlinx.fuzz
 
-import kotlinx.fuzz.config.KFuzzConfig
-import kotlinx.fuzz.config.KFuzzConfigBuilder
-import java.nio.file.Path
+import kotlin.io.path.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration
+import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 
 class KFuzzConfigTest {
     @Test
@@ -34,7 +34,7 @@ class KFuzzConfigTest {
             "kotlinx.fuzz.maxFuzzTimePerTarget" to "10s",
         )
         val config = KFuzzConfigBuilder(props)
-            .editFallback { global.workDir = Path.of("bad") }
+            .editFallback { global.workDir = Path("bad") }
             .build()
         val configClone = KFuzzConfig.fromAnotherConfig(config)
             .editOverride { target.maxFuzzTime = Duration.parse("5s") }

@@ -16,7 +16,7 @@ interface GlobalConfig {
 class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : GlobalConfig {
     override var workDir by builder.KFuzzPropProvider<Path>(
         nameSuffix = "workDir",
-        fromString = { Path.of(it) },
+        fromString = { Path(it) },
         intoString = { it.absolutePathString() },
     )
     override var logLevel by builder.KFuzzPropProvider<LogLevel>(

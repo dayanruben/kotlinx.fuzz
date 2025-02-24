@@ -129,7 +129,7 @@ object JazzerLauncher {
         }
 
         val currentRepresentatives = clusterCrashes(reproducerPath)
-        return config.target.keepGoing != 0L && currentRepresentatives - oldRepresentatives!! >= config.keepGoing
+        return config.target.keepGoing != 0L && currentRepresentatives - oldRepresentatives!! >= config.target.keepGoing
     }
 
     private fun initJazzer() {

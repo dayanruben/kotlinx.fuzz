@@ -111,7 +111,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun clusterCrashes() {
         val crashesForDeletion = mutableListOf<Path>()
-        Files.walk(config.reproducerPath)
+        Files.walk(config.global.reproducerDir)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .map { it to it.listStacktraces() }
             .flatMap { (dir, files) -> files.stream().map { dir to it } }
