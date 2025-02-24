@@ -144,7 +144,7 @@ class KFuzzConfigBuilder(
     }
 }
 
-class ConfigurationException(cause: Throwable?) : IllegalArgumentException("cannot create config", cause)
+class ConfigurationException(cause: Throwable?) : IllegalArgumentException("cannot create config: ${cause?.message}", cause)
 
 fun getSystemPropertiesMap(): Map<String, String> = buildMap {
     val properties = System.getProperties()

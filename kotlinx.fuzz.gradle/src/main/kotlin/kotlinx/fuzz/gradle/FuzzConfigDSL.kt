@@ -33,8 +33,10 @@ import kotlinx.fuzz.config.KFuzzConfigBuilder
  *
  * @see KFuzzConfig
  */
-open class FuzzConfigDSL {
-    private val builder by lazy { KFuzzConfig.fromSystemProperties() }
+open class FuzzConfigDSL(
+    projectProperties: Map<String, String>,
+) {
+    private val builder = KFuzzConfigBuilder(projectProperties)
 
     // ========== global ==========
     var workDir by KFConfigDelegate { global::workDir }

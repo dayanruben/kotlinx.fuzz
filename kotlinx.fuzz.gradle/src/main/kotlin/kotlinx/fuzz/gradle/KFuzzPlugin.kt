@@ -34,7 +34,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
             add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle:$pluginVersion")
         }
 
-        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>("fuzzConfig", FuzzConfigDSL::class.java)
+        val projectPropertiesMap: Map<String, String> = project.properties.mapValues { (_, v) -> v.toString() }
+        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>(
+            "fuzzConfig",
+            FuzzConfigDSL::class,
+            projectPropertiesMap,
+        )
         project.preconfigureFuzzConfigDSL(fuzzConfigDSL)
 
         project.tasks.withType<Test>().configureEach {

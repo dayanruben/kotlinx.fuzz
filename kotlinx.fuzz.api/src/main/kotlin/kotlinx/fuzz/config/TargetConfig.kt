@@ -21,7 +21,7 @@ class TargetConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Targe
         nameSuffix = "maxFuzzTimePerTarget",
         intoString = { it.toString() },
         fromString = { Duration.parse(it) },
-        validate = { require(it.isPositive()) { "maxTime must be positive" } },
+        validate = { require(it.isPositive()) { "maxFuzzTimePerTarget must be positive" } },
         default = Duration.parse(TargetConfig.Defaults.MAX_FUZZ_TIME_STRING),
     )
     override var keepGoing by builder.KFuzzPropProvider<Long>(
