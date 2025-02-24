@@ -19,7 +19,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
 }
 
-fz {
+fuzzConfig {
     keepGoing = 10
     instrument = listOf(
         "kotlinx.fuzz.test.**",

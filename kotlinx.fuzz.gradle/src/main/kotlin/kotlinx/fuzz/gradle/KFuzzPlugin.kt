@@ -34,7 +34,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle:$pluginVersion")
         }
 
-        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>("fz", FuzzConfigDSL::class.java)
+        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>("fuzzConfig", FuzzConfigDSL::class.java)
         project.preconfigureFuzzConfigDSL(fuzzConfigDSL)
 
         project.tasks.withType<Test>().configureEach {
