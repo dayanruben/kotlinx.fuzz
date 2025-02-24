@@ -1,4 +1,4 @@
-@file:Suppress("WRONG_ORDER_IN_CLASS_LIKE_STRUCTURES")
+@file:Suppress("WRONG_ORDER_IN_CLASS_LIKE_STRUCTURES", "KDOC_EXTRA_PROPERTY")
 
 package kotlinx.fuzz.gradle
 
@@ -52,8 +52,8 @@ open class FuzzConfigDSL(
     var instrument by KFConfigDelegate { target::instrument }
     var customHookExcludes by KFConfigDelegate { target::customHookExcludes }
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
-
     private val builtConfig: KFuzzConfig by lazy { builder.build() }
+
     fun build(): KFuzzConfig = builtConfig
 
     // ========== engine ==========

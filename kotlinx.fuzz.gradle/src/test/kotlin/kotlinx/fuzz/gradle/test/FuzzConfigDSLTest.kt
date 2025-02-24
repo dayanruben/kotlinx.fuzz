@@ -14,7 +14,7 @@ import org.junit.jupiter.api.assertDoesNotThrow
 object FuzzConfigDsltest {
     @Test
     fun basicTest() {
-        val dsl = object : FuzzConfigDSL() {}
+        val dsl = object : FuzzConfigDSL(emptyMap()) {}
         dsl.apply {
             workDir = Path(".")
             reproducerDir = Path(".")
@@ -32,7 +32,7 @@ object FuzzConfigDsltest {
     @Test
     fun allDSLParameters() {
         assertDoesNotThrow {
-            val dsl = object : FuzzConfigDSL() {}
+            val dsl = object : FuzzConfigDSL(emptyMap()) {}
             dsl.apply {
                 workDir = Path(".")
                 reproducerDir = Path(".")
