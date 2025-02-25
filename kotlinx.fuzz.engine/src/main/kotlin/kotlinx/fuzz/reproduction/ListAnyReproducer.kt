@@ -1,10 +1,14 @@
 package kotlinx.fuzz.reproduction
 
-import com.squareup.kotlinpoet.CodeBlock
+import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.*
+import kotlin.reflect.KFunction
+import kotlin.reflect.full.declaredFunctions
+import kotlin.reflect.jvm.jvmErasure
 
 class ListAnyReproducer(
     private val template: ReproducerTemplate,
@@ -40,34 +44,88 @@ class ListAnyReproducer(
             else -> error("Unsupported execution result type: ${executionResult.typeName}")
         }
 
+    private fun CodeBlock.Builder.addFunction(function: KFunction<*>) {
+        val returnType = function.returnType.jvmErasure.asTypeName()
+        val isNullable = function.returnType.isMarkedNullable
+        val castOperator = if (isNullable) "as?" else "as"
+
+        val parameters = function.parameters.drop(1)
+
+        add("override fun %N(", function.name)
+        parameters.forEachIndexed { index, param ->
+            val paramType = param.type.jvmErasure.asTypeName()
+
+            val resolvedParamType = if (param.type.arguments.isNotEmpty()) {
+                val typeArguments = param.type.arguments
+                val resolvedArguments = typeArguments.map {
+                    it.type?.jvmErasure?.asTypeName() ?: TypeVariableName("T")
+                }
+                paramType.parameterizedBy(*resolvedArguments.toTypedArray())
+            } else {
+                paramType
+            }
+
+            val finalParamType = if (param.type.isMarkedNullable) {
+                resolvedParamType.copy(nullable = true)
+            } else {
+                resolvedParamType
+            }
+
+            add("%N: %T", param.name, finalParamType)
+            if (index < parameters.size - 1) {
+                add(", ")
+            }
+        }
+        add("): %T = iterator.next() $castOperator %T\n",
+            returnType.copy(nullable = isNullable),
+            returnType.copy(nullable = isNullable))
+    }
+
+    private fun buildListReproducerObject(objectName: String, input: ByteArray): CodeBlock = buildCodeBlock {
+        addStatement("val $objectName = object : %T {", ClassName("kotlinx.fuzz", "KFuzzer"))
+        indent()
+
+        addStatement(
+            "val values = listOf<Any?>(" +
+                registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
+                    executionResult.value?.let {
+                        if (executionResult.typeName.contains("Array")) {
+                            arrayToString(executionResult)
+                        } else {
+                            executionResult.value.toString()
+                        }
+                    } ?: "null"
+                } +
+                ")",
+        )
+
+        addStatement("val iterator = values.iterator()")
+
+        for (function in kotlinx.fuzz.KFuzzer::class.declaredFunctions) {
+            addFunction(function)
+        }
+
+        unindent()
+        addStatement("}")
+    }
+
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val initialCode = ""
-
-        val code = CodeBlock.builder()
-            .addStatement(
-                "val values = mutableListOf<Any?>(${
-                    registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
-                        executionResult.value?.let {
-                            if (executionResult.typeName.contains("Array")) {
-                                arrayToString(executionResult)
-                            } else {
-                                executionResult.value.toString()
-                            }
-                        } ?: "null"
-                    }
-                })",
-            )
-            .addStatement("var index = 0")
-            .addStatement("val consumeNext = { values[index++] }")
-            .addStatement(initialCode)
-            .build()
+        val objectName = "listReproducer"
+        val objectCode = buildListReproducerObject(objectName, input)
+        val instanceString = method.declaringClass.kotlin.objectInstance?.let {
+            method.declaringClass.kotlin.simpleName
+        } ?: "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
+        val code = buildCodeBlock {
+            add(objectCode)
+            addStatement("$instanceString.`${method.name}`($objectName)")
+        }
 
         reproducerFile.writeText(
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
-                listOf(KotlinpoetImport("kotlinx.fuzz", "KFuzzerImpl")),
+                emptyList(),
             ),
         )
     }
