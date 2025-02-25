@@ -119,7 +119,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     override var threads: Int by KFuzzConfigProperty(
         SystemProperty.THREADS,
         defaultValue = max(1, Runtime.getRuntime().availableProcessors() / 2),
-        validate = { require(it > 0) { "'cores' must be positive" } },
+        validate = { require(it > 0) { "'threads' must be positive" } },
         toString = { it.toString() },
         fromString = { it.toInt() },
     )
