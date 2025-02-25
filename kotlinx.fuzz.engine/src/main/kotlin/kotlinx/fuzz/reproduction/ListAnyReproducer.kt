@@ -76,28 +76,16 @@ class ListAnyReproducer(
                 add(", ")
             }
         }
-        add("): %T = iterator.next() $castOperator %T\n",
+        add(
+            "): %T = iterator.next() $castOperator %T\n",
             returnType.copy(nullable = isNullable),
-            returnType.copy(nullable = isNullable))
+            returnType.copy(nullable = isNullable),
+        )
     }
 
-    private fun buildListReproducerObject(objectName: String, input: ByteArray): CodeBlock = buildCodeBlock {
-        addStatement("val $objectName = object : %T {", ClassName("kotlinx.fuzz", "KFuzzer"))
+    private fun buildListReproducerObject(): CodeBlock = buildCodeBlock {
+        addStatement("val listReproducer = object : %T {", ClassName("kotlinx.fuzz", "KFuzzer"))
         indent()
-
-        addStatement(
-            "val values = listOf<Any?>(" +
-                registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
-                    executionResult.value?.let {
-                        if (executionResult.typeName.contains("Array")) {
-                            arrayToString(executionResult)
-                        } else {
-                            executionResult.value.toString()
-                        }
-                    } ?: "null"
-                } +
-                ")",
-        )
 
         addStatement("val iterator = values.iterator()")
 
@@ -111,14 +99,26 @@ class ListAnyReproducer(
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val objectName = "listReproducer"
-        val objectCode = buildListReproducerObject(objectName, input)
+        val objectCode = buildListReproducerObject()
         val instanceString = method.declaringClass.kotlin.objectInstance?.let {
             method.declaringClass.kotlin.simpleName
         } ?: "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
         val code = buildCodeBlock {
+            addStatement(
+                "val values = listOf<Any?>(" +
+                    registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
+                        executionResult.value?.let {
+                            if (executionResult.typeName.contains("Array")) {
+                                arrayToString(executionResult)
+                            } else {
+                                executionResult.value.toString()
+                            }
+                        } ?: "null"
+                    } +
+                    ")",
+            )
             add(objectCode)
-            addStatement("$instanceString.`${method.name}`($objectName)")
+            addStatement("$instanceString.`${method.name}`(listReproducer)")
         }
 
         reproducerFile.writeText(
