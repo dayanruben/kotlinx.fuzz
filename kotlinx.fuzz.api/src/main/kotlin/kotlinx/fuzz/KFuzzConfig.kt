@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.seconds
  * Default: empty list
  * @param maxSingleTargetFuzzTime - max time to fuzz a single target. Default: 1 minute
  * @param reproducerPath - Path to store reproducers. Default: `$workDir/reproducers`
- * @param cores - Number of cores to use for executing targets in parallel
+ * @param threads - Number of cpu threads to use for executing targets in parallel. Default `threads available for jvm / 2`, usually half of logical threads
  */
 interface KFuzzConfig {
     val fuzzEngine: String
@@ -43,7 +43,7 @@ interface KFuzzConfig {
     val dumpCoverage: Boolean
     val reproducerPath: Path
     val logLevel: String
-    val cores: Int
+    val threads: Int
 
     fun toPropertiesMap(): Map<String, String>
 
@@ -116,8 +116,8 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
         toString = { it },
         fromString = { it },
     )
-    override val cores: Int by KFuzzConfigProperty(
-        SystemProperty.CORES,
+    override var threads: Int by KFuzzConfigProperty(
+        SystemProperty.THREADS,
         defaultValue = max(1, Runtime.getRuntime().availableProcessors() / 2),
         validate = { require(it > 0) { "'cores' must be positive" } },
         toString = { it.toString() },
