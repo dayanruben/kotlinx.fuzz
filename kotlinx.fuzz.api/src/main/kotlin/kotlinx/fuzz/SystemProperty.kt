@@ -1,6 +1,7 @@
 package kotlinx.fuzz
 
 enum class SystemProperty(name: String) {
+    CORES("kotlinx.fuzz.cores"),
     CUSTOM_HOOK_EXCLUDES("kotlinx.fuzz.customHookExcludes"),
     DUMP_COVERAGE("kotlinx.fuzz.dumpCoverage"),
     ENGINE("kotlinx.fuzz.engine"),

@@ -69,14 +69,11 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
 
-        val cores = Runtime.getRuntime().availableProcessors()
-        log.info { "Running with $cores cores" }
-        val dispatcher = Dispatchers.Default.limitedParallelism(
-            cores, "fuzz-test",
-        )
+        val dispatcher = Dispatchers.Default.limitedParallelism(config.cores, "kotlinx.fuzz")
         runBlocking(dispatcher) {
             root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
         }
+
         fuzzEngine.finishExecution()
     }
 
