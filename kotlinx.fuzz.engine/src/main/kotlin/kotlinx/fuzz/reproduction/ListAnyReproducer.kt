@@ -9,6 +9,7 @@ import kotlin.io.path.*
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.jvm.jvmErasure
+import kotlinx.fuzz.KFuzzer
 
 class ListAnyReproducer(
     private val template: ReproducerTemplate,
@@ -44,15 +45,18 @@ class ListAnyReproducer(
             else -> error("Unsupported execution result type: ${executionResult.typeName}")
         }
 
-    private fun CodeBlock.Builder.addFunction(function: KFunction<*>) {
+    private fun generateFunction(function: KFunction<*>): FunSpec {
         val returnType = function.returnType.jvmErasure.asTypeName()
         val isNullable = function.returnType.isMarkedNullable
         val castOperator = if (isNullable) "as?" else "as"
 
         val parameters = function.parameters.drop(1)
 
-        add("override fun %N(", function.name)
-        parameters.forEachIndexed { index, param ->
+        val result = FunSpec.builder(function.name)
+            .returns(returnType.copy(nullable = isNullable))
+            .addModifiers(KModifier.OVERRIDE)
+
+        parameters.forEach { param ->
             val paramType = param.type.jvmErasure.asTypeName()
 
             val resolvedParamType = if (param.type.arguments.isNotEmpty()) {
@@ -71,35 +75,31 @@ class ListAnyReproducer(
                 resolvedParamType
             }
 
-            add("%N: %T", param.name, finalParamType)
-            if (index < parameters.size - 1) {
-                add(", ")
-            }
+            result.addParameter(param.name!!, finalParamType)
         }
-        add(
-            "): %T = iterator.next() $castOperator %T\n",
-            returnType.copy(nullable = isNullable),
-            returnType.copy(nullable = isNullable),
-        )
+        result.addStatement("return iterator.next() $castOperator ${returnType.copy(nullable = isNullable)}")
+        return result.build()
     }
 
-    private fun buildListReproducerObject(): CodeBlock = buildCodeBlock {
-        addStatement("val listReproducer = object : %T {", ClassName("kotlinx.fuzz", "KFuzzer"))
-        indent()
-
-        addStatement("val iterator = values.iterator()")
-
-        for (function in kotlinx.fuzz.KFuzzer::class.declaredFunctions) {
-            addFunction(function)
+    private fun buildListReproducerObject(): TypeSpec {
+        val result = TypeSpec.classBuilder("ListReproducer")
+            .addSuperinterface(KFuzzer::class)
+            .addModifiers(KModifier.PRIVATE)
+            .primaryConstructor(
+                FunSpec.constructorBuilder().addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).build(),
+            )
+            .addProperty(PropertySpec.builder("iterator", Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).initializer("values.iterator()").addModifiers(
+                KModifier.PRIVATE,
+            )
+                .build())
+        for (function in KFuzzer::class.declaredFunctions) {
+            result.addFunction(generateFunction(function))
         }
-
-        unindent()
-        addStatement("}")
+        return result.build()
     }
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val objectCode = buildListReproducerObject()
         val instanceString = method.declaringClass.kotlin.objectInstance?.let {
             method.declaringClass.kotlin.simpleName
         } ?: "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
@@ -117,15 +117,14 @@ class ListAnyReproducer(
                     } +
                     ")",
             )
-            add(objectCode)
-            addStatement("$instanceString.`${method.name}`(listReproducer)")
+            addStatement("$instanceString.`${method.name}`(ListReproducer(values))")
         }
 
         reproducerFile.writeText(
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
-                emptyList(),
+                additionalObjects = listOf(buildListReproducerObject()),
             ),
         )
     }

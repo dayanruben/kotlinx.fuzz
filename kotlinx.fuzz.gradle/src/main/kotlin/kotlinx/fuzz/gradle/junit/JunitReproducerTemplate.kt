@@ -6,14 +6,20 @@ import kotlinx.fuzz.reproduction.KotlinpoetImport
 import kotlinx.fuzz.reproduction.ReproducerTemplate
 
 class JunitReproducerTemplate(private val instance: Any, private val method: Method) : ReproducerTemplate {
-    override fun buildReproducer(identifier: String, code: CodeBlock, imports: List<KotlinpoetImport>): String {
+    override fun buildReproducer(
+        identifier: String,
+        testCode: CodeBlock,
+        imports: List<KotlinpoetImport>,
+        additionalObjects: List<TypeSpec>,
+        additionalFunctions: List<FunSpec>,
+    ): String {
         val fullClassName = instance::class.java.name
         val packageName = fullClassName.substringBeforeLast('.', missingDelimiterValue = "")
 
         val testFunction = FunSpec.builder("`${method.name} reproducer $identifier`")
             .addAnnotation(ClassName("org.junit.jupiter.api", "Test"))
             .returns(Unit::class)
-            .addCode(code)
+            .addCode(testCode)
             .build()
 
         val objectSpec = TypeSpec.objectBuilder("Reproducer_$identifier")
@@ -22,6 +28,8 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
 
         val fileSpec = FileSpec.builder(packageName, "")
             .addType(objectSpec)
+            .addTypes(additionalObjects)
+            .addFunctions(additionalFunctions)
 
         imports.forEach {
             fileSpec.addImport(it.packageName, it.className)
