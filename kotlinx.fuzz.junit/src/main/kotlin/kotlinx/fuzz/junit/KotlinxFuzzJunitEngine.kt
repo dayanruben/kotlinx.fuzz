@@ -129,7 +129,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInMethod(method: Method, engineDescriptor: EngineDescriptor) {
-        if (!method.isFuzzTarget()) {
+        if (!method.isFuzzTarget(config.supportJazzerTargets)) {
             return
         }
 
@@ -142,14 +142,34 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
-        ReflectionSupport.findAllClassesInClasspathRoot(uri, ::isKFuzzTestContainer) { true }
-            .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config, isRegression) }
+        ReflectionSupport.findAllClassesInClasspathRoot(
+            uri,
+            { isKFuzzTestContainer(it, config.supportJazzerTargets) }) { true }
+            .map { klass ->
+                ClassTestDescriptor(
+                    klass,
+                    engineDescriptor,
+                    config,
+                    isRegression,
+                    supportJazzerTargets = config.supportJazzerTargets
+                )
+            }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
-        ReflectionSupport.findAllClassesInPackage(packageName, ::isKFuzzTestContainer) { true }
-            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config, isRegression) }
+        ReflectionSupport.findAllClassesInPackage(
+            packageName,
+            { isKFuzzTestContainer(it, config.supportJazzerTargets) }) { true }
+            .map { aClass ->
+                ClassTestDescriptor(
+                    aClass!!,
+                    engineDescriptor,
+                    config,
+                    isRegression,
+                    supportJazzerTargets = config.supportJazzerTargets
+                )
+            }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
 
@@ -160,27 +180,31 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 engineDescriptor,
                 config,
                 isRegression,
+                supportJazzerTargets = config.supportJazzerTargets,
             ),
         )
     }
 
-    private fun isKFuzzTestContainer(klass: Class<*>): Boolean = ReflectionSupport.findMethods(
-        klass,
-        { method: Method -> method.isFuzzTarget() },
-        HierarchyTraversalMode.TOP_DOWN,
-    ).isNotEmpty()
-
-    private fun Method.isFuzzTarget(): Boolean =
-        AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                parameterCount == 1 &&
-                parameters[0].type == KFuzzer::class.java ||
-                (config.supportJazzerTargets && isJazzerFuzzTarget())
-
-    private fun Method.isJazzerFuzzTarget(): Boolean =
-        AnnotationSupport.isAnnotated(this, FuzzTest::class.java) && parameterCount == 1 &&
-                (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
 
     companion object {
+        private fun isKFuzzTestContainer(klass: Class<*>, supportJazzerTargets: Boolean): Boolean =
+            ReflectionSupport.findMethods(
+                klass,
+                { method: Method -> method.isFuzzTarget(supportJazzerTargets) },
+                HierarchyTraversalMode.TOP_DOWN,
+            ).isNotEmpty()
+
+
+        internal fun Method.isFuzzTarget(supportJazzerApi: Boolean): Boolean =
+            AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
+                    parameterCount == 1 &&
+                    parameters[0].type == KFuzzer::class.java ||
+                    (supportJazzerApi && isJazzerFuzzTarget())
+
+        private fun Method.isJazzerFuzzTarget(): Boolean =
+            AnnotationSupport.isAnnotated(this, FuzzTest::class.java) && parameterCount == 1 &&
+                    (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
+
         private fun KClass<*>.testInstance(): Any =
             objectInstance ?: java.getDeclaredConstructor().newInstance()
     }

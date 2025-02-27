@@ -1,5 +1,8 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.*
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
@@ -12,13 +15,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.SystemProperty
-import kotlinx.fuzz.addAnnotationParams
-import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.error
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -68,8 +64,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         // TODO: pass the config explicitly rather than through system properties
         val config = KFuzzConfig.fromSystemProperties()
-        val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
-        val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
+        val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let {
+            config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
+        } ?: config
+
+        val propertiesList =
+            methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = if (isDebugMode()) {
             getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
