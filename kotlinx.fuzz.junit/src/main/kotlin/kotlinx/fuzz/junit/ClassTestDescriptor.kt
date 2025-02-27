@@ -12,7 +12,7 @@ internal class ClassTestDescriptor(
     parent: TestDescriptor,
     private val config: KFuzzConfig,
     private val isRegression: Boolean,
-    supportJazzerTargets: Boolean
+    supportJazzerTargets: Boolean,
 ) : AbstractTestDescriptor(
     parent.uniqueId.append("class", testClass.getName()),
     testClass.getSimpleName(),
@@ -23,7 +23,7 @@ internal class ClassTestDescriptor(
         addAllChildren(supportJazzerTargets)
     }
 
-    private fun addAllChildren(supportJazzerTargets: Boolean ) {
+    private fun addAllChildren(supportJazzerTargets: Boolean) {
         ReflectionUtils.findMethods(
             testClass,
             { method -> method.isFuzzTarget(supportJazzerTargets) },

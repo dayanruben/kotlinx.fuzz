@@ -6,13 +6,6 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.debug
-import kotlinx.fuzz.log.error
-import kotlinx.fuzz.reproducerPathOf
-import org.jetbrains.casr.adapter.CasrAdapter
 import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
@@ -24,6 +17,13 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
+import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.debug
+import kotlinx.fuzz.log.error
+import kotlinx.fuzz.reproducerPathOf
+import org.jetbrains.casr.adapter.CasrAdapter
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()

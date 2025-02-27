@@ -2,6 +2,9 @@ package kotlinx.fuzz.junit
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
+import java.lang.reflect.Method
+import java.net.URI
+import kotlin.reflect.KClass
 import kotlinx.coroutines.*
 import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
@@ -17,9 +20,6 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
-import java.lang.reflect.Method
-import java.net.URI
-import kotlin.reflect.KClass
 
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
@@ -151,7 +151,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                     engineDescriptor,
                     config,
                     isRegression,
-                    supportJazzerTargets = config.supportJazzerTargets
+                    supportJazzerTargets = config.supportJazzerTargets,
                 )
             }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
@@ -167,7 +167,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                     engineDescriptor,
                     config,
                     isRegression,
-                    supportJazzerTargets = config.supportJazzerTargets
+                    supportJazzerTargets = config.supportJazzerTargets,
                 )
             }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
@@ -185,7 +185,6 @@ class KotlinxFuzzJunitEngine : TestEngine {
         )
     }
 
-
     companion object {
         private fun isKFuzzTestContainer(klass: Class<*>, supportJazzerTargets: Boolean): Boolean =
             ReflectionSupport.findMethods(
@@ -194,16 +193,15 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
 
-
         internal fun Method.isFuzzTarget(supportJazzerApi: Boolean): Boolean =
             AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                    parameterCount == 1 &&
-                    parameters[0].type == KFuzzer::class.java ||
-                    (supportJazzerApi && isJazzerFuzzTarget())
+                parameterCount == 1 &&
+                parameters[0].type == KFuzzer::class.java ||
+                (supportJazzerApi && isJazzerFuzzTarget())
 
         private fun Method.isJazzerFuzzTarget(): Boolean =
             AnnotationSupport.isAnnotated(this, FuzzTest::class.java) && parameterCount == 1 &&
-                    (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
+                (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
 
         private fun KClass<*>.testInstance(): Any =
             objectInstance ?: java.getDeclaredConstructor().newInstance()
