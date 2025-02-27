@@ -15,7 +15,7 @@ class ListAnyReproducerWriter(
     private val template: ReproducerTestTemplate,
     private val instance: Any,
     private val method: Method,
-) : CrashReproducerWriter {
+) : CrashReproducerWriter(template, method) {
     private fun arrayToString(executionResult: ExecutionResult): String =
         when {
             executionResult.typeName.startsWith("Boolean") ->
