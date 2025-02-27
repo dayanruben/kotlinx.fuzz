@@ -3,12 +3,9 @@ package kotlinx.fuzz.gradle.junit
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
-import kotlinx.fuzz.IgnoreFailures
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.config.JazzerConfig
-import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.coroutines.*
+import kotlinx.fuzz.*
+import kotlinx.fuzz.config.*
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -68,16 +65,23 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
-        root.children.forEach { child -> executeImpl(request, child) }
+
+        val dispatcher = Dispatchers.Default.limitedParallelism(config.threads, "kotlinx.fuzz")
+        runBlocking(dispatcher) {
+            root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
+        }
+
         fuzzEngine.finishExecution()
     }
 
-    private fun handleContainer(request: ExecutionRequest, descriptor: TestDescriptor) {
+    private suspend fun handleContainer(
+        request: ExecutionRequest,
+        descriptor: TestDescriptor,
+    ): Unit = coroutineScope {
         request.engineExecutionListener.executionStarted(descriptor)
-        descriptor.children.forEach { child -> executeImpl(request, child) }
+        descriptor.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
         request.engineExecutionListener.executionFinished(
-            descriptor,
-            TestExecutionResult.successful(),
+            descriptor, TestExecutionResult.successful(),
         )
     }
 
@@ -91,7 +95,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         else -> TestExecutionResult.failed(finding)
     }
 
-    private fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
+    private suspend fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
         when (descriptor) {
             is ClassTestDescriptor -> handleContainer(request, descriptor)
             is MethodRegressionTestDescriptor -> handleContainer(request, descriptor)
@@ -145,7 +149,14 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInClass(javaClass: Class<*>, engineDescriptor: TestDescriptor) {
-        engineDescriptor.addChild(ClassTestDescriptor(javaClass, engineDescriptor, config, isRegression))
+        engineDescriptor.addChild(
+            ClassTestDescriptor(
+                javaClass,
+                engineDescriptor,
+                config,
+                isRegression,
+            ),
+        )
     }
 
     companion object {
@@ -162,6 +173,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 parameters.size == 1 &&
                 parameters[0].type == KFuzzer::class.java
 
-        private fun KClass<*>.testInstance(): Any = objectInstance ?: java.getDeclaredConstructor().newInstance()
+        private fun KClass<*>.testInstance(): Any =
+            objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
 }
