@@ -6,16 +6,13 @@ import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.writeText
 
-class ByteArrayReproducerWriter(private val template: ReproducerTestTemplate, private val method: Method) : CrashReproducerWriter {
+class ByteArrayReproducerWriter(private val template: ReproducerTestTemplate, private val method: Method) :
+    CrashReproducerWriter(template, method) {
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val instanceName = method.declaringClass.kotlin.objectInstance?.let {
-            method.declaringClass.kotlin.simpleName
-        } ?: "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
-
         val code = CodeBlock.builder()
             .addStatement(
-                "$instanceName.`${method.name}`(KFuzzerImpl(byteArrayOf(${input.joinToString(", ")})))",
+                "${method.getInstanceString()}.`${method.name}`(KFuzzerImpl(byteArrayOf(${input.joinToString(", ")})))",
             )
             .build()
 
