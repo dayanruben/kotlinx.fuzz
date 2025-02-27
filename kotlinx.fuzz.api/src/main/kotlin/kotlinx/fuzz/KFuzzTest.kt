@@ -2,6 +2,7 @@ package kotlinx.fuzz
 
 import kotlin.time.Duration
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.config.TargetConfig
 import org.junit.platform.commons.annotation.Testable
 
@@ -29,7 +30,7 @@ annotation class KFuzzTest(
     val dumpCoverage: Boolean = TargetConfig.Defaults.DUMP_COVERAGE,
 )
 
-fun KFuzzConfig.addAnnotationParams(annotation: KFuzzTest): KFuzzConfig = KFuzzConfig.fromAnotherConfig(this)
+fun KFuzzConfig.addAnnotationParams(annotation: KFuzzTest): KFuzzConfig = KFuzzConfigBuilder.fromAnotherConfig(this)
     .editOverride {
         target.keepGoing = newUnlessDefault(
             old = this@addAnnotationParams.target.keepGoing,
@@ -41,8 +42,8 @@ fun KFuzzConfig.addAnnotationParams(annotation: KFuzzTest): KFuzzConfig = KFuzzC
             new = Duration.parse(annotation.maxFuzzTime),
             default = Duration.parse(TargetConfig.Defaults.MAX_FUZZ_TIME_STRING),
         )
-        target.instrument = this@addAnnotationParams.target.instrument + annotation.instrument
-        target.customHookExcludes = this@addAnnotationParams.target.customHookExcludes + annotation.customHookExcludes
+        global.instrument = this@addAnnotationParams.global.instrument + annotation.instrument
+        global.customHookExcludes = this@addAnnotationParams.global.customHookExcludes + annotation.customHookExcludes
         target.dumpCoverage = newUnlessDefault(
             old = this@addAnnotationParams.target.dumpCoverage,
             new = annotation.dumpCoverage,

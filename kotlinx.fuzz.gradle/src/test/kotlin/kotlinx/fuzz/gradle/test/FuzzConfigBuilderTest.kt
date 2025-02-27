@@ -19,7 +19,7 @@ object FuzzConfigBuilderTest {
         assertThrows<IllegalArgumentException> {
             KFuzzConfigBuilder(emptyMap()).editOverride {
                 target.maxFuzzTime = 0.seconds
-                target.instrument = emptyList()
+                global.instrument = emptyList()
                 global.workDir = Path("test")
                 global.reproducerDir = Path("test")
             }.build()
@@ -30,7 +30,7 @@ object FuzzConfigBuilderTest {
     fun `enough set`() {
         assertDoesNotThrow {
             KFuzzConfigBuilder(emptyMap()).editOverride {
-                target.instrument = listOf("1", "2")
+                global.instrument = listOf("1", "2")
                 target.maxFuzzTime = 30.seconds
                 global.workDir = Path("test")
                 global.reproducerDir = Path("test")
@@ -44,12 +44,12 @@ object FuzzConfigBuilderTest {
             KFuzzConfigBuilder(emptyMap()).editOverride {
                 engine.apply {
                     libFuzzerRssLimitMb = 5
-                    enableLogging = false
                 }
+                global.detailedLogging = false
                 global.hooks = true
                 target.keepGoing = 339
-                target.instrument = listOf()
-                target.customHookExcludes = listOf("exclude")
+                global.instrument = listOf()
+                global.customHookExcludes = listOf("exclude")
                 target.maxFuzzTime = 1000.seconds
                 global.workDir = Path("test")
                 global.reproducerDir = Path("test")

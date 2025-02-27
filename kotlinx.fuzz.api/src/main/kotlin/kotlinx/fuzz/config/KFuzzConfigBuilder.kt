@@ -2,6 +2,19 @@ package kotlinx.fuzz.config
 
 import kotlin.reflect.KProperty
 
+/*
+How to add a new property:
+ - If you want to add it to existing config set (e.g. global / target / ...):
+    - Add it to the interface and to interface Impl similary to existing ones
+    - Add it in plugin DSL if you want to let the user configure it
+ - If you want to add a new config set:
+    - Make a new interface and its impl, make sure impl takes [KFuzzConfigBuilder] as ctor argument
+    - Add it to [KFuzzConfig] interface
+    - Add its impl to [KFuzzConfigBuilder.KFuzzConfigImpl]
+    - If you want, add it to DSL
+ - If you add it to DSL, then also add it to [FuzzConfigDSLTest]
+ */
+
 class KFuzzConfigBuilder(
     private val propertiesMap: Map<String, String>,
 ) {
@@ -121,6 +134,10 @@ class KFuzzConfigBuilder(
             check(isBuilt) { "cannot get properties map, config is not built yet!" }
             return delegatesMap.values.associate { it.name to it.getStringValue() }
         }
+    }
+
+    companion object {
+        fun fromAnotherConfig(config: KFuzzConfig): KFuzzConfigBuilder = KFuzzConfigBuilder(config.toPropertiesMap())
     }
 
     inner class KFuzzPropProvider<T : Any>(

@@ -13,7 +13,6 @@ interface KFuzzConfig {
 
     companion object {
         const val PROPERTY_NAME_PREFIX = "kotlinx.fuzz."
-        fun fromSystemProperties(): KFuzzConfigBuilder = KFuzzConfigBuilder(getSystemPropertiesMap())
-        fun fromAnotherConfig(config: KFuzzConfig): KFuzzConfigBuilder = KFuzzConfigBuilder(config.toPropertiesMap())
+        fun fromSystemProperties(): KFuzzConfig = KFuzzConfigBuilder(getSystemPropertiesMap()).build()
     }
 }

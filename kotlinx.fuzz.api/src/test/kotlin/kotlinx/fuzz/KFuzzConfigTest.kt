@@ -4,7 +4,6 @@ import kotlin.io.path.Path
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.time.Duration
-import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 
 class KFuzzConfigTest {
@@ -36,7 +35,7 @@ class KFuzzConfigTest {
         val config = KFuzzConfigBuilder(props)
             .editFallback { global.workDir = Path("bad") }
             .build()
-        val configClone = KFuzzConfig.fromAnotherConfig(config)
+        val configClone = KFuzzConfigBuilder.fromAnotherConfig(config)
             .editOverride { target.maxFuzzTime = Duration.parse("5s") }
             .build()
         val actualWorkDirString = configClone.global.workDir.fileName.toString()

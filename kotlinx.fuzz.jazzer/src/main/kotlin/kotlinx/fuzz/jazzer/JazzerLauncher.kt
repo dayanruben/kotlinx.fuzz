@@ -27,7 +27,7 @@ import org.jetbrains.casr.adapter.CasrAdapter
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
-    private val config = KFuzzConfig.fromSystemProperties().build()
+    private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = config.engine as JazzerConfig
     private var oldRepresentatives: Int? = null  // Number of clusters initially, so that keepGoing will depend inly on new findings
         set(value) {
@@ -136,9 +136,9 @@ object JazzerLauncher {
         Log.fixOutErr(System.out, System.err)
 
         Opt.hooks.setIfDefault(config.global.hooks)
-        Opt.instrumentationIncludes.setIfDefault(config.target.instrument)
-        Opt.customHookIncludes.setIfDefault(config.target.instrument)
-        Opt.customHookExcludes.setIfDefault(config.target.customHookExcludes)
+        Opt.instrumentationIncludes.setIfDefault(config.global.instrument)
+        Opt.customHookIncludes.setIfDefault(config.global.instrument)
+        Opt.customHookExcludes.setIfDefault(config.global.customHookExcludes)
         Opt.keepGoing.setIfDefault(config.target.keepGoing)
         Opt.reproducerPath.setIfDefault(config.global.reproducerDir.absolutePathString())
 

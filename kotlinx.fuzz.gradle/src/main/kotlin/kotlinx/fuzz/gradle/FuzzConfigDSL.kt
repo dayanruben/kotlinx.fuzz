@@ -23,6 +23,7 @@ import kotlinx.fuzz.config.KFuzzConfigBuilder
  * @property reproducerDir Directory for crash reproducers. Default: {workDir}/reproducers
  * @property hooks Whether to apply custom hooks (currently unsupported). Default: true
  * @property logLevel Sets the logging level for kotlinx.fuzz library. Default: WARN
+ * @property detailedLogging Forwards logs from fuzzing engine. Default: false
  * @property maxFuzzTimePerTarget Max time to fuzz each @KFuzzTest. Default: 1 minute
  * @property keepGoing How many crashes to find before stopping fuzzing, or 0 for unlimited. Default: 0
  * @property instrument Which packages to instrument with coverage tracking. Should include your files.
@@ -43,14 +44,15 @@ open class FuzzConfigDSL(
     var reproducerDir by KFConfigDelegate { global::reproducerDir }
     var hooks by KFConfigDelegate { global::hooks }
     var logLevel by KFConfigDelegate { global::logLevel }
+    var detailedLogging by KFConfigDelegate { global::detailedLogging }
 
     // ========== target ==========
     var maxFuzzTimePerTarget by KFConfigDelegate { target::maxFuzzTime }
     var keepGoing by KFConfigDelegate { target::keepGoing }
 
     // TODO: default to project packages?
-    var instrument by KFConfigDelegate { target::instrument }
-    var customHookExcludes by KFConfigDelegate { target::customHookExcludes }
+    var instrument by KFConfigDelegate { global::instrument }
+    var customHookExcludes by KFConfigDelegate { global::customHookExcludes }
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
     private val builtConfig: KFuzzConfig by lazy { builder.build() }
 
@@ -66,7 +68,6 @@ open class FuzzConfigDSL(
      */
     inner class JazzerConfigDSL : EngineConfigDSL {
         var libFuzzerRssLimit by KFConfigDelegate { engine::libFuzzerRssLimitMb }
-        var enableLogging by KFConfigDelegate { engine::enableLogging }
     }
 
     /**

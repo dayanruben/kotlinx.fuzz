@@ -19,7 +19,7 @@ object AnnotationsTest {
     fun setup() {
         writeToSystemProperties {
             target.maxFuzzTime = 10.seconds
-            target.instrument = listOf("kotlinx.fuzz.test.**")
+            global.instrument = listOf("kotlinx.fuzz.test.**")
             global.workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             global.reproducerDir = global.workDir.resolve("reproducers")
         }

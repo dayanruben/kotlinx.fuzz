@@ -24,7 +24,7 @@ object FuzzConfigDsltest {
         val expectedConfig = KFuzzConfigBuilder(emptyMap()).editOverride {
             global.workDir = Path(".")
             global.reproducerDir = Path(".")
-            target.instrument = emptyList()
+            global.instrument = emptyList()
         }.build()
         assertEquals(expectedConfig.global.workDir, actualConfig.global.workDir)
     }
@@ -47,7 +47,7 @@ object FuzzConfigDsltest {
 
                 engine {
                     libFuzzerRssLimit = 5
-                    enableLogging = true
+                    detailedLogging = true
                 }
 
                 coverage {

@@ -69,7 +69,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val javaCommand = System.getProperty("java.home") + "/bin/java"
 
         // TODO: pass the config explicitly rather than through system properties
-        val config = KFuzzConfig.fromSystemProperties().build()
+        val config = KFuzzConfig.fromSystemProperties()
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
@@ -146,12 +146,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val stdoutStream = config.logsDir.resolve(stdout).outputStream()
         val stderrStream = config.logsDir.resolve(stderr).outputStream()
         val stdoutThread = logProcessStream(process.inputStream, stdoutStream) {
-            if (jazzerConfig.enableLogging) {
+            if (config.global.detailedLogging) {
                 log.info(it)
             }
         }
         val stderrThread = logProcessStream(process.errorStream, stderrStream) {
-            if (jazzerConfig.enableLogging) {
+            if (config.global.detailedLogging) {
                 log.info(it)
             }
         }

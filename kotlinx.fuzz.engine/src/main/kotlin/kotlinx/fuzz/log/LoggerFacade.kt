@@ -12,7 +12,6 @@ import org.slf4j.event.Level
 object LoggerFacade {
     val LOG_LEVEL by lazy {
         KFuzzConfig.fromSystemProperties()
-            .build()
             .global
             .logLevel
             .toSLF4JLevel()

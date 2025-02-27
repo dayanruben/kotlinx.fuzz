@@ -8,36 +8,56 @@ import kotlin.io.path.absolutePathString
 interface GlobalConfig {
     val workDir: Path
     val reproducerDir: Path
+    val instrument: List<String>
+    val customHookExcludes: List<String>
     val hooks: Boolean
     val logLevel: LogLevel
     val regressionEnabled: Boolean
+    val detailedLogging: Boolean
 }
 
 class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : GlobalConfig {
-    override var workDir by builder.KFuzzPropProvider<Path>(
+    override var workDir: Path by builder.KFuzzPropProvider(
         nameSuffix = "workDir",
-        fromString = { Path(it) },
         intoString = { it.absolutePathString() },
+        fromString = { Path(it).absolute() },
     )
-    override var logLevel by builder.KFuzzPropProvider<LogLevel>(
+    override var logLevel: LogLevel by builder.KFuzzPropProvider(
         nameSuffix = "logLevel",
         intoString = { it.toString() },
         fromString = { LogLevel.valueOf(it) },
         default = LogLevel.WARN,
     )
-    override var reproducerDir by builder.KFuzzPropProvider<Path>(
+    override var reproducerDir: Path by builder.KFuzzPropProvider(
         nameSuffix = "reproducerDir",
         intoString = { it.absolutePathString() },
         fromString = { Path(it).absolute() },
     )
-    override var hooks by builder.KFuzzPropProvider<Boolean>(
+    override var instrument: List<String> by builder.KFuzzPropProvider(
+        nameSuffix = "instrument",
+        intoString = { it.joinToString(",") },
+        fromString = { it.split(",") },
+    )
+    override var customHookExcludes: List<String> by builder.KFuzzPropProvider(
+        nameSuffix = "customHookExcludes",
+        intoString = { it.joinToString(",") },
+        fromString = { it.split(",") },
+        default = emptyList(),
+    )
+    override var hooks: Boolean by builder.KFuzzPropProvider(
         nameSuffix = "enableHooks",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },
         default = true,
     )
-    override var regressionEnabled by builder.KFuzzPropProvider<Boolean>(
+    override var regressionEnabled: Boolean by builder.KFuzzPropProvider(
         nameSuffix = "regression",
+        intoString = { it.toString() },
+        fromString = { it.toBooleanStrict() },
+        default = false,
+    )
+    override var detailedLogging: Boolean by builder.KFuzzPropProvider(
+        "detailedLogging",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },
         default = false,

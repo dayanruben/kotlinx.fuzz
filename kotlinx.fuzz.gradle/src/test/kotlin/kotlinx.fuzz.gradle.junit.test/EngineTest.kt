@@ -84,7 +84,7 @@ object EngineTest {
             global.workDir = kotlin.io.path.createTempDirectory("fuzz-test")
             global.reproducerDir = global.workDir.resolve("reproducers")
             target.maxFuzzTime = 5.seconds
-            target.instrument = listOf("kotlinx.fuzz.test.**")
+            global.instrument = listOf("kotlinx.fuzz.test.**")
             target.keepGoing = 2
         }
     }

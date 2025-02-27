@@ -29,7 +29,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
     // To prevent failures due to lack of necessary properties, config is read lazily
     private val config: KFuzzConfig by lazy {
-        KFuzzConfig.fromSystemProperties().build()
+        KFuzzConfig.fromSystemProperties()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
         when (config.engine) {

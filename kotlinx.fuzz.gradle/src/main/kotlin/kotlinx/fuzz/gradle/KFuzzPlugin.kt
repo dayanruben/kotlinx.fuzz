@@ -4,6 +4,7 @@ import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
 import org.gradle.api.Plugin
@@ -35,11 +36,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         }
 
         val projectPropertiesMap: Map<String, String> = project.properties.mapValues { (_, v) -> v.toString() }
-        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>(
-            "fuzzConfig",
-            FuzzConfigDSL::class,
-            projectPropertiesMap,
-        )
+        val fuzzConfigDSL = project.extensions.create<FuzzConfigDSL>("fuzzConfig", projectPropertiesMap)
         project.preconfigureFuzzConfigDSL(fuzzConfigDSL)
 
         project.tasks.withType<Test>().configureEach {
@@ -87,7 +84,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             testClassesDirs = defaultTCD
             outputs.upToDateWhen { false }
             doFirst {
-                val regressionConfig = KFuzzConfig.fromAnotherConfig(fuzzConfig).editOverride {
+                val regressionConfig = KFuzzConfigBuilder.fromAnotherConfig(fuzzConfig).editOverride {
                     global.regressionEnabled = true
                 }.build()
                 systemProperties(regressionConfig.toPropertiesMap())
