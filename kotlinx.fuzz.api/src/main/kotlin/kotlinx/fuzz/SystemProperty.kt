@@ -16,6 +16,7 @@ enum class SystemProperty(name: String) {
     REPRODUCER_PATH("kotlinx.fuzz.reproducerPath"),
     THREADS("kotlinx.fuzz.threads"),
     WORK_DIR("kotlinx.fuzz.workDir"),
+    SUPPORT_JAZZER_TARGETS("kotlinx.fuzz.supportJazzerTargets"),
     ;
 
     fun get(): String? = System.getProperty(name)

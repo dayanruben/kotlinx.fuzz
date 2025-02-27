@@ -1,8 +1,7 @@
 package kotlinx.fuzz.junit
 
-import java.lang.reflect.Method
-import java.net.URI
-import kotlin.reflect.KClass
+import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import com.code_intelligence.jazzer.junit.FuzzTest
 import kotlinx.coroutines.*
 import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
@@ -18,6 +17,9 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import java.lang.reflect.Method
+import java.net.URI
+import kotlin.reflect.KClass
 
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
@@ -140,13 +142,13 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
-        ReflectionSupport.findAllClassesInClasspathRoot(uri, isKFuzzTestContainer) { true }
+        ReflectionSupport.findAllClassesInClasspathRoot(uri, ::isKFuzzTestContainer) { true }
             .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config, isRegression) }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
-        ReflectionSupport.findAllClassesInPackage(packageName, isKFuzzTestContainer) { true }
+        ReflectionSupport.findAllClassesInPackage(packageName, ::isKFuzzTestContainer) { true }
             .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config, isRegression) }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
@@ -162,20 +164,23 @@ class KotlinxFuzzJunitEngine : TestEngine {
         )
     }
 
+    private fun isKFuzzTestContainer(klass: Class<*>): Boolean = ReflectionSupport.findMethods(
+        klass,
+        { method: Method -> method.isFuzzTarget() },
+        HierarchyTraversalMode.TOP_DOWN,
+    ).isNotEmpty()
+
+    private fun Method.isFuzzTarget(): Boolean =
+        AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
+                parameterCount == 1 &&
+                parameters[0].type == KFuzzer::class.java ||
+                (config.supportJazzerTargets && isJazzerFuzzTarget())
+
+    private fun Method.isJazzerFuzzTarget(): Boolean =
+        AnnotationSupport.isAnnotated(this, FuzzTest::class.java) && parameterCount == 1 &&
+                (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
+
     companion object {
-        val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
-            ReflectionSupport.findMethods(
-                klass,
-                { method: Method -> method.isFuzzTarget() },
-                HierarchyTraversalMode.TOP_DOWN,
-            ).isNotEmpty()
-        }
-
-        private fun Method.isFuzzTarget(): Boolean =
-            AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                parameters.size == 1 &&
-                parameters[0].type == KFuzzer::class.java
-
         private fun KClass<*>.testInstance(): Any =
             objectInstance ?: java.getDeclaredConstructor().newInstance()
     }
