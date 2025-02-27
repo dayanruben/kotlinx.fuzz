@@ -11,11 +11,11 @@ import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.jvm.jvmErasure
 import kotlinx.fuzz.KFuzzer
 
-class ListAnyReproducer(
-    private val template: ReproducerTemplate,
+class ListAnyReproducerWriter(
+    private val template: ReproducerTestTemplate,
     private val instance: Any,
     private val method: Method,
-) : CrashReproducer {
+) : CrashReproducerWriter {
     private fun arrayToString(executionResult: ExecutionResult): String =
         when {
             executionResult.typeName.startsWith("Boolean") ->

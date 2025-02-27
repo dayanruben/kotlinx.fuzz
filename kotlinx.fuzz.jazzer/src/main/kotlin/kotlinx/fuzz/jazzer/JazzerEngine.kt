@@ -19,7 +19,7 @@ import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.reproduction.CrashReproducer
+import kotlinx.fuzz.reproduction.CrashReproducerWriter
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -37,9 +37,9 @@ internal val KFuzzConfig.exceptionsDir: Path
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = JazzerConfig.fromSystemProperties()
-    private lateinit var crashReproducer: CrashReproducer
+    private lateinit var crashReproducer: CrashReproducerWriter
 
-    override fun setReproducer(reproducer: CrashReproducer) {
+    override fun setReproducer(reproducer: CrashReproducerWriter) {
         crashReproducer = reproducer
     }
 

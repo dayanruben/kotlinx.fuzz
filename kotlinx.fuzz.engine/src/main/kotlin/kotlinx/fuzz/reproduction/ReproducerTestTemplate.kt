@@ -4,7 +4,7 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.TypeSpec
 
-interface ReproducerTemplate {
+interface ReproducerTestTemplate {
     fun buildReproducer(
         identifier: String,
         testCode: CodeBlock,

@@ -1,7 +1,7 @@
 package kotlinx.fuzz
 
 import java.lang.reflect.Method
-import kotlinx.fuzz.reproduction.CrashReproducer
+import kotlinx.fuzz.reproduction.CrashReproducerWriter
 
 interface KFuzzEngine {
     /**
@@ -26,7 +26,7 @@ interface KFuzzEngine {
      *
      * @param reproducer
      */
-    fun setReproducer(reproducer: CrashReproducer)
+    fun setReproducer(reproducer: CrashReproducerWriter)
 
     /**
      * Runs any needed postwork, like rearranging crash files
