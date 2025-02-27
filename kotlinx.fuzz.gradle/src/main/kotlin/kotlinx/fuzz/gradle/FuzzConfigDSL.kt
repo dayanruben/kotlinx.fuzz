@@ -24,6 +24,7 @@ import kotlinx.fuzz.config.KFuzzConfigBuilder
  * @property hooks Whether to apply custom hooks (currently unsupported). Default: true
  * @property logLevel Sets the logging level for kotlinx.fuzz library. Default: WARN
  * @property detailedLogging Forwards logs from fuzzing engine. Default: false
+ * @property threads How many threads to use for parallel fuzzing. Default: #cpu_cores / 2
  * @property maxFuzzTimePerTarget Max time to fuzz each @KFuzzTest. Default: 1 minute
  * @property keepGoing How many crashes to find before stopping fuzzing, or 0 for unlimited. Default: 0
  * @property instrument Which packages to instrument with coverage tracking. Should include your files.
@@ -45,6 +46,7 @@ open class FuzzConfigDSL(
     var hooks by KFConfigDelegate { global::hooks }
     var logLevel by KFConfigDelegate { global::logLevel }
     var detailedLogging by KFConfigDelegate { global::detailedLogging }
+    var threads by KFConfigDelegate { global::threads }
 
     // ========== target ==========
     var maxFuzzTimePerTarget by KFConfigDelegate { target::maxFuzzTime }

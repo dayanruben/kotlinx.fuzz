@@ -4,6 +4,7 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
 import kotlin.io.path.absolutePathString
+import kotlin.math.max
 
 interface GlobalConfig {
     val workDir: Path
@@ -14,6 +15,7 @@ interface GlobalConfig {
     val logLevel: LogLevel
     val regressionEnabled: Boolean
     val detailedLogging: Boolean
+    val threads: Int
 }
 
 class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : GlobalConfig {
@@ -57,10 +59,17 @@ class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Globa
         default = false,
     )
     override var detailedLogging: Boolean by builder.KFuzzPropProvider(
-        "detailedLogging",
+        nameSuffix = "detailedLogging",
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },
         default = false,
+    )
+    override var threads: Int by builder.KFuzzPropProvider(
+        nameSuffix = "threads",
+        intoString = { it.toString() },
+        fromString = { it.toInt() },
+        validate = { require(it > 0) { "'threads' must be positive" } },
+        default = max(1, Runtime.getRuntime().availableProcessors() / 2),
     )
 }
 

@@ -38,6 +38,8 @@ object FuzzConfigDsltest {
                 reproducerDir = Path(".")
                 hooks = true
                 logLevel = LogLevel.DEBUG
+                detailedLogging = true
+                threads = 5
 
                 maxFuzzTimePerTarget = 1.seconds
                 keepGoing = 5
@@ -47,7 +49,6 @@ object FuzzConfigDsltest {
 
                 engine {
                     libFuzzerRssLimit = 5
-                    detailedLogging = true
                 }
 
                 coverage {
