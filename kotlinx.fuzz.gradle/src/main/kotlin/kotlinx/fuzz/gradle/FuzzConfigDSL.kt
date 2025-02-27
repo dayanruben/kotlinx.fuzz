@@ -66,7 +66,6 @@ open class FuzzConfigDSL(
 
     /**
      * @property libFuzzerRssLimit LibFuzzer rss limit parameter. Default: 0
-     * @property enableLogging Whether to enable logging in Jazzer. Default: true
      */
     inner class JazzerConfigDSL : EngineConfigDSL {
         var libFuzzerRssLimit by KFConfigDelegate { engine::libFuzzerRssLimitMb }
