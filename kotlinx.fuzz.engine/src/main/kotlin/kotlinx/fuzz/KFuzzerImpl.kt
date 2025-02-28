@@ -62,20 +62,49 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    private fun fitIntoRange(
-        value: BigDecimal,
-        oldMin: BigDecimal,
-        oldMax: BigDecimal,
-        newMin: BigDecimal,
-        newMax: BigDecimal,
-    ): BigDecimal {
-        val normalized = value.subtract(oldMin, MathContext.DECIMAL128)
-            .divide(oldMax.subtract(oldMin, MathContext.DECIMAL128), MathContext.DECIMAL128)
+    private inline fun<reified T : Comparable<T>> fitIntoRange(
+        value: T,
+        newRange: ClosedFloatingPointRange<T>,
+        context: MathContext = MathContext.DECIMAL128,
+    ): T {
+        when (value) {
+            is Float -> if (value.isInfinite() || value.isNaN()) {
+                return value
+            }
+            is Double -> if (value.isInfinite() || value.isNaN()) {
+                return value
+            }
+        }
 
-        return newMin.add(
-            normalized.multiply(newMax.subtract(newMin, MathContext.DECIMAL128), MathContext.DECIMAL128),
-            MathContext.DECIMAL128,
-        )
+        val bigDecimalValue = when (value) {
+            is Float -> value.toBigDecimal()
+            is Double -> value.toBigDecimal()
+            else -> error("Not float type")
+        }
+
+        val oldUpperBound = when (T::class) {
+            Float::class -> Float.MAX_VALUE.toBigDecimal()
+            else -> Double.MAX_VALUE.toBigDecimal()
+        }
+
+        val normalized = bigDecimalValue.add(oldUpperBound, context).divide(oldUpperBound.multiply(BigDecimal(2), context), context)
+
+        val newLowerBound = when (T::class) {
+            Float::class -> (newRange.start as Float).toBigDecimal()
+            else -> (newRange.start as Double).toBigDecimal()
+        }
+
+        val newUpperBound = when (T::class) {
+            Float::class -> (newRange.endInclusive as Float).toBigDecimal()
+            else -> (newRange.endInclusive as Double).toBigDecimal()
+        }
+
+        val result = newLowerBound.add(normalized.multiply(newUpperBound.subtract(newLowerBound, context), context), context)
+
+        return when (T::class) {
+            Float::class -> result.toFloat() as T
+            else -> result.toDouble() as T
+        }
     }
 
     /**
@@ -258,14 +287,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
     override fun float(range: FloatRange): Float {
         require(range.isNotEmpty()) { "range is empty" }
-
-        return fitIntoRange(
-            iterator.readFloat().toBigDecimal(),
-            Float.MIN_VALUE.toBigDecimal(),
-            Float.MAX_VALUE.toBigDecimal(),
-            range.start.toBigDecimal(),
-            range.endInclusive.toBigDecimal(),
-        ).toFloat()
+        return fitIntoRange(iterator.readFloat(), range)
     }
 
     override fun floatOrNull(range: FloatRange): Float? {
@@ -298,14 +320,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
     override fun double(range: DoubleRange): Double {
         require(range.isNotEmpty()) { "range is empty" }
-
-        return fitIntoRange(
-            iterator.readDouble().toBigDecimal(),
-            Double.MIN_VALUE.toBigDecimal(),
-            Double.MAX_VALUE.toBigDecimal(),
-            range.start.toBigDecimal(),
-            range.endInclusive.toBigDecimal(),
-        ).toDouble()
+        return fitIntoRange(iterator.readDouble(), range)
     }
 
     override fun doubleOrNull(range: DoubleRange): Double? {

@@ -246,20 +246,20 @@ interface KFuzzer {
      * insufficiently long. In this case it will be shorter.
      *
      * @param maxLength the maximum length of the array
-     * @param range denotes desired range for each value. Should be a subset of [Float.MIN_VALUE, Float.MAX_VALUE].
-     * [Float.MIN_VALUE, Float.MAX_VALUE] by default.
+     * @param range denotes desired range for each value. Should be a subset of [-Float.MAX_VALUE, Float.MAX_VALUE].
+     * [-Float.MAX_VALUE, Float.MAX_VALUE] by default.
      * @return nullable float array that has each value in given range
      */
-    fun floatsOrNull(maxLength: Int, range: FloatRange = Float.MIN_VALUE..Float.MAX_VALUE): FloatArray?
+    fun floatsOrNull(maxLength: Int, range: FloatRange = -Float.MAX_VALUE..Float.MAX_VALUE): FloatArray?
 
     /**
      * Consumes a not null double from the fuzzer input.
      *
-     * @param range denotes desired range for resulting value. Should be a subset of [Double.MIN_VALUE, Double.MAX_VALUE].
-     * [Double.MIN_VALUE, Double.MAX_VALUE] by default.
+     * @param range denotes desired range for resulting value. Should be a subset of [-Double.MAX_VALUE, Double.MAX_VALUE].
+     * [-Double.MAX_VALUE, Double.MAX_VALUE] by default.
      * @return double that has value in the given range
      */
-    fun double(range: DoubleRange = Double.MIN_VALUE..Double.MAX_VALUE): Double
+    fun double(range: DoubleRange = -Double.MAX_VALUE..Double.MAX_VALUE): Double
 
     /**
      * Consumes a nullable double from the fuzzer input.
