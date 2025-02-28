@@ -78,7 +78,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 systemProperties(fuzzConfig.toPropertiesMap() + (SystemProperty.REGRESSION.propertyName to "true"))
                 for (property in SystemProperty.values()) {
                     property.get()?.let {
-                        systemProperties[property.name] = property.get()
+                        systemProperties[property.propertyName] = property.get()
                     }
                 }
             }
