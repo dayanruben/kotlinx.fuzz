@@ -4,6 +4,7 @@ import kotlin.time.Duration.Companion.seconds
 plugins {
     kotlin("jvm") version "2.0.21"
     id("kotlinx.fuzz.gradle")
+    id("com.google.devtools.ksp") version "2.0.21-1.0.26"
     kotlin("plugin.serialization") version "2.0.20"
 }
 
@@ -17,6 +18,8 @@ dependencies {
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
+    implementation("org.jetbrains:kotlinx.fuzz.ksp-plugin")
+    ksp("org.jetbrains:kotlinx.fuzz.ksp-plugin")
 }
 
 fuzzConfig {
@@ -40,5 +43,9 @@ jacocoReport {
 }
 
 kotlin {
-    jvmToolchain(8)
+    jvmToolchain(11)
+}
+
+ksp {
+    arg("path", "/Users/Timur.Kudashev/IdeaProjects/kotlinx.fuzz/kotlinx.fuzz.test/build/fuzz/logs")
 }
