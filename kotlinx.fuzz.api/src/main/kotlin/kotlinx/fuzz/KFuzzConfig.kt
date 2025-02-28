@@ -125,7 +125,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
     )
 
     override fun toPropertiesMap(): Map<String, String> = configProperties()
-        .associate { it.systemProperty.name to it.stringValue }
+        .associate { it.systemProperty.propertyName to it.stringValue }
 
     private fun assertAllSet() {
         configProperties().forEach { it.assertIsSet() }
@@ -165,7 +165,7 @@ class KFuzzConfigImpl private constructor() : KFuzzConfig {
             wrapConfigErrors {
                 KFuzzConfigImpl().apply {
                     configProperties().forEach {
-                        val propertyKey = it.systemProperty.name
+                        val propertyKey = it.systemProperty.propertyName
                         it.setFromString(
                             properties[propertyKey] ?: error("map missing property $propertyKey"),
                         )
@@ -208,7 +208,7 @@ internal class KFuzzConfigProperty<T : Any> internal constructor(
     private val toString: (T) -> String,
     private val fromString: (String) -> T,
 ) : ReadWriteProperty<Any, T> {
-    private val name: String = systemProperty.name.substringAfterLast('.')
+    private val name: String = systemProperty.propertyName.substringAfterLast('.')
     private var cachedValue: T? = null
     val stringValue: String get() = toString(get())
 

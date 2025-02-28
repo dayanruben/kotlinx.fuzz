@@ -1,6 +1,6 @@
 package kotlinx.fuzz
 
-enum class SystemProperty(name: String) {
+enum class SystemProperty(val propertyName: String) {
     CUSTOM_HOOK_EXCLUDES("kotlinx.fuzz.customHookExcludes"),
     DUMP_COVERAGE("kotlinx.fuzz.dumpCoverage"),
     ENGINE("kotlinx.fuzz.engine"),
@@ -18,7 +18,7 @@ enum class SystemProperty(name: String) {
     WORK_DIR("kotlinx.fuzz.workDir"),
     ;
 
-    fun get(): String? = System.getProperty(name)
+    fun get(): String? = System.getProperty(propertyName)
 
-    fun get(default: String): String = System.getProperty(name, default)
+    fun get(default: String): String = System.getProperty(propertyName, default)
 }

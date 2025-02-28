@@ -43,8 +43,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.exceptionsDir.createDirectories()
     }
 
-    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
-
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
         val port = ServerSocket(0).use { it.localPort }
         Socket("127.0.0.1", intellijDebuggerDispatchPort).use { socket ->
@@ -71,11 +69,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
-        val debugOptions = if (isDebugMode()) {
-            getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
-        } else {
-            emptyList()
-        }
+        val debugOptions = SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()?.let { port ->
+            getDebugSetup(port.toInt(), method)
+        } ?: emptyList()
 
         val exitCode = ProcessBuilder(
             javaCommand,
