@@ -11,11 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.SystemProperty
-import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.*
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
 
@@ -40,6 +36,33 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
+        initialCrashDeduplication()
+    }
+
+    private fun initialCrashDeduplication() {
+        config.reproducerPath.listDirectoryEntries()
+            .filter { it.isDirectory() }
+            .forEach {classDir ->
+                classDir.listDirectoryEntries()
+                    .filter { it.isDirectory() }
+                    .forEach { methodDir ->
+                        flatten(methodDir)
+                        JazzerLauncher.clusterCrashes(methodDir)
+                    }
+            }
+        clusterCrashes()
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private fun flatten(dir: Path) {
+        Files.walk(dir).filter { it.isRegularFile() }.forEach {
+            val targetFile = dir.resolve(it.name)
+            if (targetFile.exists()) {
+                return@forEach
+            }
+            it.copyTo(targetFile)
+        }
+        dir.listDirectoryEntries().filter { it.isDirectory() }.forEach { it.deleteRecursively() }
     }
 
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
@@ -74,6 +97,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         val exitCode = ProcessBuilder(
             javaCommand,
+            "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),

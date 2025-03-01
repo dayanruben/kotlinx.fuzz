@@ -178,7 +178,7 @@ object JazzerLauncher {
         return mapping
     }
 
-    private fun clusterCrashes(directoryPath: Path): Int {
+    fun clusterCrashes(directoryPath: Path): Int {
         val stacktraceFiles = directoryPath.listStacktraces()
 
         val rawStackTraces = mutableListOf<String>()
