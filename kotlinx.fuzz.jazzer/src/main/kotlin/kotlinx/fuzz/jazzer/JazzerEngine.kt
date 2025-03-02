@@ -36,6 +36,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
+        config.reproducerPath.createDirectories()
         initialCrashDeduplication()
     }
 
