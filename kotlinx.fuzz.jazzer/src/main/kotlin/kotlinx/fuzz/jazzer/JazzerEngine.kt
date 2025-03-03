@@ -18,6 +18,7 @@ import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
+import java.lang.management.ManagementFactory
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
@@ -41,6 +42,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
     }
+
+    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
 
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
         val port = ServerSocket(0).use { it.localPort }
@@ -68,9 +71,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
-        val debugOptions = SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()?.let { port ->
-            getDebugSetup(port.toInt(), method)
-        } ?: emptyList()
+        val debugOptions = if (isDebugMode()) {
+            getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
+        } else {
+            emptyList()
+        }
 
         val exitCode = ProcessBuilder(
             javaCommand,
