@@ -24,6 +24,8 @@ private val Project.fuzzConfig: KFuzzConfig
         return dsl.build()
     }
 
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
+
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
     val log = Logging.getLogger(KFuzzPlugin::class.java)!!
@@ -71,6 +73,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -88,6 +91,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
                     global.regressionEnabled = true
                 }.build()
                 systemProperties(regressionConfig.toPropertiesMap())
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
