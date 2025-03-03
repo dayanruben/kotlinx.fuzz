@@ -4,7 +4,6 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
-import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
 import java.net.ServerSocket
 import java.net.Socket
@@ -43,12 +42,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
-        config.reproducerPath.createDirectories()
+        config.global.reproducerDir.createDirectories()
         initialCrashDeduplication()
     }
 
     private fun initialCrashDeduplication() {
-        config.reproducerPath.listDirectoryEntries()
+        config.global.reproducerDir.listDirectoryEntries()
             .filter { it.isDirectory() }
             .forEach {classDir ->
                 classDir.listDirectoryEntries()
