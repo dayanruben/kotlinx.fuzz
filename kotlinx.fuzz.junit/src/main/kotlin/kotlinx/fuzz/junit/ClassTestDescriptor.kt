@@ -1,6 +1,6 @@
 package kotlinx.fuzz.junit
 
-import kotlinx.fuzz.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine.Companion.isFuzzTarget
 import org.junit.platform.commons.util.ReflectionUtils
 import org.junit.platform.engine.TestDescriptor

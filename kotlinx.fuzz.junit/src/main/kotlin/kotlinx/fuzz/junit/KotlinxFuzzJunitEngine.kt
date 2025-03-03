@@ -7,6 +7,7 @@ import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.coroutines.*
 import kotlinx.fuzz.*
+import kotlinx.fuzz.config.*
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -30,16 +31,12 @@ class KotlinxFuzzJunitEngine : TestEngine {
         KFuzzConfig.fromSystemProperties()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
-        when (config.fuzzEngine) {
-            "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+        when (config.engine) {
+            is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
                 .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
-
-            else -> throw AssertionError("Unsupported fuzzer engine!")
         }
     }
-    private val isRegression: Boolean by lazy {
-        SystemProperty.REGRESSION.get().toBooleanOrFalse()
-    }
+    private val isRegression: Boolean by lazy { config.global.regressionEnabled }
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -71,7 +68,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
 
-        val dispatcher = Dispatchers.Default.limitedParallelism(config.threads, "kotlinx.fuzz")
+        val dispatcher = Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
             root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
         }
@@ -129,7 +126,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInMethod(method: Method, engineDescriptor: EngineDescriptor) {
-        if (!method.isFuzzTarget(config.supportJazzerTargets)) {
+        if (!method.isFuzzTarget(config.global.supportJazzerTargets)) {
             return
         }
 
@@ -144,14 +141,14 @@ class KotlinxFuzzJunitEngine : TestEngine {
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
         ReflectionSupport.findAllClassesInClasspathRoot(
             uri,
-            { isKFuzzTestContainer(it, config.supportJazzerTargets) }) { true }
+            { isKFuzzTestContainer(it, config.global.supportJazzerTargets) }) { true }
             .map { klass ->
                 ClassTestDescriptor(
                     klass,
                     engineDescriptor,
                     config,
                     isRegression,
-                    supportJazzerTargets = config.supportJazzerTargets,
+                    supportJazzerTargets = config.global.supportJazzerTargets,
                 )
             }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
@@ -160,14 +157,14 @@ class KotlinxFuzzJunitEngine : TestEngine {
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
         ReflectionSupport.findAllClassesInPackage(
             packageName,
-            { isKFuzzTestContainer(it, config.supportJazzerTargets) }) { true }
+            { isKFuzzTestContainer(it, config.global.supportJazzerTargets) }) { true }
             .map { aClass ->
                 ClassTestDescriptor(
                     aClass!!,
                     engineDescriptor,
                     config,
                     isRegression,
-                    supportJazzerTargets = config.supportJazzerTargets,
+                    supportJazzerTargets = config.global.supportJazzerTargets,
                 )
             }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
@@ -180,7 +177,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 engineDescriptor,
                 config,
                 isRegression,
-                supportJazzerTargets = config.supportJazzerTargets,
+                supportJazzerTargets = config.global.supportJazzerTargets,
             ),
         )
     }

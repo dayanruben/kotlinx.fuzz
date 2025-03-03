@@ -6,10 +6,11 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
-import kotlinx.fuzz.KFuzzConfigImpl
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
@@ -100,12 +101,17 @@ object EngineTest {
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            maxSingleTargetFuzzTime = 5.seconds
-            instrument = listOf("kotlinx.fuzz.test.**")
-            workDir = createTempDirectory("fuzz-test")
-            reproducerPath = workDir.resolve("reproducers")
-            keepGoing = 2
-            supportJazzerTargets = true
+            // subtle check that getValue() works before build()
+            with(global) {
+                workDir = createTempDirectory("fuzz-test")
+                reproducerDir = global.workDir.resolve("reproducers")
+                instrument = listOf("kotlinx.fuzz.test.**")
+                supportJazzerTargets = true
+            }
+            with(target) {
+                maxFuzzTime = 5.seconds
+                keepGoing = 2
+            }
         }
     }
 
@@ -125,6 +131,11 @@ object EngineTest {
             }
     }
 
+    // without cleanup, KFuzzConfigTest fails hehe
+    @AfterAll
+    @JvmStatic
+    fun cleanup() = cleanupSystemProperties()
+
     @Test
     fun `jazzer api support`() {
         val successTests = 2L
@@ -142,7 +153,19 @@ object EngineTest {
     }
 }
 
-internal fun writeToSystemProperties(block: KFuzzConfigImpl.() -> Unit) {
-    KFuzzConfigImpl.build(block).toPropertiesMap()
+fun writeToSystemProperties(config: KFuzzConfigBuilder.KFuzzConfigImpl.() -> Unit) {
+    KFuzzConfigBuilder(emptyMap())
+        .editOverride(config)
+        .build()
+        .toPropertiesMap()
         .forEach { (key, value) -> System.setProperty(key, value) }
+}
+
+fun cleanupSystemProperties() {
+    val needsCleanup = listOf(
+        "kotlinx.fuzz.workDir",
+        "kotlinx.fuzz.reproducerDir",
+        "kotlinx.fuzz.instrument",
+    )
+    needsCleanup.forEach { prop -> System.clearProperty(prop) }
 }

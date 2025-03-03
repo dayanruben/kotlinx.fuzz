@@ -30,6 +30,10 @@ gradlePlugin {
     }
 }
 
+tasks.test {
+    useJUnitPlatform()
+}
+
 /**
  * We need custom publishing setup here, as `gradlePlugin` automatically configures maven publication to include
  * necessary components
