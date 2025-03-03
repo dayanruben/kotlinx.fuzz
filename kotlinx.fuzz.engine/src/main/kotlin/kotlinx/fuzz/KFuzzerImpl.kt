@@ -72,7 +72,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private fun fitIntoFloatRange(
         value: Float,
         range: FloatRange,
-        context: MathContext = MathContext.DECIMAL128
+        context: MathContext = MathContext.DECIMAL128,
     ): Float {
         if (value.isInfinite() || value.isNaN()) {
             return value
@@ -81,11 +81,13 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         val normalized = value.toBigDecimal().add(Float.MAX_VALUE.toBigDecimal(), context)
             .divide(Float.MAX_VALUE.toBigDecimal().multiply(BigDecimal(2), context), context)
 
-        return range.start.toBigDecimal().add(
-            normalized.multiply(
-                range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context
-            ), context
-        ).toFloat()
+        return range.start.toBigDecimal()
+            .add(
+                normalized.multiply(
+                    range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context,
+                ), context,
+            )
+            .toFloat()
     }
 
     /**
@@ -98,7 +100,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
     private fun fitIntoDoubleRange(
         value: Double,
         range: DoubleRange,
-        context: MathContext = MathContext.DECIMAL128
+        context: MathContext = MathContext.DECIMAL128,
     ): Double {
         if (value.isInfinite() || value.isNaN()) {
             return value
@@ -107,11 +109,13 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         val normalized = value.toBigDecimal().add(Double.MAX_VALUE.toBigDecimal(), context)
             .divide(Double.MAX_VALUE.toBigDecimal().multiply(BigDecimal(2), context), context)
 
-        return range.start.toBigDecimal().add(
-            normalized.multiply(
-                range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context
-            ), context
-        ).toDouble()
+        return range.start.toBigDecimal()
+            .add(
+                normalized.multiply(
+                    range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context,
+                ), context,
+            )
+            .toDouble()
     }
 
     /**
@@ -540,7 +544,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
         fun readInt(): Int =
             (readByte().toInt() shl 24) or ((readByte().toInt() and 0xFF) shl 16) or
-                    ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
+                ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
 
         fun readLong(): Long = (readInt().toLong() shl 32) or (readInt().toLong() and 0xFF_FF_FF_FFL)
 
