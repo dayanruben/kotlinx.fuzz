@@ -70,9 +70,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
-        val debugOptions = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)?.let { port ->
-            getDebugSetup(port.toInt(), method)
-        } ?: emptyList()
+        val debugOptions = try {
+            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(), method)
+        } catch (e: Exception) {
+            emptyList()
+        }
 
         val exitCode = ProcessBuilder(
             javaCommand,

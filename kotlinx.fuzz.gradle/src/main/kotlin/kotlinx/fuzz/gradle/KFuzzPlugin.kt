@@ -18,13 +18,13 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
+
 private val Project.fuzzConfig: KFuzzConfig
     get() {
         val dsl = this.extensions.getByType<FuzzConfigDSL>()
         return dsl.build()
     }
-
-private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
 @Suppress("unused")
 abstract class KFuzzPlugin : Plugin<Project> {
