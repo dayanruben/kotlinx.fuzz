@@ -62,49 +62,56 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    private inline fun<reified T : Comparable<T>> fitIntoRange(
-        value: T,
-        newRange: ClosedFloatingPointRange<T>,
-        context: MathContext = MathContext.DECIMAL128,
-    ): T {
-        when (value) {
-            is Float -> if (value.isInfinite() || value.isNaN()) {
-                return value
-            }
-            is Double -> if (value.isInfinite() || value.isNaN()) {
-                return value
-            }
+    /**
+     * Fits a float number into a range. Scales full range to a given one. Note that `fitIntoDoubleRange` has the same logic
+     *
+     * @param value a number
+     * @param range target range
+     * @return a number that fits into the given range
+     */
+    private fun fitIntoFloatRange(
+        value: Float,
+        range: FloatRange,
+        context: MathContext = MathContext.DECIMAL128
+    ): Float {
+        if (value.isInfinite() || value.isNaN()) {
+            return value
         }
 
-        val bigDecimalValue = when (value) {
-            is Float -> value.toBigDecimal()
-            is Double -> value.toBigDecimal()
-            else -> error("Not float type")
+        val normalized = value.toBigDecimal().add(Float.MAX_VALUE.toBigDecimal(), context)
+            .divide(Float.MAX_VALUE.toBigDecimal().multiply(BigDecimal(2), context), context)
+
+        return range.start.toBigDecimal().add(
+            normalized.multiply(
+                range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context
+            ), context
+        ).toFloat()
+    }
+
+    /**
+     * Fits a double number into a range. Scales full range to a given one. Note that `fitIntoFloatRange` has the same logic
+     *
+     * @param value a number
+     * @param range target range
+     * @return a number that fits into the given range
+     */
+    private fun fitIntoDoubleRange(
+        value: Double,
+        range: DoubleRange,
+        context: MathContext = MathContext.DECIMAL128
+    ): Double {
+        if (value.isInfinite() || value.isNaN()) {
+            return value
         }
 
-        val oldUpperBound = when (T::class) {
-            Float::class -> Float.MAX_VALUE.toBigDecimal()
-            else -> Double.MAX_VALUE.toBigDecimal()
-        }
+        val normalized = value.toBigDecimal().add(Double.MAX_VALUE.toBigDecimal(), context)
+            .divide(Double.MAX_VALUE.toBigDecimal().multiply(BigDecimal(2), context), context)
 
-        val normalized = bigDecimalValue.add(oldUpperBound, context).divide(oldUpperBound.multiply(BigDecimal(2), context), context)
-
-        val newLowerBound = when (T::class) {
-            Float::class -> (newRange.start as Float).toBigDecimal()
-            else -> (newRange.start as Double).toBigDecimal()
-        }
-
-        val newUpperBound = when (T::class) {
-            Float::class -> (newRange.endInclusive as Float).toBigDecimal()
-            else -> (newRange.endInclusive as Double).toBigDecimal()
-        }
-
-        val result = newLowerBound.add(normalized.multiply(newUpperBound.subtract(newLowerBound, context), context), context)
-
-        return when (T::class) {
-            Float::class -> result.toFloat() as T
-            else -> result.toDouble() as T
-        }
+        return range.start.toBigDecimal().add(
+            normalized.multiply(
+                range.endInclusive.toBigDecimal().subtract(range.start.toBigDecimal(), context), context
+            ), context
+        ).toDouble()
     }
 
     /**
@@ -287,7 +294,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
     override fun float(range: FloatRange): Float {
         require(range.isNotEmpty()) { "range is empty" }
-        return fitIntoRange(iterator.readFloat(), range)
+        return fitIntoFloatRange(iterator.readFloat(), range)
     }
 
     override fun floatOrNull(range: FloatRange): Float? {
@@ -320,7 +327,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
     override fun double(range: DoubleRange): Double {
         require(range.isNotEmpty()) { "range is empty" }
-        return fitIntoRange(iterator.readDouble(), range)
+        return fitIntoDoubleRange(iterator.readDouble(), range)
     }
 
     override fun doubleOrNull(range: DoubleRange): Double? {
@@ -533,7 +540,7 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
 
         fun readInt(): Int =
             (readByte().toInt() shl 24) or ((readByte().toInt() and 0xFF) shl 16) or
-                ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
+                    ((readByte().toInt() and 0xFF) shl 8) or (readByte().toInt() and 0xFF)
 
         fun readLong(): Long = (readInt().toLong() shl 32) or (readInt().toLong() and 0xFF_FF_FF_FFL)
 
