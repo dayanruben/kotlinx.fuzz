@@ -1,4 +1,4 @@
-package kotlinx.fuzz.gradle.junit
+package kotlinx.fuzz.junit
 
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.config.KFuzzConfig

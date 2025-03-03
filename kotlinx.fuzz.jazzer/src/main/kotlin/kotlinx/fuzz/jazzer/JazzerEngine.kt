@@ -4,7 +4,6 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
-import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
 import java.net.ServerSocket
 import java.net.Socket
@@ -46,8 +45,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.global.reproducerDir.createDirectories()
         initialCrashDeduplication()
     }
-
-    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
 
     private fun initialCrashDeduplication() {
         config.global.reproducerDir.listDirectoryEntries()
@@ -101,10 +98,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
         val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
-        val debugOptions = if (isDebugMode()) {
-            val intellijDebuggerDispatchPort = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)!!.toInt()
-            getDebugSetup(intellijDebuggerDispatchPort, method)
-        } else {
+        val debugOptions = try {
+            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(), method)
+        } catch (e: Exception) {
             emptyList()
         }
 

@@ -18,6 +18,8 @@ import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
+
 private val Project.fuzzConfig: KFuzzConfig
     get() {
         val dsl = this.extensions.getByType<FuzzConfigDSL>()
@@ -32,7 +34,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         val pluginVersion = "0.2.0"
         project.dependencies {
             add("testImplementation", "org.jetbrains:kotlinx.fuzz.api:$pluginVersion")
-            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle:$pluginVersion")
+            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.junit:$pluginVersion")
         }
 
         val projectPropertiesMap: Map<String, String> = project.properties.mapValues { (_, v) -> v.toString() }
@@ -71,6 +73,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -88,6 +91,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
                     global.regressionEnabled = true
                 }.build()
                 systemProperties(regressionConfig.toPropertiesMap())
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
