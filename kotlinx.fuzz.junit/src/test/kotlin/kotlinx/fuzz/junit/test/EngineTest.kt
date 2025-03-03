@@ -7,8 +7,8 @@ import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.KFuzzConfigBuilder
-import org.junit.jupiter.api.AfterAll
 import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
