@@ -1,12 +1,13 @@
-package kotlinx.fuzz.gradle.junit.test
+package kotlinx.fuzz.junit.test
 
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.KFuzzConfigBuilder
-import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
+import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -81,7 +82,7 @@ object EngineTest {
     fun setup() {
         writeToSystemProperties {
             // subtle check that getValue() works before build()
-            global.workDir = kotlin.io.path.createTempDirectory("fuzz-test")
+            global.workDir = createTempDirectory("fuzz-test")
             global.reproducerDir = global.workDir.resolve("reproducers")
             target.maxFuzzTime = 5.seconds
             global.instrument = listOf("kotlinx.fuzz.test.**")

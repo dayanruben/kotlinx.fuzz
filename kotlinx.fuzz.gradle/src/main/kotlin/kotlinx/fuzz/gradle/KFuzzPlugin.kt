@@ -34,7 +34,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
         val pluginVersion = "0.2.0"
         project.dependencies {
             add("testImplementation", "org.jetbrains:kotlinx.fuzz.api:$pluginVersion")
-            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.gradle:$pluginVersion")
+            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.junit:$pluginVersion")
         }
 
         val projectPropertiesMap: Map<String, String> = project.properties.mapValues { (_, v) -> v.toString() }
