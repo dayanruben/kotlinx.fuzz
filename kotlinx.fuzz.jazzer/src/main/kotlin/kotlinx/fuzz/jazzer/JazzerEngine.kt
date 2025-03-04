@@ -49,7 +49,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private fun initialCrashDeduplication() {
         config.global.reproducerDir.listDirectoryEntries()
             .filter { it.isDirectory() }
-            .forEach {classDir ->
+            .forEach { classDir ->
                 classDir.listDirectoryEntries()
                     .filter { it.isDirectory() }
                     .forEach { methodDir ->
@@ -106,7 +106,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         } catch (e: Exception) {
             emptyList()
         }
-
         val exitCode = ProcessBuilder(
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
@@ -122,15 +121,15 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         return when (exitCode) {
             0 -> null
-            else -> {
-                val deserializedException = deserializeException(config.exceptionPath(method))
-                deserializedException ?: run {
-                    log.error { "Failed to deserialize exception for target '${method.fullName}'" }
-                    Error("Failed to deserialize exception for target '${method.fullName}'")
-                }
-            }
+            else -> getException(config, method)
         }
     }
+
+    private fun getException(config: KFuzzConfig, method: Method): Throwable =
+        deserializeException(config.exceptionPath(method)) ?: run {
+            log.error { "Failed to deserialize exception for target '${method.fullName}'" }
+            Error("Failed to deserialize exception for target '${method.fullName}'")
+        }
 
     override fun finishExecution() {
         collectStatistics()
