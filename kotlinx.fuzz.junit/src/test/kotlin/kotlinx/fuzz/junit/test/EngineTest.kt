@@ -1,5 +1,7 @@
 package kotlinx.fuzz.junit.test
 
+import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import com.code_intelligence.jazzer.junit.FuzzTest
 import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
@@ -78,15 +80,38 @@ object EngineTest {
         }
     }
 
+    object JazzerTestContainer {
+        @FuzzTest
+        @Suppress("BACKTICKS_PROHIBITED")
+        fun `jazzer test`(data: FuzzedDataProvider) {
+            if (data.consumeBoolean()) {
+                System.getProperty("aaa")
+            }
+        }
+
+        @FuzzTest
+        @Suppress("BACKTICKS_PROHIBITED")
+        fun `jazzer test array`(data: ByteArray) {
+            if (data.isNotEmpty() && data[0] == 0.toByte()) {
+                System.getProperty("aaa")
+            }
+        }
+    }
+
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
             // subtle check that getValue() works before build()
-            global.workDir = createTempDirectory("fuzz-test")
-            global.reproducerDir = global.workDir.resolve("reproducers")
-            target.maxFuzzTime = 5.seconds
-            global.instrument = listOf("kotlinx.fuzz.test.**")
-            target.keepGoing = 2
+            with(global) {
+                workDir = createTempDirectory("fuzz-test")
+                reproducerDir = global.workDir.resolve("reproducers")
+                instrument = listOf("kotlinx.fuzz.test.**")
+                supportJazzerTargets = true
+            }
+            with(target) {
+                maxFuzzTime = 5.seconds
+                keepGoing = 2
+            }
         }
     }
 
@@ -110,6 +135,22 @@ object EngineTest {
     @AfterAll
     @JvmStatic
     fun cleanup() = cleanupSystemProperties()
+
+    @Test
+    fun `jazzer api support`() {
+        val successTests = 2L
+        val failedTests = 0L
+        val startedTests = successTests + failedTests
+
+        EngineTestKit
+            .engine(KotlinxFuzzJunitEngine())
+            .selectors(selectClass(JazzerTestContainer::class.java))
+            .execute()
+            .testEvents()
+            .assertStatistics {
+                it.started(startedTests).succeeded(successTests).failed(failedTests)
+            }
+    }
 }
 
 fun writeToSystemProperties(config: KFuzzConfigBuilder.KFuzzConfigImpl.() -> Unit) {

@@ -16,6 +16,7 @@ interface GlobalConfig {
     val regressionEnabled: Boolean
     val detailedLogging: Boolean
     val threads: Int
+    val supportJazzerTargets: Boolean
 }
 
 class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : GlobalConfig {
@@ -70,6 +71,12 @@ class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Globa
         fromString = { it.toInt() },
         validate = { require(it > 0) { "'threads' must be positive" } },
         default = max(1, Runtime.getRuntime().availableProcessors() / 2),
+    )
+    override var supportJazzerTargets: Boolean by builder.KFuzzPropProvider(
+        nameSuffix = "supportJazzerTargets",
+        intoString = { it.toString() },
+        fromString = { it.toBooleanStrict() },
+        default = false,
     )
 }
 
