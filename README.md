@@ -49,7 +49,10 @@ plugins {
 ```kotlin
 fuzzConfig {
     instrument = listOf("org.example.**")
-    maxSingleTargetFuzzTime = 10.seconds
+    maxFuzzTimePerTarget = 10.minutes
+    coverage {
+        reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
+    }
 }
 ```
 
