@@ -6,11 +6,16 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.coroutines.*
-import kotlinx.fuzz.*
-import kotlinx.fuzz.config.*
+import kotlinx.fuzz.IgnoreFailures
+import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
+import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
@@ -68,7 +73,8 @@ class KotlinxFuzzJunitEngine : TestEngine {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
 
-        val dispatcher = Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
+        val dispatcher =
+            Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
             root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
         }
@@ -183,6 +189,8 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     companion object {
+        private val log = LoggerFacade.getLogger<Companion>()
+
         private fun isKFuzzTestContainer(klass: Class<*>, supportJazzerTargets: Boolean): Boolean =
             ReflectionSupport.findMethods(
                 klass,
@@ -196,9 +204,14 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 parameters[0].type == KFuzzer::class.java ||
                 (supportJazzerApi && isJazzerFuzzTarget())
 
-        private fun Method.isJazzerFuzzTarget(): Boolean =
-            AnnotationSupport.isAnnotated(this, FuzzTest::class.java) && parameterCount == 1 &&
-                (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java)
+        private fun Method.isJazzerFuzzTarget(): Boolean = when {
+            !AnnotationSupport.isAnnotated(this, FuzzTest::class.java) -> false
+            parameterCount == 1 && (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java) -> true
+            else -> {
+                log.warn { "Test $name is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring test." }
+                false
+            }
+        }
 
         private fun KClass<*>.testInstance(): Any =
             objectInstance ?: java.getDeclaredConstructor().newInstance()
