@@ -4,7 +4,6 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
-import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
 import java.net.ServerSocket
 import java.net.Socket
@@ -43,10 +42,35 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
+        config.global.reproducerDir.createDirectories()
+        initialCrashDeduplication()
     }
 
-    private fun isDebugMode(): Boolean =
-        ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
+    private fun initialCrashDeduplication() {
+        config.global.reproducerDir.listDirectoryEntries()
+            .filter { it.isDirectory() }
+            .forEach {classDir ->
+                classDir.listDirectoryEntries()
+                    .filter { it.isDirectory() }
+                    .forEach { methodDir ->
+                        flatten(methodDir)
+                        JazzerLauncher.clusterCrashes(methodDir)
+                    }
+            }
+        clusterCrashes()
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private fun flatten(dir: Path) {
+        Files.walk(dir).filter { it.isRegularFile() }.forEach {
+            val targetFile = dir.resolve(it.name)
+            if (targetFile.exists()) {
+                return@forEach
+            }
+            it.copyTo(targetFile)
+        }
+        dir.listDirectoryEntries().filter { it.isDirectory() }.forEach { it.deleteRecursively() }
+    }
 
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
         val port = ServerSocket(0).use { it.localPort }
@@ -74,13 +98,18 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
             config.addAnnotationParams(annotation)
         } ?: config
-
-        val debugOptions = getDebugOptions(method)
         val propertiesList =
             methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
+        val debugOptions = try {
+            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(), method)
+        } catch (e: Exception) {
+            emptyList()
+        }
+
         val exitCode = ProcessBuilder(
             javaCommand,
+            "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
@@ -101,14 +130,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
             }
         }
-    }
-
-    private fun getDebugOptions(method: Method): List<String> = if (isDebugMode()) {
-        val intellijDebuggerDispatchPort =
-            System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)!!.toInt()
-        getDebugSetup(intellijDebuggerDispatchPort, method)
-    } else {
-        emptyList()
     }
 
     override fun finishExecution() {
