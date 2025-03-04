@@ -208,7 +208,10 @@ class KotlinxFuzzJunitEngine : TestEngine {
             !AnnotationSupport.isAnnotated(this, FuzzTest::class.java) -> false
             parameterCount == 1 && (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java) -> true
             else -> {
-                log.warn { "Test $name is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring test." }
+                log.warn {
+                    "Test '$name' is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring" +
+                        " test."
+                }
                 false
             }
         }
