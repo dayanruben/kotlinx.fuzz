@@ -165,11 +165,13 @@ abstract class FuzzTask : Test() {
     var reportWithAllClasspath: Boolean = false
 
     @get:Internal
+    var runtimeClasspathConfiguration: Configuration? = null
+
+    @get:Internal
     lateinit var fuzzConfig: KFuzzConfig
+
     @get:Internal
     lateinit var mainSourceSet: SourceSet
-    @get:Internal
-    var runtimeClasspathConfiguration: Configuration? = null
 
     init {
         description = "Runs fuzzing"
