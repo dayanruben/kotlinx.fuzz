@@ -32,6 +32,12 @@ jobs:
           MAVEN_REPOSITORY_PASSWORD: ${{ secrets.MAVEN_REPOSITORY_PASSWORD }}
         run:  ./gradlew :kotlinx.fuzz.engine:publish
 
+      - name: Publish junit
+        env:
+          MAVEN_REPOSITORY_LOGIN: ${{ secrets.MAVEN_REPOSITORY_LOGIN }}
+          MAVEN_REPOSITORY_PASSWORD: ${{ secrets.MAVEN_REPOSITORY_PASSWORD }}
+        run:  ./gradlew :kotlinx.fuzz.junit:publish
+
       - name: Publish jazzer
         env:
           MAVEN_REPOSITORY_LOGIN: ${{ secrets.MAVEN_REPOSITORY_LOGIN }}

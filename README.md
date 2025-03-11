@@ -34,14 +34,14 @@ pluginManagement {
 2. Add `kotlinx.fuzz` as a dependency:
 ```kotlin
 dependencies {
-    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.0")
+    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.2")
 }
 ```
 
 3. Apply `kotlinx.fuzz` plugin to your project:
 ```kotlin
 plugins {
-    id("kotlinx.fuzz.gradle") version "0.2.0"
+    id("kotlinx.fuzz.gradle") version "0.2.2"
 }
 ```
 
@@ -49,7 +49,10 @@ plugins {
 ```kotlin
 fuzzConfig {
     instrument = listOf("org.example.**")
-    maxSingleTargetFuzzTime = 10.seconds
+    maxFuzzTimePerTarget = 10.minutes
+    coverage {
+        reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
+    }
 }
 ```
 

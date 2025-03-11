@@ -10,15 +10,10 @@ dependencies {
     implementation(project(":kotlinx.fuzz.api"))
 
     implementation(kotlin("reflect"))
-    implementation(libs.junit.platform.engine)
     implementation(libs.jacoco.core)
     implementation(libs.jacoco.report)
-    implementation(libs.kotlinx.coroutines)
-    implementation(libs.kotlinpoet)
 
-    testImplementation(libs.junit.platform.testkit)
     testImplementation(libs.junit.jupiter)
-    testRuntimeOnly(project(":kotlinx.fuzz.jazzer"))
 }
 
 gradlePlugin {
@@ -36,9 +31,7 @@ gradlePlugin {
 }
 
 tasks.test {
-    useJUnitPlatform {
-        excludeEngines("kotlinx.fuzz")
-    }
+    useJUnitPlatform()
 }
 
 /**

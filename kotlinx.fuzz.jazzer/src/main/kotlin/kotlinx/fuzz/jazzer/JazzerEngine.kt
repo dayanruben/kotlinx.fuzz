@@ -4,7 +4,6 @@ import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
 import java.io.OutputStream
-import java.lang.management.ManagementFactory
 import java.lang.reflect.Method
 import java.net.ServerSocket
 import java.net.Socket
@@ -12,31 +11,33 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzConfig
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.SystemProperty
 import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
 import kotlinx.fuzz.reproduction.CrashReproducerWriter
+
+private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
 internal val Method.fullName: String
     get() = "${this.declaringClass.name}.${this.name}"
 
 internal val KFuzzConfig.corpusDir: Path
-    get() = workDir.resolve("corpus")
+    get() = global.workDir.resolve("corpus")
 
 internal val KFuzzConfig.logsDir: Path
-    get() = workDir.resolve("logs")
+    get() = global.workDir.resolve("logs")
 
 internal val KFuzzConfig.exceptionsDir: Path
-    get() = workDir.resolve("exceptions")
+    get() = global.workDir.resolve("exceptions")
 
 @Suppress("unused")
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
-    private val jazzerConfig = JazzerConfig.fromSystemProperties()
+    private val jazzerConfig = config.engine as JazzerConfig
     private lateinit var crashReproducer: CrashReproducerWriter
 
     override fun setReproducer(reproducer: CrashReproducerWriter) {
@@ -47,9 +48,35 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
+        config.global.reproducerDir.createDirectories()
+        initialCrashDeduplication()
     }
 
-    private fun isDebugMode(): Boolean = ManagementFactory.getRuntimeMXBean().inputArguments.any { it.contains("-agentlib:jdwp") }
+    private fun initialCrashDeduplication() {
+        config.global.reproducerDir.listDirectoryEntries()
+            .filter { it.isDirectory() }
+            .forEach { classDir ->
+                classDir.listDirectoryEntries()
+                    .filter { it.isDirectory() }
+                    .forEach { methodDir ->
+                        flatten(methodDir)
+                        JazzerLauncher.clusterCrashes(methodDir)
+                    }
+            }
+        clusterCrashes()
+    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private fun flatten(dir: Path) {
+        Files.walk(dir).filter { it.isRegularFile() }.forEach {
+            val targetFile = dir.resolve(it.name)
+            if (targetFile.exists()) {
+                return@forEach
+            }
+            it.copyTo(targetFile)
+        }
+        dir.listDirectoryEntries().filter { it.isDirectory() }.forEach { it.deleteRecursively() }
+    }
 
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
         val port = ServerSocket(0).use { it.localPort }
@@ -74,17 +101,20 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         // TODO: pass the config explicitly rather than through system properties
         val config = KFuzzConfig.fromSystemProperties()
-        val methodConfig = config.addAnnotationParams(method.getAnnotation(KFuzzTest::class.java))
-        val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
+        val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
+            config.addAnnotationParams(annotation)
+        } ?: config
+        val propertiesList =
+            methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
-        val debugOptions = if (isDebugMode()) {
-            getDebugSetup(SystemProperty.INTELLIJ_DEBUGGER_DISPATCH_PORT.get()!!.toInt(), method)
-        } else {
+        val debugOptions = try {
+            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(), method)
+        } catch (e: Exception) {
             emptyList()
         }
-
         val exitCode = ProcessBuilder(
             javaCommand,
+            "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
@@ -97,15 +127,15 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
         return when (exitCode) {
             0 -> null
-            else -> {
-                val deserializedException = deserializeException(config.exceptionPath(method))
-                deserializedException ?: run {
-                    log.error { "Failed to deserialize exception for target '${method.fullName}'" }
-                    Error("Failed to deserialize exception for target '${method.fullName}'")
-                }
-            }
+            else -> getException(config, method)
         }
     }
+
+    private fun getException(config: KFuzzConfig, method: Method): Throwable =
+        deserializeException(config.exceptionPath(method)) ?: run {
+            log.error { "Failed to deserialize exception for target '${method.fullName}'" }
+            Error("Failed to deserialize exception for target '${method.fullName}'")
+        }
 
     override fun finishExecution() {
         collectStatistics()
@@ -114,7 +144,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     private fun clusterCrashes() {
         val crashesForDeletion = mutableListOf<Path>()
-        Files.walk(config.reproducerPath)
+        Files.walk(config.global.reproducerDir)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .map { it to it.listStacktraces() }
             .flatMap { (dir, files) -> files.stream().map { dir to it } }
@@ -145,9 +175,10 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     }
 
     private fun collectStatistics() {
-        val statsDir = config.workDir.resolve("stats").createDirectories()
+        val statsDir = config.global.workDir.resolve("stats")
+            .createDirectories()
         config.logsDir.listDirectoryEntries("*.err").forEach { file ->
-            val csvText = jazzerLogToCsv(file, config.maxSingleTargetFuzzTime)
+            val csvText = jazzerLogToCsv(file, config.target.maxFuzzTime)
             statsDir.resolve("${file.nameWithoutExtension}.csv").writeText(csvText)
         }
     }
@@ -157,12 +188,12 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         val stdoutStream = config.logsDir.resolve(stdout).outputStream()
         val stderrStream = config.logsDir.resolve(stderr).outputStream()
         val stdoutThread = logProcessStream(process.inputStream, stdoutStream) {
-            if (jazzerConfig.enableLogging) {
+            if (config.global.detailedLogging) {
                 log.info(it)
             }
         }
         val stderrThread = logProcessStream(process.errorStream, stderrStream) {
-            if (jazzerConfig.enableLogging) {
+            if (config.global.detailedLogging) {
                 log.info(it)
             }
         }

@@ -1,12 +1,16 @@
-package kotlinx.fuzz.gradle.junit.test
+package kotlinx.fuzz.junit.test
 
+import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import com.code_intelligence.jazzer.junit.FuzzTest
 import java.io.File
+import kotlin.io.path.createTempDirectory
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
-import kotlinx.fuzz.gradle.KFuzzConfigBuilder
-import kotlinx.fuzz.gradle.junit.KotlinxFuzzJunitEngine
+import kotlinx.fuzz.config.KFuzzConfigBuilder
+import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
@@ -76,14 +80,38 @@ object EngineTest {
         }
     }
 
+    object JazzerTestContainer {
+        @FuzzTest
+        @Suppress("BACKTICKS_PROHIBITED")
+        fun `jazzer test`(data: FuzzedDataProvider) {
+            if (data.consumeBoolean()) {
+                System.getProperty("aaa")
+            }
+        }
+
+        @FuzzTest
+        @Suppress("BACKTICKS_PROHIBITED")
+        fun `jazzer test array`(data: ByteArray) {
+            if (data.isNotEmpty() && data[0] == 0.toByte()) {
+                System.getProperty("aaa")
+            }
+        }
+    }
+
     @BeforeEach
     fun setup() {
         writeToSystemProperties {
-            maxSingleTargetFuzzTime = 5.seconds
-            instrument = listOf("kotlinx.fuzz.test.**")
-            workDir = kotlin.io.path.createTempDirectory("fuzz-test")
-            reproducerPath = workDir.resolve("reproducers")
-            keepGoing = 2
+            // subtle check that getValue() works before build()
+            with(global) {
+                workDir = createTempDirectory("fuzz-test")
+                reproducerDir = global.workDir.resolve("reproducers")
+                instrument = listOf("kotlinx.fuzz.test.**")
+                supportJazzerTargets = true
+            }
+            with(target) {
+                maxFuzzTime = 5.seconds
+                keepGoing = 2
+            }
         }
     }
 
@@ -102,9 +130,42 @@ object EngineTest {
                 it.started(startedTests).succeeded(successTests).failed(failedTests)
             }
     }
+
+    // without cleanup, KFuzzConfigTest fails hehe
+    @AfterAll
+    @JvmStatic
+    fun cleanup() = cleanupSystemProperties()
+
+    @Test
+    fun `jazzer api support`() {
+        val successTests = 2L
+        val failedTests = 0L
+        val startedTests = successTests + failedTests
+
+        EngineTestKit
+            .engine(KotlinxFuzzJunitEngine())
+            .selectors(selectClass(JazzerTestContainer::class.java))
+            .execute()
+            .testEvents()
+            .assertStatistics {
+                it.started(startedTests).succeeded(successTests).failed(failedTests)
+            }
+    }
 }
 
-fun writeToSystemProperties(block: KFuzzConfigBuilder.() -> Unit) {
-    KFuzzConfigBuilder.build(block).toPropertiesMap()
+fun writeToSystemProperties(config: KFuzzConfigBuilder.KFuzzConfigImpl.() -> Unit) {
+    KFuzzConfigBuilder(emptyMap())
+        .editOverride(config)
+        .build()
+        .toPropertiesMap()
         .forEach { (key, value) -> System.setProperty(key, value) }
+}
+
+fun cleanupSystemProperties() {
+    val needsCleanup = listOf(
+        "kotlinx.fuzz.workDir",
+        "kotlinx.fuzz.reproducerDir",
+        "kotlinx.fuzz.instrument",
+    )
+    needsCleanup.forEach { prop -> System.clearProperty(prop) }
 }

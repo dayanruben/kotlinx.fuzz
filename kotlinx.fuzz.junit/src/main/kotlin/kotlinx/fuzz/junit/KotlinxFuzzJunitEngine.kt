@@ -1,13 +1,21 @@
-package kotlinx.fuzz.gradle.junit
+package kotlinx.fuzz.junit
 
+import com.code_intelligence.jazzer.api.FuzzedDataProvider
+import com.code_intelligence.jazzer.junit.FuzzTest
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.reflect.KClass
 import kotlinx.coroutines.*
-import kotlinx.fuzz.*
+import kotlinx.fuzz.IgnoreFailures
+import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
+import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
 import kotlinx.fuzz.reproduction.ListAnyReproducerWriter
 import org.junit.platform.commons.support.AnnotationSupport
@@ -20,7 +28,7 @@ import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
-internal class KotlinxFuzzJunitEngine : TestEngine {
+class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
 
     // KotlinxFuzzJunitEngine can be instantiated at an arbitrary point of time by JunitPlatform
@@ -29,16 +37,12 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         KFuzzConfig.fromSystemProperties()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
-        when (config.fuzzEngine) {
-            "jazzer" -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+        when (config.engine) {
+            is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
                 .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
-
-            else -> throw AssertionError("Unsupported fuzzer engine!")
         }
     }
-    private val isRegression: Boolean by lazy {
-        SystemProperty.REGRESSION.get().toBooleanOrFalse()
-    }
+    private val isRegression: Boolean by lazy { config.global.regressionEnabled }
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -70,7 +74,8 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
 
-        val dispatcher = Dispatchers.Default.limitedParallelism(config.threads, "kotlinx.fuzz")
+        val dispatcher =
+            Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
             root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
         }
@@ -130,7 +135,7 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInMethod(method: Method, engineDescriptor: EngineDescriptor) {
-        if (!method.isFuzzTarget()) {
+        if (!method.isFuzzTarget(config.global.supportJazzerTargets)) {
             return
         }
 
@@ -143,14 +148,34 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun appendTestsInClasspathRoot(uri: URI, engineDescriptor: EngineDescriptor) {
-        ReflectionSupport.findAllClassesInClasspathRoot(uri, isKFuzzTestContainer) { true }
-            .map { klass -> ClassTestDescriptor(klass, engineDescriptor, config, isRegression) }
+        ReflectionSupport.findAllClassesInClasspathRoot(
+            uri,
+            { isKFuzzTestContainer(it, config.global.supportJazzerTargets) }) { true }
+            .map { klass ->
+                ClassTestDescriptor(
+                    klass,
+                    engineDescriptor,
+                    config,
+                    isRegression,
+                    supportJazzerTargets = config.global.supportJazzerTargets,
+                )
+            }
             .forEach { testDescriptor -> engineDescriptor.addChild(testDescriptor) }
     }
 
     private fun appendTestsInPackage(packageName: String, engineDescriptor: TestDescriptor) {
-        ReflectionSupport.findAllClassesInPackage(packageName, isKFuzzTestContainer) { true }
-            .map { aClass -> ClassTestDescriptor(aClass!!, engineDescriptor, config, isRegression) }
+        ReflectionSupport.findAllClassesInPackage(
+            packageName,
+            { isKFuzzTestContainer(it, config.global.supportJazzerTargets) }) { true }
+            .map { aClass ->
+                ClassTestDescriptor(
+                    aClass!!,
+                    engineDescriptor,
+                    config,
+                    isRegression,
+                    supportJazzerTargets = config.global.supportJazzerTargets,
+                )
+            }
             .forEach { descriptor -> engineDescriptor.addChild(descriptor) }
     }
 
@@ -161,23 +186,38 @@ internal class KotlinxFuzzJunitEngine : TestEngine {
                 engineDescriptor,
                 config,
                 isRegression,
+                supportJazzerTargets = config.global.supportJazzerTargets,
             ),
         )
     }
 
     companion object {
-        val isKFuzzTestContainer: (Class<*>) -> Boolean = { klass ->
+        private val log = LoggerFacade.getLogger<Companion>()
+
+        private fun isKFuzzTestContainer(klass: Class<*>, supportJazzerTargets: Boolean): Boolean =
             ReflectionSupport.findMethods(
                 klass,
-                { method: Method -> method.isFuzzTarget() },
+                { method: Method -> method.isFuzzTarget(supportJazzerTargets) },
                 HierarchyTraversalMode.TOP_DOWN,
             ).isNotEmpty()
-        }
 
-        private fun Method.isFuzzTarget(): Boolean =
+        internal fun Method.isFuzzTarget(supportJazzerApi: Boolean): Boolean =
             AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                parameters.size == 1 &&
-                parameters[0].type == KFuzzer::class.java
+                parameterCount == 1 &&
+                parameters[0].type == KFuzzer::class.java ||
+                (supportJazzerApi && isJazzerFuzzTarget())
+
+        private fun Method.isJazzerFuzzTarget(): Boolean = when {
+            !AnnotationSupport.isAnnotated(this, FuzzTest::class.java) -> false
+            parameterCount == 1 && (parameters[0].type == ByteArray::class.java || parameters[0].type == FuzzedDataProvider::class.java) -> true
+            else -> {
+                log.warn {
+                    "Test '$name' is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring" +
+                        " test."
+                }
+                false
+            }
+        }
 
         private fun KClass<*>.testInstance(): Any =
             objectInstance ?: java.getDeclaredConstructor().newInstance()
