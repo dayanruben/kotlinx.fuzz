@@ -118,21 +118,21 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                if (System.getProperty(USER_FILES_VAR_NAME) == null) {
-                    fuzzEngine.setReproducer(
-                        ListAnyCallReproducerWriter(
-                            JunitReproducerTemplate(instance, method),
-                            instance,
-                            method
-                        )
-                    )
-                } else {
+                try {
                     fuzzEngine.setReproducer(
                         ListAnyInlineReproducerWriter(
                             JunitReproducerTemplate(instance, method),
                             instance,
                             method,
                             Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) }
+                        )
+                    )
+                } catch (e: RuntimeException) {
+                    fuzzEngine.setReproducer(
+                        ListAnyCallReproducerWriter(
+                            JunitReproducerTemplate(instance, method),
+                            instance,
+                            method
                         )
                     )
                 }
