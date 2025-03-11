@@ -124,7 +124,7 @@ class ListAnyCallReproducerWriter(
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
-                additionalObjects = listOf(buildListReproducerObject()),
+                additionalClasses = listOf(buildListReproducerObject()),
             ),
         )
     }

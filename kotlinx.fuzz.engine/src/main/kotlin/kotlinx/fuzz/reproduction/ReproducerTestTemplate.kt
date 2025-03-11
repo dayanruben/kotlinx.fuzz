@@ -9,7 +9,7 @@ interface ReproducerTestTemplate {
         identifier: String,
         testCode: CodeBlock,
         imports: List<KotlinpoetImport> = emptyList(),
-        additionalObjects: List<TypeSpec> = emptyList(),
+        additionalClasses: List<TypeSpec> = emptyList(),
         additionalFunctions: List<FunSpec> = emptyList(),
     ): String
 }
