@@ -30,6 +30,9 @@ kotlinx-coroutines = "1.10.1"
 
 slf4j = "2.0.16"
 
+kotlin-compiler = "2.1.10"
+kotlin-compiler-k2 = "2.2.0-dev-326"
+
 [libraries]
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 diktat-gradle-plugin = { module = "com.saveourtool.diktat:diktat-gradle-plugin", version.ref = "diktat" }
@@ -70,6 +73,17 @@ kotlinx-coroutines = {module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", 
 
 jacoco-core = { module = "org.jacoco:org.jacoco.core", version.ref = "jacoco" }
 jacoco-report = { module = "org.jacoco:org.jacoco.report", version.ref = "jacoco" }
+
+kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin-compiler" }
+
+kotlin-compiler-k2 = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin-compiler-k2" }
+kotlin-analysis-api-api = { module = "org.jetbrains.kotlin:analysis-api-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-analysis-api-impl = { module = "org.jetbrains.kotlin:analysis-api-impl-base-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-analysis-api-fir = { module = "org.jetbrains.kotlin:analysis-api-k2-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-low-level-api-fir = { module = "org.jetbrains.kotlin:low-level-api-fir-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-analysis-api-standalone = { module = "org.jetbrains.kotlin:analysis-api-standalone-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-analysis-api-platform = { module = "org.jetbrains.kotlin:analysis-api-platform-interface-for-ide", version.ref = "kotlin-compiler-k2" }
+kotlin-symbol-light-classes = { module = "org.jetbrains.kotlin:symbol-light-classes-for-ide", version.ref = "kotlin-compiler-k2" }
 
 [plugins]
 gradle-publish = { id = "com.gradle.plugin-publish", version.ref = "gradle-publish" }
