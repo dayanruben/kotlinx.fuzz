@@ -4,6 +4,7 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import java.lang.reflect.Method
 import java.net.URI
+import kotlin.io.path.Path
 import kotlin.reflect.KClass
 import kotlinx.coroutines.*
 import kotlinx.fuzz.IgnoreFailures
@@ -29,7 +30,6 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
-import kotlin.io.path.Path
 
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
@@ -108,6 +108,25 @@ class KotlinxFuzzJunitEngine : TestEngine {
         else -> TestExecutionResult.failed(finding)
     }
 
+    private fun setReproducer(instance: Any, method: Method) = try {
+        fuzzEngine.setReproducer(
+            ListAnyInlineReproducerWriter(
+                JunitReproducerTemplate(instance, method),
+                instance,
+                method,
+                Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
+            ),
+        )
+    } catch (e: RuntimeException) {
+        fuzzEngine.setReproducer(
+            ListAnyCallReproducerWriter(
+                JunitReproducerTemplate(instance, method),
+                instance,
+                method,
+            ),
+        )
+    }
+
     private suspend fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
         when (descriptor) {
             is ClassTestDescriptor -> handleContainer(request, descriptor)
@@ -118,24 +137,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                try {
-                    fuzzEngine.setReproducer(
-                        ListAnyInlineReproducerWriter(
-                            JunitReproducerTemplate(instance, method),
-                            instance,
-                            method,
-                            Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) }
-                        )
-                    )
-                } catch (e: RuntimeException) {
-                    fuzzEngine.setReproducer(
-                        ListAnyCallReproducerWriter(
-                            JunitReproducerTemplate(instance, method),
-                            instance,
-                            method
-                        )
-                    )
-                }
+                setReproducer(instance, method)
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)

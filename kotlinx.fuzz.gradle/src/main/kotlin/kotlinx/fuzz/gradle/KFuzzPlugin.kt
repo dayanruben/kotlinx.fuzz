@@ -7,6 +7,7 @@ import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
+import kotlinx.serialization.json.Json
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -20,8 +21,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 private const val USER_FILES_VAR_NAME = "user_files"
@@ -84,7 +83,10 @@ abstract class KFuzzPlugin : Plugin<Project> {
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
                 systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
-                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files.toList().map { it.absolutePath })
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                    .toList().map {
+                        it.absolutePath
+                    })
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -103,7 +105,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 }.build()
                 systemProperties(regressionConfig.toPropertiesMap())
                 systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
-                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerRegressionTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files.toList().map { it.absolutePath })
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerRegressionTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                    .toList().map { it.absolutePath })
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

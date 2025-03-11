@@ -16,35 +16,6 @@ class ListAnyCallReproducerWriter(
     private val instance: Any,
     private val method: Method,
 ) : CrashReproducerWriter(template, method) {
-    private fun arrayToString(executionResult: ExecutionResult): String =
-        when {
-            executionResult.typeName.startsWith("Boolean") ->
-                "booleanArrayOf(${(executionResult.value as BooleanArray).joinToString(", ")})"
-
-            executionResult.typeName.startsWith("Byte") ->
-                "byteArrayOf(${(executionResult.value as ByteArray).joinToString(", ") { "$it as Byte" }})"
-
-            executionResult.typeName.startsWith("Short") ->
-                "shortArrayOf(${(executionResult.value as ShortArray).joinToString(", ") { "$it as Short" }})"
-
-            executionResult.typeName.startsWith("Int") ->
-                "intArrayOf(${(executionResult.value as IntArray).joinToString(", ")})"
-
-            executionResult.typeName.startsWith("Long") ->
-                "longArrayOf(${(executionResult.value as LongArray).joinToString(", ")})"
-
-            executionResult.typeName.startsWith("Float") ->
-                "floatArrayOf(${(executionResult.value as FloatArray).joinToString(", ") { "$it as Float" }})"
-
-            executionResult.typeName.startsWith("Double") ->
-                "doubleArrayOf(${(executionResult.value as DoubleArray).joinToString(", ")})"
-
-            executionResult.typeName.startsWith("Char") ->
-                "charArrayOf(${(executionResult.value as CharArray).joinToString(", ")})"
-
-            else -> error("Unsupported execution result type: ${executionResult.typeName}")
-        }
-
     private fun generateFunction(function: KFunction<*>): FunSpec {
         val returnType = function.returnType.jvmErasure.asTypeName()
         val isNullable = function.returnType.isMarkedNullable

@@ -161,20 +161,19 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
+                if (!reproducerFile.exists() && createNewReproducers) {
+                    crashReproducer.writeToFile(crashFile.readBytes(), targetCrashFile)
+                }
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     filesForDeletion.add(crashFile)
                     if (reproducerFile.exists()) {
                         reproducerFile.copyTo(targetReproducerFile, overwrite = true)
                         filesForDeletion.add(reproducerFile)
-                    } else if (createNewReproducers) {
-                        crashReproducer.writeToFile(crashFile.readBytes(), targetCrashFile)
                     }
                 } else {
-                    if (!reproducerFile.exists() && createNewReproducers) {
-                        crashReproducer.writeToFile(crashFile.readBytes(), reproducerFile)
-                    }
-                    if (reproducerFile.exists())
+                    if (reproducerFile.exists()) {
                         reproducerFile.copyTo(targetReproducerFile, overwrite = true)
+                    }
                 }
             }
         filesForDeletion.forEach { it.deleteIfExists() }
