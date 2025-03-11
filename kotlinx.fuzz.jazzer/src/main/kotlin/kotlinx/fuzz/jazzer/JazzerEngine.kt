@@ -63,7 +63,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                         JazzerLauncher.clusterCrashes(methodDir)
                     }
             }
-        clusterCrashes()
+        clusterCrashes(createNewReproducers = false)
     }
 
     @OptIn(ExperimentalPathApi::class)
@@ -139,11 +139,11 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     override fun finishExecution() {
         collectStatistics()
-        clusterCrashes()
+        clusterCrashes(createNewReproducers = true)
     }
 
-    private fun clusterCrashes() {
-        val crashesForDeletion = mutableListOf<Path>()
+    private fun clusterCrashes(createNewReproducers: Boolean) {
+        val filesForDeletion = mutableListOf<Path>()
         Files.walk(config.global.reproducerDir)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
             .map { it to it.listStacktraces() }
@@ -152,6 +152,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
                 val crashFile = clusterDir.parent.resolve(crashFileName)
                 val targetCrashFile = clusterDir.resolve(crashFileName)
+                val reproducerFileName = "reproducer-${stacktraceFile.name.removePrefix("stacktrace-")}.kt"
+                val reproducerFile = clusterDir.parent.resolve(reproducerFileName)
+                val targetReproducerFile = clusterDir.resolve(reproducerFileName)
 
                 if (targetCrashFile.exists() || !crashFile.exists()) {
                     return@forEach
@@ -159,19 +162,22 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
-                    crashesForDeletion.add(crashFile)
-                    crashReproducer.writeToFile(
-                        crashFile.readBytes(),
-                        clusterDir.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt"),
-                    )
+                    filesForDeletion.add(crashFile)
+                    if (reproducerFile.exists()) {
+                        reproducerFile.copyTo(targetReproducerFile, overwrite = true)
+                        filesForDeletion.add(reproducerFile)
+                    } else if (createNewReproducers) {
+                        crashReproducer.writeToFile(crashFile.readBytes(), targetCrashFile)
+                    }
                 } else {
-                    crashReproducer.writeToFile(
-                        crashFile.readBytes(),
-                        clusterDir.parent.resolve("reproducer-${crashFileName.removePrefix("crash-")}.kt"),
-                    )
+                    if (!reproducerFile.exists() && createNewReproducers) {
+                        crashReproducer.writeToFile(crashFile.readBytes(), reproducerFile)
+                    }
+                    if (reproducerFile.exists())
+                        reproducerFile.copyTo(targetReproducerFile, overwrite = true)
                 }
             }
-        crashesForDeletion.forEach { it.deleteIfExists() }
+        filesForDeletion.forEach { it.deleteIfExists() }
     }
 
     private fun collectStatistics() {
