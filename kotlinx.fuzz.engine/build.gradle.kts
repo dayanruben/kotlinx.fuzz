@@ -10,6 +10,9 @@ dependencies {
     implementation(libs.rgxgen)
     implementation(libs.slf4j.api)
     implementation(libs.kotlinpoet)
+    implementation(libs.kotlin.compiler.k2) {
+        isTransitive = false
+    }
     listOf(
         libs.kotlin.analysis.api.api,
         libs.kotlin.analysis.api.standalone,
