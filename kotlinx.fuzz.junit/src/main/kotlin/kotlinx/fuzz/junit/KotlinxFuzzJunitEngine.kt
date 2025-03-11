@@ -17,7 +17,9 @@ import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
 import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
-import kotlinx.fuzz.reproduction.ListAnyReproducerWriter
+import kotlinx.fuzz.reproduction.ListAnyCallReproducerWriter
+import kotlinx.fuzz.reproduction.ListAnyInlineReproducerWriter
+import kotlinx.serialization.json.*
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -27,6 +29,7 @@ import org.junit.platform.engine.discovery.ClasspathRootSelector
 import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
+import kotlin.io.path.Path
 
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
@@ -43,6 +46,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
         }
     }
     private val isRegression: Boolean by lazy { config.global.regressionEnabled }
+    private val USER_FILES_VAR_NAME = "user_files"
 
     override fun getId(): String = "kotlinx.fuzz"
 
@@ -114,7 +118,24 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                fuzzEngine.setReproducer(ListAnyReproducerWriter(JunitReproducerTemplate(instance, method), instance, method))
+                if (System.getProperty(USER_FILES_VAR_NAME) == null) {
+                    fuzzEngine.setReproducer(
+                        ListAnyCallReproducerWriter(
+                            JunitReproducerTemplate(instance, method),
+                            instance,
+                            method
+                        )
+                    )
+                } else {
+                    fuzzEngine.setReproducer(
+                        ListAnyInlineReproducerWriter(
+                            JunitReproducerTemplate(instance, method),
+                            instance,
+                            method,
+                            Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) }
+                        )
+                    )
+                }
 
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)

@@ -11,7 +11,7 @@ import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.jvm.jvmErasure
 import kotlinx.fuzz.KFuzzer
 
-class ListAnyReproducerWriter(
+class ListAnyCallReproducerWriter(
     private val template: ReproducerTestTemplate,
     private val instance: Any,
     private val method: Method,

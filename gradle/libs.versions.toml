@@ -16,7 +16,8 @@ kotlinx-collections-immutable = "0.3.8"
 kotlinx-datetime = "0.6.1"
 kotlinx-html = "0.11.0"
 kotlinx-io = "0.6.0"
-kotlinx-serialization = "1.7.3"
+kotlinx-serialization-examples = "1.7.3"
+kotlinx-serialization = "1.8.0"
 commons-cli = "1.9.0"
 jsoup = "1.18.1"
 
@@ -53,10 +54,11 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotlinx-html = { module = "org.jetbrains.kotlinx:kotlinx-html", version.ref = "kotlinx-html" }
 kotlinx-html-jvm = { module = "org.jetbrains.kotlinx:kotlinx-html-jvm", version.ref = "kotlinx-html" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
+kotlinx-serialization-json-examples = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization-examples" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-cbor = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-properties = { module = "org.jetbrains.kotlinx:kotlinx-serialization-properties", version.ref = "kotlinx-serialization" }
-kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization" }
+kotlinx-serialization-cbor-examples = { module = "org.jetbrains.kotlinx:kotlinx-serialization-cbor", version.ref = "kotlinx-serialization-examples" }
+kotlinx-serialization-properties-examples = { module = "org.jetbrains.kotlinx:kotlinx-serialization-properties", version.ref = "kotlinx-serialization-examples" }
+kotlinx-serialization-protobuf-examples = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinx-serialization-examples" }
 commons-cli = { module = "commons-cli:commons-cli", version.ref = "commons-cli" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 
