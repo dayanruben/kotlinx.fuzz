@@ -17,7 +17,7 @@ abstract class CrashReproducerWriter(private val template: ReproducerTestTemplat
     protected fun Method.getInstanceString() = if (isDeclaredInObject()) {
         method.declaringClass.kotlin.simpleName
     } else {
-        "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
+        "${method.declaringClass.kotlin.simpleName}()"
     }
 
     abstract fun writeToFile(input: ByteArray, reproducerFile: Path)

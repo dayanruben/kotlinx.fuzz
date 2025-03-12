@@ -4,15 +4,10 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.impl.PsiFileFactoryImpl
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.*
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.declaredFunctions
-import kotlin.reflect.jvm.jvmErasure
-import kotlinx.fuzz.KFuzzer
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
@@ -36,66 +31,6 @@ class ListAnyInlineReproducerWriter(
             result.addAll(getAllChildren(it))
         }
         return result
-    }
-
-    private fun generateFunction(function: KFunction<*>): FunSpec {
-        val returnType = function.returnType.jvmErasure.asTypeName()
-        val isNullable = function.returnType.isMarkedNullable
-        val castOperator = if (isNullable) "as?" else "as"
-
-        val parameters = function.parameters.drop(1)
-
-        val result = FunSpec.builder(function.name)
-            .returns(returnType.copy(nullable = isNullable))
-            .addModifiers(KModifier.OVERRIDE)
-
-        parameters.forEach { param ->
-            val paramType = param.type.jvmErasure.asTypeName()
-
-            val resolvedParamType = if (param.type.arguments.isNotEmpty()) {
-                val typeArguments = param.type.arguments
-                val resolvedArguments = typeArguments.map {
-                    it.type?.jvmErasure?.asTypeName() ?: TypeVariableName("T")
-                }
-                paramType.parameterizedBy(*resolvedArguments.toTypedArray())
-            } else {
-                paramType
-            }
-
-            val finalParamType = if (param.type.isMarkedNullable) {
-                resolvedParamType.copy(nullable = true)
-            } else {
-                resolvedParamType
-            }
-
-            result.addParameter(param.name!!, finalParamType)
-        }
-        result.addStatement("return iterator.next() $castOperator ${returnType.copy(nullable = isNullable)}")
-        return result.build()
-    }
-
-    private fun buildListReproducerObject(): TypeSpec {
-        val result = TypeSpec.classBuilder("ListReproducer")
-            .addSuperinterface(KFuzzer::class)
-            .addModifiers(KModifier.PRIVATE)
-            .primaryConstructor(
-                FunSpec.constructorBuilder()
-                    .addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true)))
-                    .build(),
-            )
-            .addProperty(
-                PropertySpec.builder(
-                    "iterator",
-                    Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))
-                ).initializer("values.iterator()").addModifiers(
-                    KModifier.PRIVATE,
-                )
-                    .build()
-            )
-        for (function in KFuzzer::class.declaredFunctions) {
-            result.addFunction(generateFunction(function))
-        }
-        return result.build()
     }
 
     private fun findRelevantFunction(): KtNamedFunction? = files.filter { it.extension == "kt" }

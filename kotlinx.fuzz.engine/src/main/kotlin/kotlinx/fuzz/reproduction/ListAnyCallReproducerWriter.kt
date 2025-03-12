@@ -16,59 +16,6 @@ class ListAnyCallReproducerWriter(
     private val instance: Any,
     private val method: Method,
 ) : CrashReproducerWriter(template, method) {
-    private fun generateFunction(function: KFunction<*>): FunSpec {
-        val returnType = function.returnType.jvmErasure.asTypeName()
-        val isNullable = function.returnType.isMarkedNullable
-        val castOperator = if (isNullable) "as?" else "as"
-
-        val parameters = function.parameters.drop(1)
-
-        val result = FunSpec.builder(function.name)
-            .returns(returnType.copy(nullable = isNullable))
-            .addModifiers(KModifier.OVERRIDE)
-
-        parameters.forEach { param ->
-            val paramType = param.type.jvmErasure.asTypeName()
-
-            val resolvedParamType = if (param.type.arguments.isNotEmpty()) {
-                val typeArguments = param.type.arguments
-                val resolvedArguments = typeArguments.map {
-                    it.type?.jvmErasure?.asTypeName() ?: TypeVariableName("T")
-                }
-                paramType.parameterizedBy(*resolvedArguments.toTypedArray())
-            } else {
-                paramType
-            }
-
-            val finalParamType = if (param.type.isMarkedNullable) {
-                resolvedParamType.copy(nullable = true)
-            } else {
-                resolvedParamType
-            }
-
-            result.addParameter(param.name!!, finalParamType)
-        }
-        result.addStatement("return iterator.next() $castOperator ${returnType.copy(nullable = isNullable)}")
-        return result.build()
-    }
-
-    private fun buildListReproducerObject(): TypeSpec {
-        val result = TypeSpec.classBuilder("ListReproducer")
-            .addSuperinterface(KFuzzer::class)
-            .addModifiers(KModifier.PRIVATE)
-            .primaryConstructor(
-                FunSpec.constructorBuilder().addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).build(),
-            )
-            .addProperty(PropertySpec.builder("iterator", Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).initializer("values.iterator()").addModifiers(
-                KModifier.PRIVATE,
-            )
-                .build())
-        for (function in KFuzzer::class.declaredFunctions) {
-            result.addFunction(generateFunction(function))
-        }
-        return result.build()
-    }
-
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
         val instanceString = method.getInstanceString()
