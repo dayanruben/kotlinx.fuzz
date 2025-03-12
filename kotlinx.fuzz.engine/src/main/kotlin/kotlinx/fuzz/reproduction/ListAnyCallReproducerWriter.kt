@@ -71,9 +71,7 @@ class ListAnyCallReproducerWriter(
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val instanceString = method.declaringClass.kotlin.objectInstance?.let {
-            method.declaringClass.kotlin.simpleName
-        } ?: "${method.declaringClass.kotlin.simpleName}::class.java.getDeclaredConstructor().newInstance()"
+        val instanceString = method.getInstanceString()
         val code = buildCodeBlock {
             addStatement(
                 "val values = listOf<Any?>(" +

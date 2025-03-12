@@ -28,8 +28,8 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
 
         val fileSpec = FileSpec.builder(packageName, "")
             .addType(objectSpec)
-            .addTypes(additionalClasses)
             .addFunctions(additionalFunctions)
+            .addTypes(additionalClasses)
 
         imports.forEach {
             fileSpec.addImport(it.packageName, it.className)

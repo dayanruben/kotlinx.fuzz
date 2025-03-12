@@ -162,7 +162,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
                 if (!reproducerFile.exists() && createNewReproducers) {
-                    crashReproducer.writeToFile(crashFile.readBytes(), targetCrashFile)
+                    crashReproducer.writeToFile(crashFile.readBytes(), reproducerFile)
                 }
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     filesForDeletion.add(crashFile)
