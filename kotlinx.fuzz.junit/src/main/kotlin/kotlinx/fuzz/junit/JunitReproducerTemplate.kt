@@ -10,8 +10,7 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
         identifier: String,
         testCode: CodeBlock,
         imports: List<KotlinpoetImport>,
-        additionalClasses: List<TypeSpec>,
-        additionalFunctions: List<FunSpec>,
+        additionalCode: String,
     ): String {
         val fullClassName = instance::class.java.name
         val packageName = fullClassName.substringBeforeLast('.', missingDelimiterValue = "")
@@ -28,13 +27,11 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
 
         val fileSpec = FileSpec.builder(packageName, "")
             .addType(objectSpec)
-            .addFunctions(additionalFunctions)
-            .addTypes(additionalClasses)
 
         imports.forEach {
             fileSpec.addImport(it.packageName, it.className)
         }
 
-        return fileSpec.build().toString()
+        return "${fileSpec.build()}\n${additionalCode}"
     }
 }

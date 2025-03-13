@@ -3,10 +3,10 @@ package kotlinx.fuzz.reproduction
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.nio.charset.Charset
-import kotlinx.fuzz.*
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredFunctions
 import kotlin.reflect.jvm.jvmErasure
+import kotlinx.fuzz.*
 
 data class ExecutionResult(val typeName: String, val value: Any?)
 
@@ -288,6 +288,27 @@ internal fun arrayToString(executionResult: ExecutionResult): String = when {
     else -> error("Unsupported execution result type: ${executionResult.typeName}")
 }
 
+internal fun buildListReproducerObject(): TypeSpec {
+    val result = TypeSpec.classBuilder("ListReproducer")
+        .addSuperinterface(KFuzzer::class)
+        .addModifiers(KModifier.PRIVATE)
+        .primaryConstructor(
+            FunSpec.constructorBuilder()
+                .addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true)))
+                .build(),
+        )
+        .addProperty(
+            PropertySpec.builder("iterator", Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).initializer("values.iterator()").addModifiers(
+                KModifier.PRIVATE,
+            )
+                .build(),
+        )
+    for (function in KFuzzer::class.declaredFunctions) {
+        result.addFunction(generateFunction(function))
+    }
+    return result.build()
+}
+
 private fun generateFunction(function: KFunction<*>): FunSpec {
     val returnType = function.returnType.jvmErasure.asClassName()
     val isNullable = function.returnType.isMarkedNullable
@@ -321,23 +342,5 @@ private fun generateFunction(function: KFunction<*>): FunSpec {
         result.addParameter(param.name!!, finalParamType)
     }
     result.addStatement("return iterator.next() $castOperator ${returnType.copy(nullable = isNullable)}")
-    return result.build()
-}
-
-internal fun buildListReproducerObject(): TypeSpec {
-    val result = TypeSpec.classBuilder("ListReproducer")
-        .addSuperinterface(KFuzzer::class)
-        .addModifiers(KModifier.PRIVATE)
-        .primaryConstructor(
-            FunSpec.constructorBuilder()
-                .addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true)))
-                .build(),
-        )
-        .addProperty(
-            PropertySpec.builder("iterator", Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).initializer("values.iterator()").addModifiers(KModifier.PRIVATE).build()
-        )
-    for (function in KFuzzer::class.declaredFunctions) {
-        result.addFunction(generateFunction(function))
-    }
     return result.build()
 }

@@ -13,6 +13,7 @@ import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.ReproducerType
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -109,14 +110,24 @@ class KotlinxFuzzJunitEngine : TestEngine {
     }
 
     private fun setReproducer(instance: Any, method: Method) = try {
-        fuzzEngine.setReproducer(
-            ListAnyInlineReproducerWriter(
-                JunitReproducerTemplate(instance, method),
-                instance,
-                method,
-                Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
-            ),
-        )
+        when (config.global.reproducerType) {
+            ReproducerType.LIST_ANY_INLINE -> fuzzEngine.setReproducer(
+                ListAnyInlineReproducerWriter(
+                    JunitReproducerTemplate(instance, method),
+                    instance,
+                    method,
+                    Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
+                ),
+            )
+
+            ReproducerType.LIST_ANY_CALL -> fuzzEngine.setReproducer(
+                ListAnyCallReproducerWriter(
+                    JunitReproducerTemplate(instance, method),
+                    instance,
+                    method,
+                ),
+            )
+        }
     } catch (e: RuntimeException) {
         fuzzEngine.setReproducer(
             ListAnyCallReproducerWriter(

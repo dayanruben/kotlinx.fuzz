@@ -1,15 +1,10 @@
 package kotlinx.fuzz.reproduction
 
 import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.security.MessageDigest
 import kotlin.io.path.*
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.declaredFunctions
-import kotlin.reflect.jvm.jvmErasure
-import kotlinx.fuzz.KFuzzer
 
 class ListAnyCallReproducerWriter(
     private val template: ReproducerTestTemplate,
@@ -20,6 +15,8 @@ class ListAnyCallReproducerWriter(
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
         val instanceString = method.getInstanceString()
         val code = buildCodeBlock {
+            addStatement("val method = Class.forName(\"${method.declaringClass.name}\").getDeclaredMethod(\"${method.name}\", KFuzzer::class.java)")
+            addStatement("method.isAccessible = true")
             addStatement(
                 "val values = listOf<Any?>(" +
                     registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
@@ -33,14 +30,14 @@ class ListAnyCallReproducerWriter(
                     } +
                     ")",
             )
-            addStatement("$instanceString.`${method.name}`(ListReproducer(values))")
+            addStatement("method.invoke($instanceString, ListReproducer(values))")
         }
 
         reproducerFile.writeText(
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
-                additionalClasses = listOf(buildListReproducerObject()),
+                additionalCode = buildListReproducerObject().toString(),
             ),
         )
     }

@@ -12,6 +12,7 @@ import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
 import org.jetbrains.kotlin.config.CompilerConfiguration
 import org.jetbrains.kotlin.idea.KotlinLanguage
+import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
@@ -19,22 +20,14 @@ class ListAnyInlineReproducerWriter(
     private val template: ReproducerTestTemplate,
     private val instance: Any,
     private val method: Method,
-    private val files: List<Path>,
+    files: List<Path>,
 ) : CrashReproducerWriter(template, method) {
-    private val relevantFunction = findRelevantFunction()
-        ?: throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
+    private val topLevelPrivateFunctions = mutableListOf<KtNamedFunction>()
+    private var found = false
+    private lateinit var relevantFunction: KtNamedFunction
 
-    private fun getAllChildren(ktElement: PsiElement): List<PsiElement> {
-        val result = mutableListOf<PsiElement>()
-        ktElement.children.forEach {
-            result.add(it)
-            result.addAll(getAllChildren(it))
-        }
-        return result
-    }
-
-    private fun findRelevantFunction(): KtNamedFunction? = files.filter { it.extension == "kt" }
-        .map { file ->
+    init {
+        files.filter { it.extension == "kt" }.forEach { file ->
             val project = KotlinCoreEnvironment.createForProduction(
                 Disposer.newDisposable("Disposable for dummy project"),
                 CompilerConfiguration(),
@@ -45,28 +38,42 @@ class ListAnyInlineReproducerWriter(
                 KotlinLanguage.INSTANCE,
                 file.readText(),
             ) as KtFile
-            return@map getAllChildren(ktFile).filterIsInstance<KtNamedFunction>()
-                .find { it.fqName?.asString() == "${method.declaringClass.name}.${method.name}" }
+            val targetFunction = getAllChildren(ktFile).filterIsInstance<KtNamedFunction>().find {
+                it.fqName?.asString() == "${method.declaringClass.name}.${method.name}"
+            }
+            targetFunction?.let {
+                found = true
+                relevantFunction = targetFunction
+                ktFile.children.filterIsInstance<KtNamedFunction>().filter {
+                    it.isTopLevel && it.hasModifier(KtTokens.PRIVATE_KEYWORD)
+                }.forEach { topLevelPrivateFunctions.add(it) }
+            }
         }
-        .filterNotNull()
-        .getOrNull(0)
+        if (!found) {
+            throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
+        }
+    }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    override fun writeToFile(input: ByteArray, reproducerFile: Path) {
+    private fun getAllChildren(ktElement: PsiElement): List<PsiElement> {
+        val result = mutableListOf<PsiElement>()
+        ktElement.children.forEach {
+            result.add(it)
+            result.addAll(getAllChildren(it))
+        }
+        return result
+    }
+
+    private fun buildExtensionFunction(hash: String, input: ByteArray): FunSpec {
         val parameterName = relevantFunction.valueParameters[0].name!!
-        val body = relevantFunction.bodyExpression!!.text.trimIndent()
-            .drop(1)
-            .dropLast(1)
+        val body = relevantFunction.bodyExpression!!.text
+            .trimIndent()
+            .trim('{')
+            .trim('}')
             .split("\n")
             .filter { it.isNotBlank() }
         val commonBlankPrefixLength = body.minOf { line -> line.takeWhile { it.isWhitespace() }.length }
 
-        val hash = MessageDigest.getInstance("SHA-1").digest(input).toHexString()
-        val code = buildCodeBlock {
-            addStatement("${method.getInstanceString()}.`${method.name} reproducer $hash`()")
-        }
-
-        val extension = FunSpec.builder("`${method.name} reproducer $hash`")
+        return FunSpec.builder("`${method.name} reproducer $hash`")
             .receiver(method.declaringClass)
             .addModifiers(KModifier.PRIVATE)
             .addCode(
@@ -74,25 +81,36 @@ class ListAnyInlineReproducerWriter(
                     addStatement(
                         "val $parameterName = ListReproducer(listOf<Any?>(${
                             registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
-                                executionResult.value?.let {
-                                    if (executionResult.typeName.contains("Array")) {
-                                        arrayToString(executionResult)
-                                    } else {
-                                        executionResult.value.toString()
-                                    }
-                                } ?: "null"
-                            }
+                                    executionResult.value?.let {
+                                        if (executionResult.typeName.contains("Array")) {
+                                            arrayToString(executionResult)
+                                        } else {
+                                            executionResult.value.toString()
+                                        }
+                                    } ?: "null"
+                                }
                         }))")
                     body.forEach { addStatement(it.drop(commonBlankPrefixLength)) }
                 })
             .build()
+    }
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override fun writeToFile(input: ByteArray, reproducerFile: Path) {
+        val hash = MessageDigest.getInstance("SHA-1").digest(input).toHexString()
+        val code = buildCodeBlock {
+            addStatement("${method.getInstanceString()}.`${method.name} reproducer $hash`()")
+        }
+
+        val extension = buildExtensionFunction(hash, input)
 
         reproducerFile.writeText(
             template.buildReproducer(
                 hash,
                 code,
-                additionalClasses = listOf(buildListReproducerObject()),
-                additionalFunctions = listOf(extension)
+                additionalCode = extension.toString() + "\n" +
+                    topLevelPrivateFunctions.map { buildCodeBlock { add(it.text) } }.joinToCode("\n") + "\n" +
+                    buildListReproducerObject().toString() + "\n",
             ),
         )
     }

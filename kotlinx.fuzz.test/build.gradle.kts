@@ -1,4 +1,5 @@
 import kotlinx.fuzz.config.CoverageReportType
+import kotlinx.fuzz.config.ReproducerType
 import kotlin.time.Duration.Companion.seconds
 
 plugins {
@@ -38,6 +39,7 @@ fuzzConfig {
         )
     }
     supportJazzerTargets = true
+    reproducerType = ReproducerType.LIST_ANY_INLINE
 }
 
 kotlin {
