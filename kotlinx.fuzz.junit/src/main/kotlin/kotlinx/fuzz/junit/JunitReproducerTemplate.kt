@@ -32,6 +32,6 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
             fileSpec.addImport(it.packageName, it.className)
         }
 
-        return "${fileSpec.build()}\n${additionalCode}"
+        return "${fileSpec.build()}\n$additionalCode"
     }
 }
