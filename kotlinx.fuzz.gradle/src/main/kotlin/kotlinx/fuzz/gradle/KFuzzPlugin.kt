@@ -23,7 +23,7 @@ import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
-private const val USER_FILES_VAR_NAME = "user_files"
+private const val USER_FILES_VAR_NAME = "kotlinx.fuzz.userFiles"
 
 private val Project.fuzzConfig: KFuzzConfig
     get() {

@@ -32,6 +32,7 @@ import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
+private const val USER_FILES_VAR_NAME = "kotlinx.fuzz.userFiles"
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
 
@@ -47,7 +48,6 @@ class KotlinxFuzzJunitEngine : TestEngine {
         }
     }
     private val isRegression: Boolean by lazy { config.global.regressionEnabled }
-    private val USER_FILES_VAR_NAME = "user_files"
 
     override fun getId(): String = "kotlinx.fuzz"
 
