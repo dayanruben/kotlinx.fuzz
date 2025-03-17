@@ -18,7 +18,6 @@ import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.reproduction.CrashReproducerWriter
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
@@ -35,14 +34,9 @@ internal val KFuzzConfig.exceptionsDir: Path
     get() = global.workDir.resolve("exceptions")
 
 @Suppress("unused")
-class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
+class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine() {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = config.engine as JazzerConfig
-    private lateinit var crashReproducer: CrashReproducerWriter
-
-    override fun setReproducer(reproducer: CrashReproducerWriter) {
-        crashReproducer = reproducer
-    }
 
     override fun initialise() {
         config.corpusDir.createDirectories()
@@ -162,7 +156,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
                 if (!reproducerFile.exists() && createNewReproducers) {
-                    crashReproducer.writeToFile(crashFile.readBytes(), reproducerFile)
+                    reproducer.writeToFile(crashFile.readBytes(), reproducerFile)
                 }
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     filesForDeletion.add(crashFile)
