@@ -7,10 +7,7 @@ import java.net.URI
 import kotlin.io.path.Path
 import kotlin.reflect.KClass
 import kotlinx.coroutines.*
-import kotlinx.fuzz.IgnoreFailures
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.ReproducerType
@@ -32,7 +29,9 @@ import org.junit.platform.engine.discovery.MethodSelector
 import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
+private const val REGRESSION_ENABLED_NAME = "kotlinx.fuzz.regressionEnabled"
 private const val USER_FILES_VAR_NAME = "kotlinx.fuzz.userFiles"
+
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
 
@@ -47,7 +46,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
         }
     }
-    private val isRegression: Boolean by lazy { config.global.regressionEnabled }
+    private val isRegression: Boolean by lazy { System.getProperty(REGRESSION_ENABLED_NAME).toBooleanOrFalse() }
 
     override fun getId(): String = "kotlinx.fuzz"
 
