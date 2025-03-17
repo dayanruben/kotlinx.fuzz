@@ -23,6 +23,7 @@ class ListAnyInlineReproducerWriter(
     files: List<Path>,
 ) : CrashReproducerWriter(template, method) {
     private val topLevelPrivateFunctions = mutableListOf<KtNamedFunction>()
+    private val originalFileImports = mutableListOf<String>()
     private var found = false
     private lateinit var relevantFunction: KtNamedFunction
 
@@ -47,6 +48,9 @@ class ListAnyInlineReproducerWriter(
                 ktFile.children.filterIsInstance<KtNamedFunction>().filter {
                     it.isTopLevel && it.hasModifier(KtTokens.PRIVATE_KEYWORD)
                 }.forEach { topLevelPrivateFunctions.add(it) }
+                ktFile.importDirectives.forEach {
+                    originalFileImports.add(it.text)
+                }
             }
         }
         if (!found) {
@@ -108,6 +112,7 @@ class ListAnyInlineReproducerWriter(
             template.buildReproducer(
                 hash,
                 code,
+                imports = originalFileImports,
                 additionalCode = extension.toString() + "\n" +
                     topLevelPrivateFunctions.map { buildCodeBlock { add(it.text) } }.joinToCode("\n") + "\n" +
                     buildListReproducerObject().toString() + "\n",

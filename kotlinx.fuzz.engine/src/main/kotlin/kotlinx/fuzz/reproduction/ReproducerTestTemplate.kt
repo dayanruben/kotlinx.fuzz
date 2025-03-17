@@ -6,9 +6,7 @@ interface ReproducerTestTemplate {
     fun buildReproducer(
         identifier: String,
         testCode: CodeBlock,
-        imports: List<KotlinpoetImport> = emptyList(),
+        imports: List<String> = emptyList(),
         additionalCode: String = "",
     ): String
 }
-
-data class KotlinpoetImport(val packageName: String, val className: String)

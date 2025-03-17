@@ -20,7 +20,7 @@ class ByteArrayReproducerWriter(private val template: ReproducerTestTemplate, pr
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
-                imports = listOf(KotlinpoetImport("kotlinx.fuzz", "KFuzzerImpl")),
+                imports = listOf("import kotlinx.fuzz.KFuzzerImpl")
             ),
         )
     }

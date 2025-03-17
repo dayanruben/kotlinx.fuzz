@@ -37,6 +37,7 @@ class ListAnyCallReproducerWriter(
             template.buildReproducer(
                 MessageDigest.getInstance("SHA-1").digest(input).toHexString(),
                 code,
+                imports = listOf("import kotlinx.fuzz.KFuzzer"),
                 additionalCode = buildListReproducerObject().toString(),
             ),
         )

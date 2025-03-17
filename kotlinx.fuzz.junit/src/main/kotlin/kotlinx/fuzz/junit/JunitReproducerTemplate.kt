@@ -2,14 +2,13 @@ package kotlinx.fuzz.junit
 
 import com.squareup.kotlinpoet.*
 import java.lang.reflect.Method
-import kotlinx.fuzz.reproduction.KotlinpoetImport
 import kotlinx.fuzz.reproduction.ReproducerTestTemplate
 
 class JunitReproducerTemplate(private val instance: Any, private val method: Method) : ReproducerTestTemplate {
     override fun buildReproducer(
         identifier: String,
         testCode: CodeBlock,
-        imports: List<KotlinpoetImport>,
+        imports: List<String>,
         additionalCode: String,
     ): String {
         val fullClassName = instance::class.java.name
@@ -28,10 +27,10 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
         val fileSpec = FileSpec.builder(packageName, "")
             .addType(objectSpec)
 
-        imports.forEach {
-            fileSpec.addImport(it.packageName, it.className)
-        }
+        val packageString = fileSpec.build().toString().split("\n")[0]
+        val importsString = imports.joinToString("\n")
+        val fileString = fileSpec.build().toString().split("\n").drop(2).joinToString("\n")
 
-        return "${fileSpec.build()}\n$additionalCode"
+        return "$packageString\n\n$importsString\n$fileString\n$additionalCode"
     }
 }
