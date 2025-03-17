@@ -29,7 +29,11 @@ class JunitReproducerTemplate(private val instance: Any, private val method: Met
 
         val packageString = fileSpec.build().toString().split("\n")[0]
         val importsString = imports.joinToString("\n")
-        val fileString = fileSpec.build().toString().split("\n").drop(2).joinToString("\n")
+        val fileString = fileSpec.build()
+            .toString()
+            .split("\n")
+            .drop(2)
+            .joinToString("\n")
 
         return "$packageString\n\n$importsString\n$fileString\n$additionalCode"
     }
