@@ -1,6 +1,4 @@
 import kotlinx.fuzz.booleanProperty
-import kotlinx.fuzz.task.target.CheckTargetsExist
-import kotlinx.fuzz.task.target.PrintTargetNames
 
 plugins {
     kotlin("jvm")
@@ -11,6 +9,7 @@ version = VERSION
 
 repositories {
     mavenCentral()
+    maven(url = "https://plan-maven.apal-research.com")
 }
 
 dependencies {
@@ -24,29 +23,5 @@ kotlin {
 tasks.named<Test>("test") {
     useJUnitPlatform()
     testLogging.showStandardStreams = true
-
-    // set up Jazzer options
-    environment(mapOf("JAZZER_FUZZ" to "0"))
-    maxHeapSize = "${1024 * 4}m"
-    jvmArgs("-Xss1g", "-XX:+UseParallelGC")
-}
-
-tasks.register<Copy>("copyDependencies") {
-    from(configurations.runtimeClasspath).into("${project.layout.buildDirectory.get()}/dependencies")
-}
-
-tasks.register<PrintTargetNames>("printTargetNames") {
-    dependsOn("compileTestKotlin")
-    classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
-    outputFile.set(layout.buildDirectory.file("targets.txt"))
-}
-
-tasks.register<CheckTargetsExist>("checkTargetsExist") {
-    dependsOn("compileTestKotlin")
-    classpathDir.set(kotlin.sourceSets.test.get().kotlin.destinationDirectory)
-}
-
-tasks.getByName("test").let {
-    it.enabled = project.booleanProperty("enableTests") == true
-    it.dependsOn("copyDependencies")
+    enabled = project.booleanProperty("enableTests") == true
 }
