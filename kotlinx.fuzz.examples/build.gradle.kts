@@ -1,3 +1,3 @@
 plugins {
-    id("kotlinx.fuzz.src-module")
+//    id("kotlinx.fuzz.src-module")
 }

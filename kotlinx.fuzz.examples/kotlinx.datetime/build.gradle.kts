@@ -1,4 +1,5 @@
-import kotlin.time.Duration.Companion.minutes
+import kotlinx.fuzz.config.CoverageReportType
+import kotlin.time.Duration.Companion.seconds
 
 plugins {
     id("kotlinx.fuzz.example-module")
@@ -7,20 +8,24 @@ plugins {
 
 dependencies {
     implementation(kotlin("reflect"))
-    implementation(libs.jazzer.api)
-    implementation(libs.jazzer.junit)
+    implementation(libs.plan.jazzer.api)
+    implementation(libs.plan.jazzer.junit)
     implementation(libs.reflections)
 
-    testImplementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.datetime)
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
 }
 
 
 fuzzConfig {
     instrument = listOf("kotlinx.datetime.**")
-    maxFuzzTimePerTarget = 1.minutes
+    maxFuzzTimePerTarget = 10.seconds
     supportJazzerTargets = true
+    logLevel = kotlinx.fuzz.config.LogLevel.DEBUG
+    detailedLogging = true
     coverage {
-        includeDependencies = setOf(libs.kotlinx.datetime.get().toString())
+        reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
+        val datetime = libs.kotlinx.datetime.get()
+        includeDependencies = setOf("${datetime.group}:${datetime.name}-jvm")
     }
 }
