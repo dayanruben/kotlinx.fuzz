@@ -39,7 +39,7 @@ fuzzConfig {
         )
     }
     supportJazzerTargets = true
-    reproducerType = ReproducerType.LIST_ANY_INLINE
+    reproducerType = ReproducerType.LIST_BASED_INLINE
 }
 
 kotlin {

@@ -17,54 +17,49 @@ import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
 class ListAnyInlineReproducerWriter(
-    private val template: ReproducerTestTemplate,
+    private val template: TestReproducerTemplate,
     private val instance: Any,
     private val method: Method,
     files: List<Path>,
 ) : CrashReproducerWriter(template, method) {
     private val topLevelPrivateFunctions = mutableListOf<KtNamedFunction>()
     private val originalFileImports = mutableListOf<String>()
-    private var found = false
-    private lateinit var relevantFunction: KtNamedFunction
+    private val relevantFunction: KtNamedFunction
+
+    private val PsiElement.flattenedChildren: List<PsiElement>
+        get() = buildList {
+            children.forEach {
+                add(it)
+                addAll(it.flattenedChildren)
+            }
+        }
 
     init {
-        files.filter { it.extension == "kt" }.forEach { file ->
-            val project = KotlinCoreEnvironment.createForProduction(
-                Disposer.newDisposable("Disposable for dummy project"),
-                CompilerConfiguration(),
-                EnvironmentConfigFiles.JVM_CONFIG_FILES,
-            ).project
-            val ktFile = PsiFileFactoryImpl(project).createFileFromText(
-                file.name,
-                KotlinLanguage.INSTANCE,
-                file.readText(),
-            ) as KtFile
-            val targetFunction = getAllChildren(ktFile).filterIsInstance<KtNamedFunction>().find {
-                it.fqName?.asString() == "${method.declaringClass.name}.${method.name}"
-            }
-            targetFunction?.let {
-                found = true
-                relevantFunction = targetFunction
-                ktFile.children.filterIsInstance<KtNamedFunction>().filter {
-                    it.isTopLevel && it.hasModifier(KtTokens.PRIVATE_KEYWORD)
-                }.forEach { topLevelPrivateFunctions.add(it) }
-                ktFile.importDirectives.forEach {
-                    originalFileImports.add(it.text)
+        val project = KotlinCoreEnvironment.createForProduction(
+            Disposer.newDisposable("Disposable for dummy project"),
+            CompilerConfiguration(),
+            EnvironmentConfigFiles.JVM_CONFIG_FILES,
+        ).project
+        relevantFunction = files.filter { it.extension == "kt" }
+            .mapNotNull { file ->
+                val ktFile = PsiFileFactoryImpl(project).createFileFromText(
+                    file.name,
+                    KotlinLanguage.INSTANCE,
+                    file.readText(),
+                ) as KtFile
+                ktFile.flattenedChildren.filterIsInstance<KtNamedFunction>().find {
+                    it.fqName?.asString() == "${method.declaringClass.name}.${method.name}"
                 }
             }
+            .singleOrNull<KtNamedFunction?>() ?: throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
+        relevantFunction.containingKtFile.let { ktFile ->
+            ktFile.children.filterIsInstance<KtNamedFunction>().filter {
+                it.isTopLevel && it.hasModifier(KtTokens.PRIVATE_KEYWORD)
+            }.forEach { topLevelPrivateFunctions.add(it) }
+            ktFile.importDirectives.forEach {
+                originalFileImports.add(it.text)
+            }
         }
-        if (!found) {
-            throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
-        }
-    }
-
-    private fun getAllChildren(ktElement: PsiElement): List<PsiElement> {
-        val result = mutableListOf<PsiElement>()
-        ktElement.children.forEach {
-            result.add(it)
-            result.addAll(getAllChildren(it))
-        }
-        return result
     }
 
     private fun buildExtensionFunction(hash: String, input: ByteArray): FunSpec {
@@ -84,15 +79,7 @@ class ListAnyInlineReproducerWriter(
                 buildCodeBlock {
                     addStatement(
                         "val $parameterName = ListReproducer(listOf<Any?>(${
-                            registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
-                                    executionResult.value?.let {
-                                        if (executionResult.typeName.contains("Array")) {
-                                            arrayToString(executionResult)
-                                        } else {
-                                            executionResult.value.toString()
-                                        }
-                                    } ?: "null"
-                                }
+                            invokeTestAndRegisterOutputs(instance, method, input).joinToString(", ") { toCodeString(it) }
                         }))")
                     body.forEach { addStatement(it.drop(commonBlankPrefixLength)) }
                 })
@@ -103,7 +90,7 @@ class ListAnyInlineReproducerWriter(
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
         val hash = MessageDigest.getInstance("SHA-1").digest(input).toHexString()
         val code = buildCodeBlock {
-            addStatement("${method.getInstanceString()}.`${method.name} reproducer $hash`()")
+            addStatement("${method.instanceString}.`${method.name} reproducer $hash`()")
         }
 
         val extension = buildExtensionFunction(hash, input)

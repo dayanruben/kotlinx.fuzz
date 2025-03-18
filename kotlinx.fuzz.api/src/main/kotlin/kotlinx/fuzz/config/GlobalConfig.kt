@@ -76,7 +76,7 @@ class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Globa
         nameSuffix = "reproducerType",
         intoString = { it.toString() },
         fromString = { ReproducerType.valueOf(it) },
-        default = ReproducerType.LIST_ANY_INLINE,
+        default = ReproducerType.LIST_BASED_INLINE,
     )
 }
 
@@ -84,6 +84,11 @@ enum class LogLevel {
     DEBUG, ERROR, INFO, TRACE, WARN;
 }
 
+/**
+ * Types of reproducers that are described [here](docs/Crash reproduction.md).
+ * LIST_BASED_NO_INLINE - create a List<Any?> based KFuzzer and call user's method
+ * LIST_BASED_INLINE - create a List<Any?> based KFuzzer and inline user's method
+ */
 enum class ReproducerType {
-    LIST_ANY_CALL, LIST_ANY_INLINE
+    LIST_BASED_INLINE, LIST_BASED_NO_INLINE
 }

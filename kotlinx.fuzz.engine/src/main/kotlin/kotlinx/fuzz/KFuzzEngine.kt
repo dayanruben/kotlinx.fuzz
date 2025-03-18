@@ -3,13 +3,13 @@ package kotlinx.fuzz
 import java.lang.reflect.Method
 import kotlinx.fuzz.reproduction.CrashReproducerWriter
 
-abstract class KFuzzEngine {
-    lateinit var reproducer: CrashReproducerWriter
+interface KFuzzEngine {
+    var reproducer: CrashReproducerWriter
 
     /**
      * Initialises engine. Should be called only once for every KFuzzEngine instance
      */
-    abstract fun initialise()
+    fun initialise()
 
     /**
      * Runs engine on the specified target. Crashes should be saved in "<reproducerPath>/<class name>/<method name>".
@@ -21,10 +21,10 @@ abstract class KFuzzEngine {
      * @return nullable throwable. Null iff harness ran without failures, cause (look at throwable field in
      * org.junit.platform.engine.TestExecutionResult) otherwise
      */
-    abstract fun runTarget(instance: Any, method: Method): Throwable?
+    fun runTarget(instance: Any, method: Method): Throwable?
 
     /**
      * Runs any needed postwork, like rearranging crash files
      */
-    abstract fun finishExecution()
+    fun finishExecution()
 }

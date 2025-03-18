@@ -4,6 +4,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.fuzz.IgnoreFailures
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
+import kotlinx.fuzz.asciiStringOrNull
 import kotlinx.fuzz.test.RealUserCode.method1
 
 class AnotherTarget {
@@ -41,6 +42,13 @@ class AnotherTarget {
                     error("Expected failure")
                 }
             }
+        }
+    }
+
+    @KFuzzTest
+    fun extensionFunctionCheck(data: KFuzzer) {
+        if (data.asciiStringOrNull(9) == "abibaboba") {
+            error("Expected failure")
         }
     }
 }

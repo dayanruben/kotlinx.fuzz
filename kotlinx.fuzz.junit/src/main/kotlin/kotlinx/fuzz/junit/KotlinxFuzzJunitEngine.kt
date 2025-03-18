@@ -110,7 +110,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
 
     private fun setReproducer(instance: Any, method: Method) = try {
         when (config.global.reproducerType) {
-            ReproducerType.LIST_ANY_INLINE -> fuzzEngine.reproducer =
+            ReproducerType.LIST_BASED_INLINE -> fuzzEngine.reproducer =
                 ListAnyInlineReproducerWriter(
                     JunitReproducerTemplate(instance, method),
                     instance,
@@ -118,7 +118,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                     Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
                 )
 
-            ReproducerType.LIST_ANY_CALL -> fuzzEngine.reproducer =
+            ReproducerType.LIST_BASED_NO_INLINE -> fuzzEngine.reproducer =
                 ListAnyCallReproducerWriter(
                     JunitReproducerTemplate(instance, method),
                     instance,

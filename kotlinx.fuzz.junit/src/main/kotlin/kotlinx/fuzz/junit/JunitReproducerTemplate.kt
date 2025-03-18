@@ -2,9 +2,9 @@ package kotlinx.fuzz.junit
 
 import com.squareup.kotlinpoet.*
 import java.lang.reflect.Method
-import kotlinx.fuzz.reproduction.ReproducerTestTemplate
+import kotlinx.fuzz.reproduction.TestReproducerTemplate
 
-class JunitReproducerTemplate(private val instance: Any, private val method: Method) : ReproducerTestTemplate {
+class JunitReproducerTemplate(private val instance: Any, private val method: Method) : TestReproducerTemplate {
     override fun buildReproducer(
         identifier: String,
         testCode: CodeBlock,

@@ -7,30 +7,18 @@ import java.security.MessageDigest
 import kotlin.io.path.*
 
 class ListAnyCallReproducerWriter(
-    private val template: ReproducerTestTemplate,
-    private val instance: Any,
+    private val template: TestReproducerTemplate, private val instance: Any,
     private val method: Method,
 ) : CrashReproducerWriter(template, method) {
     @OptIn(ExperimentalStdlibApi::class)
     override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val instanceString = method.getInstanceString()
         val code = buildCodeBlock {
-            addStatement("val method = Class.forName(\"${method.declaringClass.name}\").getDeclaredMethod(\"${method.name}\", KFuzzer::class.java)")
-            addStatement("method.isAccessible = true")
             addStatement(
                 "val values = listOf<Any?>(" +
-                    registerOutputs(instance, method, input).joinToString(", ") { executionResult ->
-                        executionResult.value?.let {
-                            if (executionResult.typeName.contains("Array")) {
-                                arrayToString(executionResult)
-                            } else {
-                                executionResult.value.toString()
-                            }
-                        } ?: "null"
-                    } +
+                    invokeTestAndRegisterOutputs(instance, method, input).joinToString(", ") { toCodeString(it) } +
                     ")",
             )
-            addStatement("method.invoke($instanceString, ListReproducer(values))")
+            addStatement("${method.instanceString}.`${method.name}`(ListReproducer(values))")
         }
 
         reproducerFile.writeText(
