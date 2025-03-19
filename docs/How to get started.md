@@ -27,7 +27,7 @@ fun testDuration(f: Fuzzer) {
 }
 ```
 
-4. **[Configure](docs/Configuration.md) and run the tests**. You need to decide how long you want to run fuzz tests, what parts of your project fuzzer should target and where it should store all the results. Here is an example of the simplest configuration:
+4. **[Configure](Configuration.md) and run the tests**. You need to decide how long you want to run fuzz tests, what parts of your project fuzzer should target and where it should store all the results. Here is an example of the simplest configuration:
 ```kotlin
 fuzzConfig {
     instrument = listOf("org.example.**")
