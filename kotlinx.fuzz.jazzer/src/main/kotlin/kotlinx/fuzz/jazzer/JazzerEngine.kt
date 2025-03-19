@@ -38,7 +38,7 @@ internal val KFuzzConfig.exceptionsDir: Path
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = config.engine as JazzerConfig
-    override lateinit var reproducer: CrashReproducerWriter
+    override lateinit var reproducerWriter: CrashReproducerWriter
 
     override fun initialise() {
         config.corpusDir.createDirectories()
@@ -158,7 +158,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
                 if (!reproducerFile.exists() && createNewReproducers) {
-                    reproducer.writeToFile(crashFile.readBytes(), reproducerFile)
+                    reproducerWriter.writeToFile(crashFile.readBytes(), reproducerFile)
                 }
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     filesForDeletion.add(crashFile)
