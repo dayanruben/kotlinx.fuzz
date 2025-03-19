@@ -5,18 +5,18 @@ Let’s see how to get started with **kotlinx.fuzz** from the Kotlin standard li
 1. **Analyze code**. Before starting the fuzzer, you should first decide _what it is that you want to fuzz_. Fuzzing every single function in your program is not very efficient, because it will require a lot of time and effort when analysing the bugs. Therefore, it is beneficial to select several (1-10) target functions that will be the main entry-points for fuzzer. In our case, we want to fuzz `Duration` class from Kotlin standard library. From all of it's API methods, we are going to focus on `parseIsoStringOrNull` method. It that parses a time duration from a string in the ISO-8601 format. If the string represents a valid time &mdash; it returns a Duration instance, otherwise it returns null. Let’s write a fuzz test that checks its correctness!
 2. **Design a fuzz test**. After you selected your target, your next step is to decide how are you going to fuzz it. You need to decide what scenarios you want to test and how to generate all necessary data using fuzzer. In case of our example, `parseIsoStringOrNull` just takes a string in an ISO format. For the simplest case, lest just write a fuzz test that generates a random string and passes to the target:
 ```kotlin
-@FuzzTest
-fun testDuration(f: Fuzzer) {
-    val isoString = f.generateString()
+@KFuzzTest
+fun testDuration(f: KFuzzer) {
+    val isoString = f.asciiString(10)
     val duration = Duration.parseIsoStringOrNull(isoString)
     println("$isoString -> $duration")
 }
 ```
 3. **Come up with an oracle**. After creating this simple test, we can run it for some time and manually analyse the results. However, it still takes quite a lot of effort. To fully leverage the power of fuzzing, we need to come up with an **oracle**: a way to automatically check if the execution result is correct. Oracle can be as simple or as complicated as you want, however, quality of an oracle decides what types of bugs you will be able to find. The simplest oracle is just an exception &mdash; you can ensure, that your program does not throw any unexpected exceptions. In some cases you can perform more complicated checks. For example, if you are fuzzing a JSON parsing library, you can do an inverse check: `toJSON(fromJSON(string)) == string`.  Luckily, in our example we can use the Java standard library, which has a method with exactly the same functionality (at least, according to the documentation 🙂). So here is what our final fuzz test looks like.
 ```kotlin
-@FuzzTest
-fun testDuration(f: Fuzzer) {
-    val isoString = f.generateString()
+@KFuzzTest
+fun testDuration(f: KFuzzer) {
+    val isoString = f.asciiString(10)
     val duration = Duration.parseIsoStringOrNull(isoString)
 
     val javaDuration = try {
