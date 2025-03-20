@@ -28,7 +28,7 @@ class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Globa
     override var logLevel: LogLevel by builder.KFuzzPropProvider(
         nameSuffix = "logLevel",
         intoString = { it.toString() },
-        fromString = { LogLevel.valueOf(it) },
+        fromString = { LogLevel.valueOf(it.uppercase()) },
         default = LogLevel.WARN,
     )
     override var reproducerDir: Path by builder.KFuzzPropProvider(

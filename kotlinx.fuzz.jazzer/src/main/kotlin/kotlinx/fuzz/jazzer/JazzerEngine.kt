@@ -115,9 +115,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
-        ).also {
-            System.err.println(it.command().joinToString(" "))
-        }.executeAndSaveLogs(
+        ).executeAndSaveLogs(
             stdout = "${method.fullName}.log",
             stderr = "${method.fullName}.err",
         )
