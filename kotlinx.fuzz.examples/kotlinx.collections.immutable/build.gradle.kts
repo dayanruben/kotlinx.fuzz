@@ -1,5 +1,5 @@
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.config.CoverageReportType
+import kotlin.time.Duration.Companion.hours
 
 
 plugins {
@@ -19,10 +19,9 @@ dependencies {
 
 fuzzConfig {
     instrument = listOf("kotlinx.collections.**")
-    maxFuzzTimePerTarget = 10.seconds
+    maxFuzzTimePerTarget = 2.hours
     supportJazzerTargets = true
     logLevel = kotlinx.fuzz.config.LogLevel.DEBUG
-    detailedLogging = true
     coverage {
         reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
         val immutable = libs.kotlinx.collections.immutable.get()
