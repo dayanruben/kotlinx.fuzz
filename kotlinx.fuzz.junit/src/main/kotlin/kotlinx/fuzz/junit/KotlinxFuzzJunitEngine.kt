@@ -16,8 +16,10 @@ import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
 import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
-import kotlinx.fuzz.reproduction.ListAnyCallReproducerWriter
-import kotlinx.fuzz.reproduction.ListAnyInlineReproducerWriter
+import kotlinx.fuzz.reproducer.CrashReproducerGenerator
+import kotlinx.fuzz.reproducer.JunitReproducerTemplate
+import kotlinx.fuzz.reproducer.ListAnyCallReproducerGenerator
+import kotlinx.fuzz.reproducer.ListAnyInlineReproducerGenerator
 import kotlinx.serialization.json.*
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
@@ -41,10 +43,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
         KFuzzConfig.fromSystemProperties()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
-        when (config.engine) {
-            is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
-                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
-        }
+        createEngine()
     }
     private val isRegression: Boolean by lazy { System.getProperty(REGRESSION_ENABLED_NAME).toBooleanOrFalse() }
 
@@ -74,14 +73,22 @@ class KotlinxFuzzJunitEngine : TestEngine {
         return engineDescriptor
     }
 
+    private fun createEngine(): KFuzzEngine = when (config.engine) {
+        is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+            .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
+    }
+
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
 
-        val dispatcher =
-            Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
+        val dispatcher = Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
-            root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
+            root.children.map { child ->
+                async {
+                    executeImpl(request, child)
+                }
+            }.awaitAll()
         }
 
         fuzzEngine.finishExecution()
@@ -92,7 +99,11 @@ class KotlinxFuzzJunitEngine : TestEngine {
         descriptor: TestDescriptor,
     ): Unit = coroutineScope {
         request.engineExecutionListener.executionStarted(descriptor)
-        descriptor.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
+        descriptor.children.map { child ->
+            async {
+                executeImpl(request, child)
+            }
+        }.awaitAll()
         request.engineExecutionListener.executionFinished(
             descriptor, TestExecutionResult.successful(),
         )
@@ -108,30 +119,28 @@ class KotlinxFuzzJunitEngine : TestEngine {
         else -> TestExecutionResult.failed(finding)
     }
 
-    private fun setReproducer(instance: Any, method: Method) = try {
+    private fun createReproducer(instance: Any, method: Method): CrashReproducerGenerator = try {
         when (config.global.reproducerType) {
-            ReproducerType.LIST_BASED_INLINE -> fuzzEngine.reproducer =
-                ListAnyInlineReproducerWriter(
-                    JunitReproducerTemplate(instance, method),
-                    instance,
-                    method,
-                    Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
-                )
+            ReproducerType.LIST_BASED_INLINE -> ListAnyInlineReproducerGenerator(
+                JunitReproducerTemplate(instance, method),
+                instance,
+                method,
+                Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
+            )
 
-            ReproducerType.LIST_BASED_NO_INLINE -> fuzzEngine.reproducer =
-                ListAnyCallReproducerWriter(
-                    JunitReproducerTemplate(instance, method),
-                    instance,
-                    method,
-                )
-        }
-    } catch (e: RuntimeException) {
-        fuzzEngine.reproducer =
-            ListAnyCallReproducerWriter(
+            ReproducerType.LIST_BASED_NO_INLINE -> ListAnyCallReproducerGenerator(
                 JunitReproducerTemplate(instance, method),
                 instance,
                 method,
             )
+        }
+    } catch (e: RuntimeException) {
+        log.error("Exception during reproducer initialization, fall back to AnyCallReproducer: ", e)
+        ListAnyCallReproducerGenerator(
+            JunitReproducerTemplate(instance, method),
+            instance,
+            method,
+        )
     }
 
     private suspend fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
@@ -144,8 +153,8 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                setReproducer(instance, method)
-
+                System.err.println("Creating reproducer for method ${method.name}")
+//                fuzzEngine.reproducerWriter = createReproducer(instance, method)
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)
                 request.engineExecutionListener.executionFinished(descriptor, result)
@@ -233,9 +242,9 @@ class KotlinxFuzzJunitEngine : TestEngine {
 
         internal fun Method.isFuzzTarget(supportJazzerApi: Boolean): Boolean =
             AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                parameterCount == 1 &&
-                parameters[0].type == KFuzzer::class.java ||
-                (supportJazzerApi && isJazzerFuzzTarget())
+                    parameterCount == 1 &&
+                    parameters[0].type == KFuzzer::class.java ||
+                    (supportJazzerApi && isJazzerFuzzTarget())
 
         private fun Method.isJazzerFuzzTarget(): Boolean = when {
             !AnnotationSupport.isAnnotated(this, FuzzTest::class.java) -> false
@@ -243,7 +252,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
             else -> {
                 log.warn {
                     "Test '$name' is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring" +
-                        " test."
+                            " test."
                 }
                 false
             }

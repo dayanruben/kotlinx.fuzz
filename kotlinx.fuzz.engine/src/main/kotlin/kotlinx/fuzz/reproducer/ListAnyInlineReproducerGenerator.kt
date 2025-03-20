@@ -1,4 +1,4 @@
-package kotlinx.fuzz.reproduction
+package kotlinx.fuzz.reproducer
 
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
@@ -16,12 +16,12 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtNamedFunction
 
-class ListAnyInlineReproducerWriter(
-    private val template: TestReproducerTemplate,
-    private val instance: Any,
-    private val method: Method,
+class ListAnyInlineReproducerGenerator(
+    template: TestReproducerTemplate,
+    instance: Any,
+    method: Method,
     files: List<Path>,
-) : CrashReproducerWriter(template, method) {
+) : CrashReproducerGenerator(template, instance, method) {
     private val topLevelPrivateFunctions = mutableListOf<KtNamedFunction>()
     private val originalFileImports = mutableListOf<String>()
     private val relevantFunction: KtNamedFunction
@@ -51,13 +51,14 @@ class ListAnyInlineReproducerWriter(
                     it.fqName?.asString() == "${method.declaringClass.name}.${method.name}"
                 }
             }
-            .singleOrNull<KtNamedFunction?>() ?: throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
+            .singleOrNull<KtNamedFunction?>()
+            ?: throw RuntimeException("Couldn't find file with method: ${method.name} in ${files.joinToString(", ") { it.absolutePathString() }}")
         relevantFunction.containingKtFile.let { ktFile ->
             ktFile.children.filterIsInstance<KtNamedFunction>().filter {
                 it.isTopLevel && it.hasModifier(KtTokens.PRIVATE_KEYWORD)
             }.forEach { topLevelPrivateFunctions.add(it) }
             ktFile.importDirectives.forEach {
-                originalFileImports.add(it.text)
+                originalFileImports.add(it.text.removePrefix("import").trim())
             }
         }
     }
@@ -78,8 +79,8 @@ class ListAnyInlineReproducerWriter(
             .addCode(
                 buildCodeBlock {
                     addStatement(
-                        "val $parameterName = ListReproducer(listOf<Any?>(${
-                            invokeTestAndRegisterOutputs(instance, method, input).joinToString(", ") { toCodeString(it) }
+                        "val $parameterName = ValueReproducer(listOf<Any?>(${
+                            extractTestData(input).joinToString(", ") { toCodeString(it) }
                         }))")
                     body.forEach { addStatement(it.drop(commonBlankPrefixLength)) }
                 })
@@ -87,23 +88,24 @@ class ListAnyInlineReproducerWriter(
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    override fun writeToFile(input: ByteArray, reproducerFile: Path) {
-        val hash = MessageDigest.getInstance("SHA-1").digest(input).toHexString()
+    override fun generate(seed: ByteArray): String {
+        System.err.println("Generating reproducer for method ${method.name} by seed ${seed.joinToString("")}")
+        val hash = MessageDigest.getInstance("SHA-1").digest(seed).toHexString()
         val code = buildCodeBlock {
             addStatement("${method.instanceString}.`${method.name} reproducer $hash`()")
         }
 
-        val extension = buildExtensionFunction(hash, input)
-
-        reproducerFile.writeText(
-            template.buildReproducer(
-                hash,
-                code,
-                imports = originalFileImports,
-                additionalCode = extension.toString() + "\n" +
-                    topLevelPrivateFunctions.map { buildCodeBlock { add(it.text) } }.joinToCode("\n") + "\n" +
-                    buildListReproducerObject().toString() + "\n",
+        val extension = buildExtensionFunction(hash, seed)
+        return template.buildReproducer(
+            hash,
+            code,
+            imports = originalFileImports + listOf(
+                "kotlinx.fuzz.KFuzzer",
+                "kotlinx.fuzz.reproducer.ValueReproducer",
             ),
+            additionalCode = "$extension\n${
+                topLevelPrivateFunctions.map { buildCodeBlock { add(it.text) } }.joinToCode("\n")
+            }\n"
         )
     }
 }

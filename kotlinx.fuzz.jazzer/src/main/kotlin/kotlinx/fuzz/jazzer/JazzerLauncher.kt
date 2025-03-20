@@ -100,7 +100,7 @@ object JazzerLauncher {
             reproducerPath.createDirectories()
         }
 
-        oldRepresentatives = reproducerPath.listStacktraces().size
+        oldRepresentatives = reproducerPath.listStackTraces().size
 
         val libFuzzerArgs = configure(reproducerPath, method)
 
@@ -188,7 +188,7 @@ object JazzerLauncher {
     }
 
     fun clusterCrashes(directoryPath: Path): Int {
-        val stacktraceFiles = directoryPath.listStacktraces()
+        val stacktraceFiles = directoryPath.listStackTraces()
 
         val rawStackTraces = mutableListOf<String>()
 

@@ -83,11 +83,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
-                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
-                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
-                    .toList().map {
-                        it.absolutePath
-                    })
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] =
+                    System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(
+                    this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files.map { it.absolutePath }
+                )
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -103,10 +103,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
             doFirst {
                 val regressionConfig = KFuzzConfigBuilder.fromAnotherConfig(fuzzConfig).build()
                 systemProperties(regressionConfig.toPropertiesMap())
-                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] =
+                    System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
                 systemProperties[REGRESSION_ENABLED_NAME] = System.getProperty(REGRESSION_ENABLED_NAME)
-                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(this@registerRegressionTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
-                    .toList().map { it.absolutePath })
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(
+                    this@registerRegressionTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                        .toList().map { it.absolutePath })
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")

@@ -1,14 +1,9 @@
-package kotlinx.fuzz.reproduction
+package kotlinx.fuzz.reproducer
 
-import com.squareup.kotlinpoet.*
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.nio.charset.Charset
-import kotlin.reflect.KFunction
-import kotlin.reflect.full.declaredFunctions
-import kotlin.reflect.jvm.jvmErasure
 import kotlinx.fuzz.*
 
-class OutputRegisteringKFuzzer(data: ByteArray) : KFuzzer {
+class ValueRegisteringKFuzzer(data: ByteArray) : KFuzzer {
     private val fuzzer = KFuzzerImpl(data)
     private val mutableValues = mutableListOf<Any?>()
     val values get() = mutableValues.toList()
@@ -283,27 +278,6 @@ internal fun isArray(value: Any) = when (value) {
     else -> false
 }
 
-internal fun buildListReproducerObject(): TypeSpec {
-    val result = TypeSpec.classBuilder("ListReproducer")
-        .addSuperinterface(KFuzzer::class)
-        .addModifiers(KModifier.PRIVATE)
-        .primaryConstructor(
-            FunSpec.constructorBuilder()
-                .addParameter("values", List::class.asClassName().parameterizedBy(ANY.copy(nullable = true)))
-                .build(),
-        )
-        .addProperty(
-            PropertySpec.builder("iterator", Iterator::class.asClassName().parameterizedBy(ANY.copy(nullable = true))).initializer("values.iterator()").addModifiers(
-                KModifier.PRIVATE,
-            )
-                .build(),
-        )
-    for (function in KFuzzer::class.declaredFunctions) {
-        result.addFunction(generateFunction(function))
-    }
-    return result.build()
-}
-
 internal fun toCodeString(value: Any?) = value?.let {
     when {
         isArray(value) -> arrayToString(value)
@@ -312,39 +286,3 @@ internal fun toCodeString(value: Any?) = value?.let {
         else -> value.toString()
     }
 } ?: "null"
-
-private fun generateFunction(function: KFunction<*>): FunSpec {
-    val returnType = function.returnType.jvmErasure.asClassName()
-    val isNullable = function.returnType.isMarkedNullable
-    val castOperator = if (isNullable) "as?" else "as"
-
-    val parameters = function.parameters.drop(1)
-
-    val result = FunSpec.builder(function.name)
-        .returns(returnType.copy(nullable = isNullable))
-        .addModifiers(KModifier.OVERRIDE)
-
-    parameters.forEach { param ->
-        val paramType = param.type.jvmErasure.asTypeName()
-
-        val resolvedParamType = if (param.type.arguments.isNotEmpty()) {
-            val typeArguments = param.type.arguments
-            val resolvedArguments = typeArguments.map {
-                it.type?.jvmErasure?.asTypeName() ?: TypeVariableName("T")
-            }
-            paramType.parameterizedBy(*resolvedArguments.toTypedArray())
-        } else {
-            paramType
-        }
-
-        val finalParamType = if (param.type.isMarkedNullable) {
-            resolvedParamType.copy(nullable = true)
-        } else {
-            resolvedParamType
-        }
-
-        result.addParameter(param.name!!, finalParamType)
-    }
-    result.addStatement("return iterator.next() $castOperator ${returnType.copy(nullable = isNullable)}")
-    return result.build()
-}

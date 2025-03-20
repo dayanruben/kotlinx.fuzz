@@ -7,7 +7,6 @@ plugins {
 dependencies {
     implementation(project(":kotlinx.fuzz.api"))
     implementation(kotlin("reflect"))
-    implementation(libs.rgxgen)
     implementation(libs.slf4j.api)
     implementation(libs.kotlinpoet)
     implementation(libs.kotlin.compiler.k2) {

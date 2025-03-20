@@ -1,11 +1,9 @@
 package kotlinx.fuzz
 
 import java.lang.reflect.Method
-import kotlinx.fuzz.reproduction.CrashReproducerWriter
+import kotlinx.fuzz.reproducer.CrashReproducerGenerator
 
 interface KFuzzEngine {
-    var reproducer: CrashReproducerWriter
-
     /**
      * Initialises engine. Should be called only once for every KFuzzEngine instance
      */
@@ -16,15 +14,21 @@ interface KFuzzEngine {
      * Each crash should be represented as file with name that starts with "crash-", "timeout-" or "slow-unit- and contain byte array
      * that can be passed as input to KFuzzerImpl to reproduce the crash
      *
-     * @param instance - instance of a class that contains method under fuzzing (harness)
-     * @param method - harness itself
+     * @param instance --- instance of a class that contains method under fuzzing (harness)
+     * @param method --- harness itself
      * @return nullable throwable. Null iff harness ran without failures, cause (look at throwable field in
      * org.junit.platform.engine.TestExecutionResult) otherwise
      */
-    fun runTarget(instance: Any, method: Method): Throwable?
+    fun runTarget(
+        instance: Any,
+        method: Method,
+    ): Throwable?
 
     /**
      * Runs any needed postwork, like rearranging crash files
+     * @param reproducerGenerator --- generates reproducer tests from found crashes
      */
-    fun finishExecution()
+    fun finishExecution(
+        reproducerGenerator: CrashReproducerGenerator? = null,
+    )
 }

@@ -1,4 +1,4 @@
-package kotlinx.fuzz.reproduction
+package kotlinx.fuzz.reproducer
 
 import com.squareup.kotlinpoet.CodeBlock
 

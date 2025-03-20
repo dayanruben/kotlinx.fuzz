@@ -18,7 +18,7 @@ import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
-import kotlinx.fuzz.reproduction.CrashReproducerWriter
+import kotlinx.fuzz.reproducer.CrashReproducerGenerator
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
@@ -38,7 +38,6 @@ internal val KFuzzConfig.exceptionsDir: Path
 class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = config.engine as JazzerConfig
-    override lateinit var reproducer: CrashReproducerWriter
 
     override fun initialise() {
         config.corpusDir.createDirectories()
@@ -59,7 +58,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                         JazzerLauncher.clusterCrashes(methodDir)
                     }
             }
-        clusterCrashes(createNewReproducers = false)
+        clusterCrashes()
     }
 
     @OptIn(ExperimentalPathApi::class)
@@ -116,7 +115,9 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
-        ).executeAndSaveLogs(
+        ).also {
+            System.err.println(it.command().joinToString(" "))
+        }.executeAndSaveLogs(
             stdout = "${method.fullName}.log",
             stderr = "${method.fullName}.err",
         )
@@ -133,16 +134,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             Error("Failed to deserialize exception for target '${method.fullName}'")
         }
 
-    override fun finishExecution() {
+    override fun finishExecution(reproducerGenerator: CrashReproducerGenerator?) {
         collectStatistics()
-        clusterCrashes(createNewReproducers = true)
+        clusterCrashes(reproducerGenerator)
     }
 
-    private fun clusterCrashes(createNewReproducers: Boolean) {
+    private fun clusterCrashes(reproducerWriter: CrashReproducerGenerator? = null) {
         val filesForDeletion = mutableListOf<Path>()
         Files.walk(config.global.reproducerDir)
             .filter { it.isDirectory() && it.name.startsWith("cluster-") }
-            .map { it to it.listStacktraces() }
+            .map { it to it.listStackTraces() }
             .flatMap { (dir, files) -> files.stream().map { dir to it } }
             .forEach { (clusterDir, stacktraceFile) ->
                 val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
@@ -157,8 +158,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 }
 
                 crashFile.copyTo(targetCrashFile, overwrite = true)
-                if (!reproducerFile.exists() && createNewReproducers) {
-                    reproducer.writeToFile(crashFile.readBytes(), reproducerFile)
+                if (!reproducerFile.exists() && reproducerWriter != null) {
+                    reproducerWriter.generateToPath(crashFile.readBytes(), reproducerFile)
                 }
                 if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
                     filesForDeletion.add(crashFile)
@@ -166,10 +167,8 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                         reproducerFile.copyTo(targetReproducerFile, overwrite = true)
                         filesForDeletion.add(reproducerFile)
                     }
-                } else {
-                    if (reproducerFile.exists()) {
-                        reproducerFile.copyTo(targetReproducerFile, overwrite = true)
-                    }
+                } else if (reproducerFile.exists()) {
+                    reproducerFile.copyTo(targetReproducerFile, overwrite = true)
                 }
             }
         filesForDeletion.forEach { it.deleteIfExists() }
@@ -224,7 +223,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
 
-internal fun Path.listStacktraces(): List<Path> = listDirectoryEntries("stacktrace-*")
+internal fun Path.listStackTraces(): List<Path> = listDirectoryEntries("stacktrace-*")
 
 internal fun Path.listClusters(): List<Path> = listDirectoryEntries("cluster-*")
 

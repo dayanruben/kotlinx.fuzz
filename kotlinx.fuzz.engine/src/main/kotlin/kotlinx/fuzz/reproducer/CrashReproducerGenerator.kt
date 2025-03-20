@@ -1,11 +1,13 @@
-package kotlinx.fuzz.reproduction
+package kotlinx.fuzz.reproducer
 
 import java.lang.reflect.Method
 import java.nio.file.Path
+import kotlin.io.path.writeText
 
-abstract class CrashReproducerWriter(
-    private val template: TestReproducerTemplate,
-    private val method: Method,
+abstract class CrashReproducerGenerator(
+    val template: TestReproducerTemplate,
+    val instance: Any,
+    val method: Method,
 ) {
     protected val Method.instanceString: String
         get() = if (isDeclaredInObject()) {
@@ -13,8 +15,9 @@ abstract class CrashReproducerWriter(
         } else {
             "${method.declaringClass.kotlin.simpleName}()"
         }
-    protected fun invokeTestAndRegisterOutputs(instance: Any, method: Method, input: ByteArray): List<Any?> {
-        val fuzzer = OutputRegisteringKFuzzer(input)
+
+    protected fun extractTestData(seed: ByteArray): List<Any?> {
+        val fuzzer = ValueRegisteringKFuzzer(seed)
         try {
             method.invoke(instance, fuzzer)
         } catch (_: Throwable) {
@@ -25,5 +28,10 @@ abstract class CrashReproducerWriter(
 
     private fun Method.isDeclaredInObject() = this.declaringClass.kotlin.objectInstance != null
 
-    abstract fun writeToFile(input: ByteArray, reproducerFile: Path)
+    abstract fun generate(seed: ByteArray): String
+
+    fun generateToPath(seed: ByteArray, path: Path) {
+        val code = generate(seed)
+        path.writeText(code)
+    }
 }
