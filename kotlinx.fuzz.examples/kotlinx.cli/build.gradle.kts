@@ -8,8 +8,6 @@ plugins {
 
 dependencies {
     implementation(kotlin("reflect"))
-    implementation(libs.plan.jazzer.api)
-    implementation(libs.plan.jazzer.junit)
     implementation(libs.kotlinx.cli)
     implementation(libs.commons.cli)
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
