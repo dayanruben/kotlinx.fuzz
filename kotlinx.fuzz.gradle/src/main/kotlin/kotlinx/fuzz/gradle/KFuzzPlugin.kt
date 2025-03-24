@@ -79,6 +79,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 systemProperties(fuzzConfig.toPropertiesMap())
                 systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
             }
+
+            // these 2 options forces task to generate report even if it failed
+            // TODO: consider solution with fuzz.finalizedBy(generateReport)
+            ignoreFailures = true
+            doLast{generateReport()}
+
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
             }
@@ -174,8 +180,8 @@ abstract class FuzzTask : Test() {
         group = "verification"
     }
 
-    @TaskAction
-    fun action() {
+//    @TaskAction
+    fun generateReport() {
         overallStats()
         if (fuzzConfig.target.dumpCoverage) {
             val workDir = fuzzConfig.global.workDir
