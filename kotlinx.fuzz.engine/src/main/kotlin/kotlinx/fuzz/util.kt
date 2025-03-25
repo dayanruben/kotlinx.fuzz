@@ -9,7 +9,7 @@ fun String?.toBooleanOrTrue(): Boolean = this?.toBoolean() != false
 fun String?.toBooleanOrFalse(): Boolean = this?.toBoolean() == true
 
 fun KFuzzConfig.reproducerPathOf(method: Method): Path =
-    Path(global.reproducerDir.absolutePathString(), method.declaringClass.simpleName, method.name).absolute()
+    Path(global.reproducerDir.absolutePathString(), method.declaringClass.name, method.name).absolute()
 
 fun Path.listCrashes(): List<Path> = if (this.exists()) listDirectoryEntries("{crash-*,timeout-*,slow-unit-*}") else emptyList()
 

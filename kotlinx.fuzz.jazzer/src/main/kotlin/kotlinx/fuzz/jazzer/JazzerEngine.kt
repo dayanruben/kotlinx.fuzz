@@ -14,6 +14,7 @@ import kotlin.io.path.*
 import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.clusterCrashes
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
@@ -35,7 +36,7 @@ internal val KFuzzConfig.exceptionsDir: Path
     get() = global.workDir.resolve("exceptions")
 
 @Suppress("unused")
-class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
+class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = config.engine as JazzerConfig
 
@@ -134,42 +135,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     override fun finishExecution(reproducerGenerator: CrashReproducerGenerator?) {
         collectStatistics()
-        clusterCrashes(reproducerGenerator)
-    }
-
-    private fun clusterCrashes(reproducerWriter: CrashReproducerGenerator? = null) {
-        val filesForDeletion = mutableListOf<Path>()
-        Files.walk(config.global.reproducerDir)
-            .filter { it.isDirectory() && it.name.startsWith("cluster-") }
-            .map { it to it.listStackTraces() }
-            .flatMap { (dir, files) -> files.stream().map { dir to it } }
-            .forEach { (clusterDir, stacktraceFile) ->
-                val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
-                val crashFile = clusterDir.parent.resolve(crashFileName)
-                val targetCrashFile = clusterDir.resolve(crashFileName)
-                val reproducerFileName = "reproducer-${stacktraceFile.name.removePrefix("stacktrace-")}.kt"
-                val reproducerFile = clusterDir.parent.resolve(reproducerFileName)
-                val targetReproducerFile = clusterDir.resolve(reproducerFileName)
-
-                if (targetCrashFile.exists() || !crashFile.exists()) {
-                    return@forEach
-                }
-
-                crashFile.copyTo(targetCrashFile, overwrite = true)
-                if (!reproducerFile.exists() && reproducerWriter != null) {
-                    reproducerWriter.generateToPath(crashFile.readBytes(), reproducerFile)
-                }
-                if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
-                    filesForDeletion.add(crashFile)
-                    if (reproducerFile.exists()) {
-                        reproducerFile.copyTo(targetReproducerFile, overwrite = true)
-                        filesForDeletion.add(reproducerFile)
-                    }
-                } else if (reproducerFile.exists()) {
-                    reproducerFile.copyTo(targetReproducerFile, overwrite = true)
-                }
-            }
-        filesForDeletion.forEach { it.deleteIfExists() }
     }
 
     private fun collectStatistics() {

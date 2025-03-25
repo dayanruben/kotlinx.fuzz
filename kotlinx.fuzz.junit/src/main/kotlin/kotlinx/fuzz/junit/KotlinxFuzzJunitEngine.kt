@@ -6,6 +6,8 @@ import java.lang.reflect.Method
 import java.net.URI
 import kotlin.io.path.Path
 import kotlin.reflect.KClass
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.jvm.javaMethod
 import kotlinx.coroutines.*
 import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
@@ -91,6 +93,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
             }.awaitAll()
         }
 
+        fuzzEngine.clusterCrashesAndGenerateReproducers(::createReproducer)
         fuzzEngine.finishExecution()
     }
 
@@ -117,6 +120,13 @@ class KotlinxFuzzJunitEngine : TestEngine {
         }
 
         else -> TestExecutionResult.failed(finding)
+    }
+
+    private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator {
+        val testClass = Class.forName(className).kotlin
+        val testInstance = testClass.testInstance()
+        val testMethod = testClass.declaredMemberFunctions.single { it.name == methodName }
+        return createReproducer(testInstance, testMethod.javaMethod!!)
     }
 
     private fun createReproducer(instance: Any, method: Method): CrashReproducerGenerator = try {
@@ -153,8 +163,6 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                System.err.println("Creating reproducer for method ${method.name}")
-//                fuzzEngine.reproducerWriter = createReproducer(instance, method)
                 val finding = fuzzEngine.runTarget(instance, method)
                 val result = handleFinding(finding, method)
                 request.engineExecutionListener.executionFinished(descriptor, result)
