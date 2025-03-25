@@ -13,6 +13,8 @@ import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.ReproducerType
+import kotlinx.fuzz.deduplication.cleanupCrashesAndGenerateReproducers
+import kotlinx.fuzz.deduplication.initializeClusters
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
@@ -83,6 +85,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
+        fuzzEngine.initializeClusters()
 
         val dispatcher = Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
@@ -93,7 +96,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
             }.awaitAll()
         }
 
-        fuzzEngine.clusterCrashesAndGenerateReproducers(::createReproducer)
+        fuzzEngine.cleanupCrashesAndGenerateReproducers(::createReproducer)
         fuzzEngine.finishExecution()
     }
 
@@ -144,8 +147,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 method,
             )
         }
-    } catch (e: RuntimeException) {
-        log.error("Exception during reproducer initialization, fall back to AnyCallReproducer: ", e)
+    } catch (_: RuntimeException) {
         ListAnyCallReproducerGenerator(
             JunitReproducerTemplate(instance, method),
             instance,
