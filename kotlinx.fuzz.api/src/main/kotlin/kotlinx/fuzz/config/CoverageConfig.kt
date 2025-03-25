@@ -1,10 +1,16 @@
 package kotlinx.fuzz.config
 
+import java.nio.file.Path
+import kotlin.io.path.Path
+import kotlin.io.path.absolute
+import kotlin.io.path.absolutePathString
+
 private const val NAME_PREFIX = "coverage"
 
 interface CoverageConfig {
     val reportTypes: Set<CoverageReportType>
     val includeDependencies: Set<String>
+    val jacocoAgentPath: Path
 }
 
 class CoverageConfigImpl internal constructor(builder: KFuzzConfigBuilder) : CoverageConfig {
@@ -19,6 +25,12 @@ class CoverageConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Cov
         intoString = { it.joinToString(",") },
         fromString = { it.split(",").toSet() },
         default = emptySet(),
+    )
+    override var jacocoAgentPath: Path by builder.KFuzzPropProvider(
+        default = Path("/Users/ilma4/Downloads/jacoco-0.8.12/lib/jacocoagent.jar"),
+        nameSuffix = "$NAME_PREFIX.jacocoAgentPath",
+        intoString = { it.absolutePathString() },
+        fromString = { Path(it).absolute() },
     )
 }
 

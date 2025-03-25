@@ -59,6 +59,8 @@ open class FuzzConfigDSL(
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
     private val builtConfig: KFuzzConfig by lazy { builder.build() }
 
+    var jacocoAgentPath by KFConfigDelegate { coverage::jacocoAgentPath}
+
     fun build(): KFuzzConfig = builtConfig.also {
         builtConfig.toPropertiesMap().forEach { (key, value) -> System.setProperty(key, value) }
     }

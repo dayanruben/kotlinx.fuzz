@@ -106,13 +106,31 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         } catch (e: Exception) {
             emptyList()
         }
-        val exitCode = ProcessBuilder(
+
+
+        val command = mutableListOf<String>(
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
             "-Xmx4096m", // TODO: make it configurable
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
+        )
+        if (config.target.dumpCoverage) {
+            val coverageFile = config.global.workDir
+                .resolve("coverage")
+                .createDirectories()
+                .resolve("${method.fullName}.exec")
+                .absolutePathString()
+            val agentPath = config.coverage.jacocoAgentPath
+
+            val opt =
+                "-javaagent:$agentPath=destfile=$coverageFile,dumponexit=true,output=file,jmx=false,includes=kotlinx.datetime.**"
+            command.add(opt)
+        }
+
+        val exitCode = ProcessBuilder(
+            *command.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
             method.declaringClass.name, method.name,
         ).executeAndSaveLogs(
