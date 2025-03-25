@@ -6,11 +6,15 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.TypeSpec
 import java.lang.reflect.Method
+import kotlin.math.log
+import kotlinx.fuzz.log.LoggerFacade
 
 class JunitReproducerTemplate(
     private val instance: Any,
     private val method: Method,
 ) : TestReproducerTemplate {
+    private val log = LoggerFacade.getLogger<JunitReproducerTemplate>()
+
     override fun buildReproducer(
         identifier: String,
         testCode: CodeBlock,
@@ -33,7 +37,15 @@ class JunitReproducerTemplate(
         val fileSpec = FileSpec.Companion.builder(packageName, "")
             .addType(objectSpec)
         for (import in imports) {
-            fileSpec.addImport(import.substringBeforeLast('.'), import.substringAfterLast('.'))
+            val pkgName = import.substringBeforeLast('.')
+            val importName = import.substringAfterLast('.')
+            when (importName) {
+                "*" -> {
+                    log.warn("Reproducers do not support wildcard imports")
+                    log.warn("Please add all the necessary imports to the reproducer test manually")
+                }
+                else -> fileSpec.addImport(pkgName, importName)
+            }
         }
 
         return "${fileSpec.build()}\n$additionalCode"
