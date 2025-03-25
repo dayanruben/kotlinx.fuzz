@@ -6,7 +6,6 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.TypeSpec
 import java.lang.reflect.Method
-import kotlin.math.log
 import kotlinx.fuzz.log.LoggerFacade
 
 class JunitReproducerTemplate(

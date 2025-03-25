@@ -105,7 +105,7 @@ class ListAnyInlineReproducerGenerator(
             ),
             additionalCode = "$extension\n${
                 topLevelPrivateFunctions.map { buildCodeBlock { add(it.text) } }.joinToCode("\n")
-            }\n"
+            }\n",
         )
     }
 }

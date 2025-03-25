@@ -9,7 +9,6 @@ class ByteArrayReproducerGenerator(
     instance: Any,
     method: Method,
 ) : CrashReproducerGenerator(template, instance, method) {
-
     @OptIn(ExperimentalStdlibApi::class)
     override fun generate(seed: ByteArray): String {
         val code = CodeBlock.builder()

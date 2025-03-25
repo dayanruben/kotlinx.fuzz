@@ -20,6 +20,8 @@ import kotlinx.fuzz.listStackTraces
 import kotlinx.fuzz.reproducer.CrashReproducerGenerator
 import org.jetbrains.casr.adapter.CasrAdapter
 
+typealias ReproducerProvider = (String, String) -> CrashReproducerGenerator?
+
 fun KFuzzEngine.initializeClusters() {
     config.global.reproducerDir.listDirectoryEntries()
         .filter { it.isDirectory() }
@@ -35,7 +37,7 @@ fun KFuzzEngine.initializeClusters() {
 }
 
 fun KFuzzEngine.cleanupCrashesAndGenerateReproducers(
-    reproducer: (String, String) -> CrashReproducerGenerator?,
+    reproducer: ReproducerProvider,
 ) {
     val filesForDeletion = mutableListOf<Path>()
     Files.walk(config.global.reproducerDir)
@@ -74,7 +76,6 @@ fun KFuzzEngine.cleanupCrashesAndGenerateReproducers(
         }
     filesForDeletion.forEach { it.deleteIfExists() }
 }
-
 
 /**
  * Clusters all crashes located in the directory and returns the number of unique crashes

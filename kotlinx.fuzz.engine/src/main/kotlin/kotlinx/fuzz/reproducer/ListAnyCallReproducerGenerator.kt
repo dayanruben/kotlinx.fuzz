@@ -9,14 +9,13 @@ class ListAnyCallReproducerGenerator(
     instance: Any,
     method: Method,
 ) : CrashReproducerGenerator(template, instance, method) {
-
     @OptIn(ExperimentalStdlibApi::class)
     override fun generate(seed: ByteArray): String {
         val code = buildCodeBlock {
             addStatement(
                 "val values = listOf<Any?>(" +
-                        extractTestData(seed).joinToString(", ") { toCodeString(it) } +
-                        ")",
+                    extractTestData(seed).joinToString(", ") { toCodeString(it) } +
+                    ")",
             )
             addStatement("${method.instanceString}.`${method.name}`(ValueReproducer(values))")
         }
@@ -27,7 +26,7 @@ class ListAnyCallReproducerGenerator(
             imports = listOf(
                 "kotlinx.fuzz.KFuzzer",
                 "kotlinx.fuzz.reproducer.ValueReproducer",
-            )
+            ),
         )
     }
 }

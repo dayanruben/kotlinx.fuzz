@@ -86,7 +86,8 @@ abstract class KFuzzPlugin : Plugin<Project> {
                 systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] =
                     System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
                 systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(
-                    this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files.map { it.absolutePath }
+                    this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                        .map { it.absolutePath },
                 )
             }
             useJUnitPlatform {
