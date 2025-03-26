@@ -7,13 +7,15 @@ plugins {
     kotlin("plugin.serialization") version "2.0.20"
 }
 
+val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
+
 dependencies {
-    implementation(libs.plan.jazzer.api)
-    implementation(libs.plan.jazzer.junit)
-    implementation(libs.kotlinx.serialization.json.examples)
-    implementation(libs.kotlinx.serialization.cbor.examples)
-    implementation(libs.kotlinx.serialization.properties.examples)
-    implementation(libs.kotlinx.serialization.protobuf.examples)
+    implementation(libs.findLibrary("plan-jazzer-api").get())
+    implementation(libs.findLibrary("plan-jazzer-junit").get())
+    implementation(libs.findLibrary("kotlinx-serialization-json-examples").get())
+    implementation(libs.findLibrary("kotlinx-serialization-cbor-examples").get())
+    implementation(libs.findLibrary("kotlinx-serialization-properties-examples").get())
+    implementation(libs.findLibrary("kotlinx-serialization-protobuf-examples").get())
 
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
 }
@@ -25,13 +27,14 @@ fuzzConfig {
     logLevel = kotlinx.fuzz.config.LogLevel.DEBUG
     coverage {
         reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
-        val deps = with(libs.kotlinx.serialization) {
-            listOf(json, cbor, properties, protobuf)
-        }
+        includeDependencies = listOf(
+            libs.findLibrary("kotlinx-serialization-json-examples").get(),
+            libs.findLibrary("kotlinx-serialization-cbor-examples").get(),
+            libs.findLibrary("kotlinx-serialization-properties-examples").get(),
+            libs.findLibrary("kotlinx-serialization-protobuf-examples").get()
+        )
             .map { it.get() }
             .map { "${it.group}:${it.name}-jvm" }
             .toSet()
-
-        includeDependencies = deps
     }
 }
