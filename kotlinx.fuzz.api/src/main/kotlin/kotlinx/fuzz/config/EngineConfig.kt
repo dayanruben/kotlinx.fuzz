@@ -10,7 +10,7 @@ interface JazzerConfig : EngineConfig {
     /**
      * Maximum heap size for the fuzzer, specified in megabytes. Default: 4096
      */
-    val maxHeapSizeMb: Long
+    val subprocessMaxHeapSizeMb: Long
 
     object Defaults {
         const val MAX_HEAP_SIZE_MB = 4096L
@@ -25,7 +25,7 @@ class JazzerConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Jazze
         validate = { require(it >= 0) { "rssLimit must be positive!" } },
         default = 0,
     )
-    override var maxHeapSizeMb: Long by builder.KFuzzPropProvider(
+    override var subprocessMaxHeapSizeMb: Long by builder.KFuzzPropProvider(
         "$NAME_PREFIX.maxHeapSizeMb",
         default = JazzerConfig.Defaults.MAX_HEAP_SIZE_MB,
         intoString = { it.toString() },

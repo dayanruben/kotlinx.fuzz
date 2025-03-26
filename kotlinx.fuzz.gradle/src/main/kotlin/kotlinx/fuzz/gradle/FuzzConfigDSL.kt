@@ -69,11 +69,12 @@ open class FuzzConfigDSL(
 
     /**
      * @property libFuzzerRssLimit LibFuzzer rss limit parameter. Default: 0
-     * @property maxHeapSizeMb Maximum heap size for the fuzzer, specified in megabytes. Default: 4096
+     * @property subprocessMaxHeapSizeMb Maximum heap size for the fuzzer process, specified in megabytes.
+     * Note that there can be up to [FuzzConfigDSL.threads] subprocesses running simultaneously. Default: 4096
      */
     inner class JazzerConfigDSL : EngineConfigDSL {
         var libFuzzerRssLimit by KFConfigDelegate { engine::libFuzzerRssLimitMb }
-        var maxHeapSizeMb by KFConfigDelegate { engine::maxHeapSizeMb }
+        var subprocessMaxHeapSizeMb by KFConfigDelegate { engine::subprocessMaxHeapSizeMb }
     }
 
     /**
