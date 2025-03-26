@@ -42,6 +42,7 @@ class JunitReproducerTemplate(
                 "*" -> {
                     log.warn("Reproducers do not support wildcard imports")
                     log.warn("Please add all the necessary imports to the reproducer test manually")
+                    fileSpec.addFileComment("import $import")
                 }
                 else -> fileSpec.addImport(pkgName, importName)
             }
