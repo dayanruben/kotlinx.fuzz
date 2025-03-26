@@ -13,6 +13,9 @@ fun Path.listClusters(): List<Path> = listDirectoryEntries("cluster-*")
 fun String?.toBooleanOrTrue(): Boolean = this?.toBoolean() != false
 fun String?.toBooleanOrFalse(): Boolean = this?.toBoolean() == true
 
+fun Boolean?.orTrue(): Boolean = this != false
+fun Boolean?.orFalse(): Boolean = this == true
+
 fun KFuzzConfig.reproducerPathOf(method: Method): Path =
     Path(global.reproducerDir.absolutePathString(), method.declaringClass.name, method.name).absolute()
 

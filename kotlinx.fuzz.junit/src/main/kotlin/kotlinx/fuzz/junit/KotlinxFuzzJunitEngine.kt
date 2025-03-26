@@ -125,11 +125,14 @@ class KotlinxFuzzJunitEngine : TestEngine {
         else -> TestExecutionResult.failed(finding)
     }
 
-    private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator {
+    private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator? {
         val testClass = Class.forName(className).kotlin
         val testInstance = testClass.testInstance()
-        val testMethod = testClass.declaredMemberFunctions.single { it.name == methodName }
-        return createReproducer(testInstance, testMethod.javaMethod!!)
+        return testClass.declaredMemberFunctions
+            .filter { it.javaMethod?.isFuzzTarget(supportJazzerApi = false).orFalse() }
+            .singleOrNull { it.name == methodName }
+            ?.javaMethod
+            ?.let { createReproducer(testInstance, it) }
     }
 
     private fun createReproducer(instance: Any, method: Method): CrashReproducerGenerator = try {
@@ -252,9 +255,9 @@ class KotlinxFuzzJunitEngine : TestEngine {
 
         internal fun Method.isFuzzTarget(supportJazzerApi: Boolean): Boolean =
             AnnotationSupport.isAnnotated(this, KFuzzTest::class.java) &&
-                parameterCount == 1 &&
-                parameters[0].type == KFuzzer::class.java ||
-                (supportJazzerApi && isJazzerFuzzTarget())
+                    parameterCount == 1 &&
+                    parameters[0].type == KFuzzer::class.java ||
+                    (supportJazzerApi && isJazzerFuzzTarget())
 
         private fun Method.isJazzerFuzzTarget(): Boolean = when {
             !AnnotationSupport.isAnnotated(this, FuzzTest::class.java) -> false
@@ -262,7 +265,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
             else -> {
                 log.warn {
                     "Test '$name' is annotated with @FuzzTest but does not take a single ByteArray or FuzzedDataProvider argument. AutoFuzz is not supported. Ignoring" +
-                        " test."
+                            " test."
                 }
                 false
             }

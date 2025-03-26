@@ -20,7 +20,9 @@ import kotlinx.fuzz.listStackTraces
 import kotlinx.fuzz.reproducer.CrashReproducerGenerator
 import org.jetbrains.casr.adapter.CasrAdapter
 
-typealias ReproducerProvider = (String, String) -> CrashReproducerGenerator?
+fun interface ReproducerProvider {
+    fun createReproducerGenerator(className: String, methodName: String): CrashReproducerGenerator?
+}
 
 fun KFuzzEngine.initializeClusters() {
     config.global.reproducerDir.listDirectoryEntries()
@@ -37,7 +39,7 @@ fun KFuzzEngine.initializeClusters() {
 }
 
 fun KFuzzEngine.cleanupCrashesAndGenerateReproducers(
-    reproducer: ReproducerProvider,
+    reproducerProvider: ReproducerProvider,
 ) {
     val filesForDeletion = mutableListOf<Path>()
     Files.walk(config.global.reproducerDir)
@@ -60,7 +62,7 @@ fun KFuzzEngine.cleanupCrashesAndGenerateReproducers(
             }
 
             crashFile.copyTo(targetCrashFile, overwrite = true)
-            val reproducerWriter = reproducer(className, methodName)
+            val reproducerWriter = reproducerProvider.createReproducerGenerator(className, methodName)
             if (!reproducerFile.exists() && reproducerWriter != null) {
                 reproducerWriter.generateToPath(crashFile.readBytes(), reproducerFile)
             }
