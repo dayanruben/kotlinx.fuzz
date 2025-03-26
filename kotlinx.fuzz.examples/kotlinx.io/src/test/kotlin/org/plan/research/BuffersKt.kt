@@ -4,18 +4,19 @@ package org.plan.research
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
-import kotlinx.io.*
+import kotlinx.io.Buffer
 import kotlinx.io.bytestring.ByteString
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.indexOf
+import kotlinx.io.snapshot
+import kotlinx.io.write
 import org.plan.research.Constants.MAX_DURATION
 import org.plan.research.Constants.MAX_OPERATIONS_NUMBER
 import kotlin.test.assertEquals
 
 object BuffersKt {
-    val manyBytes = SystemFileSystem.source(Path("data.bin")).buffered().readByteString()
+    val manyBytes by lazy { org.plan.research.utils.largeByteString }
 
-    val arr = ByteArray(manyBytes.size * 100)
+    val arr by lazy { ByteArray(manyBytes.size * 100) }
 
     @FuzzTest(maxDuration = MAX_DURATION)
     fun snapshot(data: FuzzedDataProvider): Unit = with(data) {

@@ -25,6 +25,7 @@ import kotlinx.fuzz.listStackTraces
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
+import kotlinx.fuzz.log.info
 import kotlinx.fuzz.reproducerPathOf
 
 object JazzerLauncher {
@@ -58,6 +59,9 @@ object JazzerLauncher {
 
         val error = runTarget(instance, targetMethod)
         error?.let {
+            log.error { "An exception occurred while fuzzing" }
+            log.error(error)
+
             serializeException(error, config.exceptionPath(targetMethod))
             exitProcess(1)
         }
@@ -97,6 +101,8 @@ object JazzerLauncher {
 
     @OptIn(ExperimentalStdlibApi::class)
     private fun runTarget(instance: Any, method: Method): Throwable? {
+        configureFuzzTargetHolder(method, instance)
+
         val reproducerPath = config.reproducerPathOf(method)
         if (!reproducerPath.exists()) {
             reproducerPath.createDirectories()
@@ -108,6 +114,9 @@ object JazzerLauncher {
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
+            System.err.println("Found finding: $finding")
+            System.err.println("Found bytes: ${bytes?.toHexString()}")
+            System.err.println("ReproducerPath: $reproducerPath:")
             val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
             val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
             if (stopFuzzing) {
@@ -116,17 +125,24 @@ object JazzerLauncher {
             stopFuzzing
         }
 
+        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
+
+        return atomicFinding.get()
+    }
+
+    private fun configureFuzzTargetHolder(method: Method, instance: Any) {
         if (method.isAnnotationPresent(KFuzzTest::class.java)) {
+            FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
+                JazzerTarget::fuzzTargetOne.javaMethod,
+                LifecycleMethodsInvoker.noop(JazzerTarget),
+            )
             JazzerTarget.reset(MethodHandles.lookup().unreflect(method), instance)
         } else {
-            log.error { "Using legacy target" }
+            log.info { "Using legacy target" }
             FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
                 method, LifecycleMethodsInvoker.noop(instance),
             )
         }
-        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-
-        return atomicFinding.get()
     }
 
     private fun isTerminalFinding(hash: String, finding: Throwable, reproducerPath: Path): Boolean {
@@ -153,11 +169,6 @@ object JazzerLauncher {
         Opt.reproducerPath.setIfDefault(config.global.reproducerDir.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())
-
-        FuzzTargetHolder.fuzzTarget = FuzzTargetHolder.FuzzTarget(
-            JazzerTarget::fuzzTargetOne.javaMethod,
-            LifecycleMethodsInvoker.noop(JazzerTarget),
-        )
     }
 }
 

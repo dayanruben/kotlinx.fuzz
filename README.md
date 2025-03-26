@@ -11,7 +11,9 @@
 
 Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8. Also, the library is built using Kotlin version 2.0.21, which adds additional requirements. This is a subject to change in the future.
 
-## Usage
+## Simple setup
+
+Here we are going to give you a simple instruction on how to configure and run fuzzer in your project. If you want more detailed instructions, check out our [How to get started](docs/How%20to%20get%20started.md) guide.
 
 1. Add PLAN lab maven repository to your gradle config:
 
