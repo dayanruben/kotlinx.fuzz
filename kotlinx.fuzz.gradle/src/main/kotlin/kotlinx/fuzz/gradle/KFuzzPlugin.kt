@@ -1,5 +1,8 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.log.LoggerFacade
@@ -13,9 +16,6 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 private const val REGRESSION_ENABLED_NAME = "kotlinx.fuzz.regressionEnabled"
@@ -83,7 +83,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
             // these 2 options forces task to generate report even if it failed
             // TODO: consider solution with fuzz.finalizedBy(generateReport)
             ignoreFailures = true
-            doLast{generateReport()}
+            doLast { generateReport() }
 
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -180,7 +180,7 @@ abstract class FuzzTask : Test() {
         group = "verification"
     }
 
-//    @TaskAction
+    // @TaskAction
     fun generateReport() {
         overallStats()
         if (fuzzConfig.target.dumpCoverage) {

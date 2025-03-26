@@ -2,9 +2,9 @@
 
 package kotlinx.fuzz.gradle
 
+import kotlin.reflect.KProperty
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
-import kotlin.reflect.KProperty
 
 /**
  * DSL for specifying fuzzing config. Sample usage:

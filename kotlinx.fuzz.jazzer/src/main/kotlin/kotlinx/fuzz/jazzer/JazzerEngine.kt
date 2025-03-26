@@ -1,12 +1,5 @@
 package kotlinx.fuzz.jazzer
 
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.addAnnotationParams
-import kotlinx.fuzz.config.JazzerConfig
-import kotlinx.fuzz.config.KFuzzConfig
-import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.error
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.ObjectInputStream
@@ -18,6 +11,13 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
+import kotlinx.fuzz.KFuzzEngine
+import kotlinx.fuzz.KFuzzTest
+import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.config.JazzerConfig
+import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
@@ -110,7 +110,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
-            "-Xmx4096m", // TODO: make it configurable
+            "-Xmx4096m",  // TODO: make it configurable
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
