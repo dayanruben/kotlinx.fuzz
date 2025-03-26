@@ -6,12 +6,10 @@ plugins {
     id("kotlinx.fuzz.gradle")
 }
 
-val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
-
 dependencies {
     implementation(kotlin("reflect"))
-    implementation(libs.findLibrary("kotlinx-cli").get())
-    implementation(libs.findLibrary("commons-cli").get())
+    implementation(libs.kotlinx.cli)
+    implementation(libs.commons.cli)
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
 }
 
@@ -23,7 +21,7 @@ fuzzConfig {
 //    detailedLogging = true
     coverage {
         reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
-        val immutable = libs.findLibrary("kotlinx-cli").get().get()
+        val immutable = libs.kotlinx.cli.get()
         includeDependencies = setOf("${immutable.group}:${immutable.name}-jvm")
     }
 }
