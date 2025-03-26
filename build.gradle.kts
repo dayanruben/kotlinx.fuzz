@@ -9,8 +9,5 @@ allprojects {
         mavenLocal()
         mavenCentral()
     }
-    configureDiktat {
-        val examplesDir = project(":kotlinx.fuzz.examples").projectDir.toPath().normalize()
-        it.file.toPath().startsWith(examplesDir)
-    }
+    configureDiktat()
 }

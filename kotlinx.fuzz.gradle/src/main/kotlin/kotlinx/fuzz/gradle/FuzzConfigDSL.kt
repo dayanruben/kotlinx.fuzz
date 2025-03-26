@@ -59,7 +59,9 @@ open class FuzzConfigDSL(
     var dumpCoverage by KFConfigDelegate { target::dumpCoverage }
     private val builtConfig: KFuzzConfig by lazy { builder.build() }
 
-    fun build(): KFuzzConfig = builtConfig
+    fun build(): KFuzzConfig = builtConfig.also {
+        builtConfig.toPropertiesMap().forEach { (key, value) -> System.setProperty(key, value) }
+    }
 
     // ========== engine ==========
 
@@ -67,9 +69,12 @@ open class FuzzConfigDSL(
 
     /**
      * @property libFuzzerRssLimit LibFuzzer rss limit parameter. Default: 0
+     * @property subprocessMaxHeapSizeMb Maximum heap size for the fuzzer process, specified in megabytes.
+     * Note that there can be up to [FuzzConfigDSL.threads] subprocesses running simultaneously. Default: 4096
      */
     inner class JazzerConfigDSL : EngineConfigDSL {
         var libFuzzerRssLimit by KFConfigDelegate { engine::libFuzzerRssLimitMb }
+        var subprocessMaxHeapSizeMb by KFConfigDelegate { engine::subprocessMaxHeapSizeMb }
     }
 
     /**

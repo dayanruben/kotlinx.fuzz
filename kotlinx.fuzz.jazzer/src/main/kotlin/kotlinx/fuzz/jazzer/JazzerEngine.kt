@@ -110,6 +110,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
+            "-Xmx${jazzerConfig.subprocessMaxHeapSizeMb}m",
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
@@ -125,11 +126,16 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         }
     }
 
-    private fun getException(config: KFuzzConfig, method: Method): Throwable =
-        deserializeException(config.exceptionPath(method)) ?: run {
-            log.error { "Failed to deserialize exception for target '${method.fullName}'" }
-            Error("Failed to deserialize exception for target '${method.fullName}'")
+    private fun getException(config: KFuzzConfig, method: Method): Throwable {
+        val path = config.exceptionPath(method)
+        return when {
+            path.notExists() -> Error("'path' = $path not exists. Can't read exception from test '${method.fullName}'")
+            else -> deserializeException(path) ?: run {
+                log.error { "Failed to deserialize exception for target '${method.fullName}'" }
+                Error("Failed to deserialize exception for target '${method.fullName}'")
+            }
         }
+    }
 
     override fun finishExecution() {
         collectStatistics()
