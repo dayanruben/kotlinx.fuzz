@@ -110,7 +110,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
-            "-Xmx4096m",  // TODO: make it configurable
+            "-Xmx${jazzerConfig.maxHeapSizeMb}m",
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
             JazzerLauncher::class.qualifiedName!!,
