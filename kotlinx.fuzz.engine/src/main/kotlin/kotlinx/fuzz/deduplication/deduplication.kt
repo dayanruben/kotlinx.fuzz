@@ -17,12 +17,7 @@ import kotlinx.fuzz.KFuzzEngine
 import kotlinx.fuzz.flatten
 import kotlinx.fuzz.listClusters
 import kotlinx.fuzz.listStackTraces
-import kotlinx.fuzz.reproducer.CrashReproducerGenerator
 import org.jetbrains.casr.adapter.CasrAdapter
-
-fun interface ReproducerProvider {
-    fun createReproducerGenerator(className: String, methodName: String): CrashReproducerGenerator?
-}
 
 fun KFuzzEngine.initializeClusters() {
     config.global.reproducerDir.listDirectoryEntries()
