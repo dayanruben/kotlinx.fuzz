@@ -114,9 +114,6 @@ object JazzerLauncher {
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
-            System.err.println("Found finding: $finding")
-            System.err.println("Found bytes: ${bytes?.toHexString()}")
-            System.err.println("ReproducerPath: $reproducerPath:")
             val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
             val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
             if (stopFuzzing) {
