@@ -180,7 +180,6 @@ abstract class FuzzTask : Test() {
         group = "verification"
     }
 
-    // @TaskAction
     fun generateReport() {
         overallStats()
         if (fuzzConfig.target.dumpCoverage) {
