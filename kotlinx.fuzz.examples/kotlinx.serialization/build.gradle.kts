@@ -10,10 +10,10 @@ plugins {
 dependencies {
     implementation(libs.plan.jazzer.api)
     implementation(libs.plan.jazzer.junit)
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.kotlinx.serialization.cbor)
-    implementation(libs.kotlinx.serialization.properties)
-    implementation(libs.kotlinx.serialization.protobuf)
+    implementation(libs.kotlinx.serialization.json.examples)
+    implementation(libs.kotlinx.serialization.cbor.examples)
+    implementation(libs.kotlinx.serialization.properties.examples)
+    implementation(libs.kotlinx.serialization.protobuf.examples)
 
     testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer")
 }
@@ -25,13 +25,11 @@ fuzzConfig {
     logLevel = kotlinx.fuzz.config.LogLevel.DEBUG
     coverage {
         reportTypes = setOf(CoverageReportType.HTML, CoverageReportType.CSV)
-        val deps = with(libs.kotlinx.serialization) {
-            listOf(json, cbor, properties, protobuf)
+        includeDependencies = with(libs.kotlinx.serialization) {
+            listOf(json.examples, cbor.examples, properties.examples, protobuf.examples)
+                .map { it.get() }
+                .map { "${it.group}:${it.name}-jvm" }
+                .toSet()
         }
-            .map { it.get() }
-            .map { "${it.group}:${it.name}-jvm" }
-            .toSet()
-
-        includeDependencies = deps
     }
 }

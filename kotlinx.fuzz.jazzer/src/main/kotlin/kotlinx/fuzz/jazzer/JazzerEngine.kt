@@ -7,7 +7,6 @@ import java.io.OutputStream
 import java.lang.reflect.Method
 import java.net.ServerSocket
 import java.net.Socket
-import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
@@ -34,7 +33,7 @@ internal val KFuzzConfig.exceptionsDir: Path
     get() = global.workDir.resolve("exceptions")
 
 @Suppress("unused")
-class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
+class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
     private val log = LoggerFacade.getLogger<JazzerEngine>()
     private val jazzerConfig = config.engine as JazzerConfig
 
@@ -43,33 +42,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
         config.logsDir.createDirectories()
         config.exceptionsDir.createDirectories()
         config.global.reproducerDir.createDirectories()
-        initialCrashDeduplication()
-    }
-
-    private fun initialCrashDeduplication() {
-        config.global.reproducerDir.listDirectoryEntries()
-            .filter { it.isDirectory() }
-            .forEach { classDir ->
-                classDir.listDirectoryEntries()
-                    .filter { it.isDirectory() }
-                    .forEach { methodDir ->
-                        flatten(methodDir)
-                        JazzerLauncher.clusterCrashes(methodDir)
-                    }
-            }
-        clusterCrashes()
-    }
-
-    @OptIn(ExperimentalPathApi::class)
-    private fun flatten(dir: Path) {
-        Files.walk(dir).filter { it.isRegularFile() }.forEach {
-            val targetFile = dir.resolve(it.name)
-            if (targetFile.exists()) {
-                return@forEach
-            }
-            it.copyTo(targetFile)
-        }
-        dir.listDirectoryEntries().filter { it.isDirectory() }.forEach { it.deleteRecursively() }
     }
 
     private fun getDebugSetup(intellijDebuggerDispatchPort: Int, method: Method): List<String> {
@@ -139,30 +111,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
     override fun finishExecution() {
         collectStatistics()
-        clusterCrashes()
-    }
-
-    private fun clusterCrashes() {
-        val crashesForDeletion = mutableListOf<Path>()
-        Files.walk(config.global.reproducerDir)
-            .filter { it.isDirectory() && it.name.startsWith("cluster-") }
-            .map { it to it.listStacktraces() }
-            .flatMap { (dir, files) -> files.stream().map { dir to it } }
-            .forEach { (clusterDir, stacktraceFile) ->
-                val crashFileName = "crash-${stacktraceFile.name.removePrefix("stacktrace-")}"
-                val crashFile = clusterDir.parent.resolve(crashFileName)
-                val targetFile = clusterDir.resolve(crashFileName)
-
-                if (targetFile.exists() || !crashFile.exists()) {
-                    return@forEach
-                }
-
-                crashFile.copyTo(targetFile, overwrite = true)
-                if (!clusterDir.name.endsWith(crashFileName.removePrefix("crash-"))) {
-                    crashesForDeletion.add(crashFile)
-                }
-            }
-        crashesForDeletion.forEach { it.deleteIfExists() }
     }
 
     private fun collectStatistics() {
@@ -213,10 +161,6 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
 
 internal fun KFuzzConfig.exceptionPath(method: Method): Path =
     exceptionsDir.resolve("${method.fullName}.exception")
-
-internal fun Path.listStacktraces(): List<Path> = listDirectoryEntries("stacktrace-*")
-
-internal fun Path.listClusters(): List<Path> = listDirectoryEntries("cluster-*")
 
 /**
  * Reads a Throwable from the specified [path].

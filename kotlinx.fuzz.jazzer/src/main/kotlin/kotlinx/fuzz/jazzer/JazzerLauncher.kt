@@ -20,18 +20,20 @@ import kotlin.system.exitProcess
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.deduplication.clusterCrashes
+import kotlinx.fuzz.listStackTraces
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
 import kotlinx.fuzz.log.info
 import kotlinx.fuzz.reproducerPathOf
-import org.jetbrains.casr.adapter.CasrAdapter
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
     private val config = KFuzzConfig.fromSystemProperties()
     private val jazzerConfig = config.engine as JazzerConfig
-    private var oldRepresentatives: Int? = null  // Number of clusters initially, so that keepGoing will depend inly on new findings
+    private var oldRepresentatives: Int? =
+        null  // Number of clusters initially, so that keepGoing will depend inly on new findings
         set(value) {
             require(field == null && value != null) { "Number of old representatives should be set only once to a non-null value" }
             field = value
@@ -106,17 +108,14 @@ object JazzerLauncher {
             reproducerPath.createDirectories()
         }
 
-        oldRepresentatives = reproducerPath.listStacktraces().size
+        oldRepresentatives = reproducerPath.listStackTraces().size
 
         val libFuzzerArgs = configure(reproducerPath, method)
 
         val atomicFinding = AtomicReference<Throwable>()
         FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
-            // todo remove debug prints. log.err doesn't work :(
-            System.err.println("Found finding: $finding")
-            System.err.println("Found bytes: ${bytes?.toHexString()}")
-            System.err.println("ReproducerPath: $reproducerPath:")
-            val stopFuzzing = isTerminalFinding(bytes, finding, reproducerPath)
+            val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+            val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
             if (stopFuzzing) {
                 atomicFinding.set(finding)
             }
@@ -143,9 +142,7 @@ object JazzerLauncher {
         }
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun isTerminalFinding(bytes: ByteArray, finding: Throwable, reproducerPath: Path): Boolean {
-        val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+    private fun isTerminalFinding(hash: String, finding: Throwable, reproducerPath: Path): Boolean {
         val file = reproducerPath.absolute().resolve("stacktrace-$hash")
 
         if (!file.exists()) {
@@ -169,69 +166,6 @@ object JazzerLauncher {
         Opt.reproducerPath.setIfDefault(config.global.reproducerDir.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())
-    }
-
-    private fun convertToJavaStyleStackTrace(kotlinStackTrace: String): String {
-        val lines = kotlinStackTrace.lines()
-        if (lines.isEmpty()) {
-            return kotlinStackTrace
-        }
-
-        val firstLine = lines.first()
-        val updatedFirstLine = if (firstLine.startsWith("Exception in thread \"main\"")) {
-            firstLine
-        } else {
-            "Exception in thread \"main\" $firstLine"
-        }
-
-        return listOf(updatedFirstLine).plus(lines.drop(1)).joinToString("\n")
-    }
-
-    private fun initClustersMapping(
-        directoryPath: Path,
-        stacktraceFiles: List<Path>,
-        clusters: List<Int>,
-    ): MutableMap<Int, Path> {
-        val mapping = mutableMapOf<Int, Path>()
-        directoryPath.listClusters().map { it.name.removePrefix("cluster-") }.forEach { hash ->
-            val clusterId = clusters[stacktraceFiles.indexOfFirst { it.name.endsWith(hash) }]
-            mapping[clusterId] = directoryPath.resolve("cluster-$hash")
-        }
-        return mapping
-    }
-
-    fun clusterCrashes(directoryPath: Path): Int {
-        val stacktraceFiles = directoryPath.listStacktraces()
-
-        val rawStackTraces = mutableListOf<String>()
-
-        stacktraceFiles.forEach { file ->
-            val lines = convertToJavaStyleStackTrace(file.readText())
-            rawStackTraces.add(lines)
-        }
-
-        val clusters = CasrAdapter.parseAndClusterStackTraces(rawStackTraces)
-        val mapping = initClustersMapping(directoryPath, stacktraceFiles, clusters)
-
-        clusters.forEachIndexed { index, cluster ->
-            val stacktraceSrc = stacktraceFiles[index]
-
-            if (!mapping.containsKey(cluster)) {
-                mapping[cluster] = directoryPath.resolve("cluster-${stacktraceSrc.name.removePrefix("stacktrace-")}")
-            }
-
-            val clusterDir = directoryPath.resolve(mapping[cluster]!!)
-            if (!clusterDir.exists()) {
-                clusterDir.createDirectory()
-            }
-
-            stacktraceSrc.copyTo(clusterDir.resolve(stacktraceSrc.name), overwrite = true)
-            if (mapping[cluster]!!.name.removePrefix("cluster-") != stacktraceSrc.name.removePrefix("stacktrace-")) {
-                stacktraceSrc.deleteExisting()
-            }
-        }
-
-        return clusters.maxOrNull() ?: 0
     }
 }
 

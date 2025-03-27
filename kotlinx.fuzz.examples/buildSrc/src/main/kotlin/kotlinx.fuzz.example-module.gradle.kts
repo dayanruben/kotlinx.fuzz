@@ -5,6 +5,7 @@ plugins {
 repositories {
     mavenCentral()
     maven(url = "https://plan-maven.apal-research.com")
+    maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-ide-plugin-dependencies")
 }
 
 dependencies {
@@ -13,7 +14,7 @@ dependencies {
 
 
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(8)
 }
 
 tasks.named<Test>("test") {

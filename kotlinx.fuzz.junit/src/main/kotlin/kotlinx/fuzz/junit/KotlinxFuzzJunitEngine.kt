@@ -4,16 +4,27 @@ import com.code_intelligence.jazzer.api.FuzzedDataProvider
 import com.code_intelligence.jazzer.junit.FuzzTest
 import java.lang.reflect.Method
 import java.net.URI
+import kotlin.io.path.Path
 import kotlin.reflect.KClass
+import kotlin.reflect.full.declaredMemberFunctions
+import kotlin.reflect.jvm.javaMethod
 import kotlinx.coroutines.*
 import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.ReproducerType
+import kotlinx.fuzz.deduplication.cleanupCrashesAndGenerateReproducers
+import kotlinx.fuzz.deduplication.initializeClusters
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.info
 import kotlinx.fuzz.log.warn
 import kotlinx.fuzz.regression.RegressionEngine
+import kotlinx.fuzz.reproducer.CrashReproducerGenerator
+import kotlinx.fuzz.reproducer.JunitReproducerTemplate
+import kotlinx.fuzz.reproducer.ListAnyCallReproducerGenerator
+import kotlinx.fuzz.reproducer.ListAnyInlineReproducerGenerator
+import kotlinx.serialization.json.*
 import org.junit.platform.commons.support.AnnotationSupport
 import org.junit.platform.commons.support.HierarchyTraversalMode
 import org.junit.platform.commons.support.ReflectionSupport
@@ -25,6 +36,7 @@ import org.junit.platform.engine.discovery.PackageSelector
 import org.junit.platform.engine.support.descriptor.EngineDescriptor
 
 private const val REGRESSION_ENABLED_NAME = "kotlinx.fuzz.regressionEnabled"
+private const val USER_FILES_VAR_NAME = "kotlinx.fuzz.userFiles"
 
 class KotlinxFuzzJunitEngine : TestEngine {
     private val log = LoggerFacade.getLogger<KotlinxFuzzJunitEngine>()
@@ -35,10 +47,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
         KFuzzConfig.fromSystemProperties()
     }
     private val fuzzEngine: KFuzzEngine by lazy {
-        when (config.engine) {
-            is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
-                .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
-        }
+        createEngine()
     }
     private val isRegression: Boolean by lazy { System.getProperty(REGRESSION_ENABLED_NAME).toBooleanOrFalse() }
 
@@ -68,16 +77,26 @@ class KotlinxFuzzJunitEngine : TestEngine {
         return engineDescriptor
     }
 
+    private fun createEngine(): KFuzzEngine = when (config.engine) {
+        is JazzerConfig -> Class.forName("kotlinx.fuzz.jazzer.JazzerEngine")
+            .getConstructor(KFuzzConfig::class.java).newInstance(config) as KFuzzEngine
+    }
+
     override fun execute(request: ExecutionRequest) {
         val root = request.rootTestDescriptor
         fuzzEngine.initialise()
+        fuzzEngine.initializeClusters()
 
-        val dispatcher =
-            Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
+        val dispatcher = Dispatchers.Default.limitedParallelism(config.global.threads, "kotlinx.fuzz")
         runBlocking(dispatcher) {
-            root.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
+            root.children.map { child ->
+                async {
+                    executeImpl(request, child)
+                }
+            }.awaitAll()
         }
 
+        fuzzEngine.cleanupCrashesAndGenerateReproducers(::createReproducer)
         fuzzEngine.finishExecution()
     }
 
@@ -86,7 +105,11 @@ class KotlinxFuzzJunitEngine : TestEngine {
         descriptor: TestDescriptor,
     ): Unit = coroutineScope {
         request.engineExecutionListener.executionStarted(descriptor)
-        descriptor.children.map { child -> async { executeImpl(request, child) } }.awaitAll()
+        descriptor.children.map { child ->
+            async {
+                executeImpl(request, child)
+            }
+        }.awaitAll()
         request.engineExecutionListener.executionFinished(
             descriptor, TestExecutionResult.successful(),
         )
@@ -100,6 +123,39 @@ class KotlinxFuzzJunitEngine : TestEngine {
         }
 
         else -> TestExecutionResult.failed(finding)
+    }
+
+    private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator? {
+        val testClass = Class.forName(className).kotlin
+        val testInstance = testClass.testInstance()
+        return testClass.declaredMemberFunctions
+            .filter { it.javaMethod?.isFuzzTarget(supportJazzerApi = false).orFalse() }
+            .singleOrNull { it.name == methodName }
+            ?.javaMethod
+            ?.let { createReproducer(testInstance, it) }
+    }
+
+    private fun createReproducer(instance: Any, method: Method): CrashReproducerGenerator = try {
+        when (config.global.reproducerType) {
+            ReproducerType.LIST_BASED_INLINE -> ListAnyInlineReproducerGenerator(
+                JunitReproducerTemplate(instance, method),
+                instance,
+                method,
+                Json.decodeFromString<List<String>>(System.getProperty(USER_FILES_VAR_NAME)).map { Path(it) },
+            )
+
+            ReproducerType.LIST_BASED_NO_INLINE -> ListAnyCallReproducerGenerator(
+                JunitReproducerTemplate(instance, method),
+                instance,
+                method,
+            )
+        }
+    } catch (_: RuntimeException) {
+        ListAnyCallReproducerGenerator(
+            JunitReproducerTemplate(instance, method),
+            instance,
+            method,
+        )
     }
 
     private suspend fun executeImpl(request: ExecutionRequest, descriptor: TestDescriptor) {
