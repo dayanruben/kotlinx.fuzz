@@ -60,11 +60,15 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
     override fun runTarget(instance: Any, method: Method): FuzzingResult {
         // TODO: pass the config explicitly rather than through system properties
         val config = KFuzzConfig.fromSystemProperties()
+        // custom hooks
+        val customHookClasses = CustomHooks.findCustomHookClasses().map { it.canonicalName!! }
+        log.debug("found custom hooks in classes: {}", customHookClasses)
+        config.global.customHookClasses.addAll(customHookClasses)
+        // annotation parameters
         val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
             config.addAnnotationParams(annotation)
         } ?: config
-        val propertiesList =
-            methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
+        val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = try {
             getDebugSetup(
