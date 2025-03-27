@@ -58,17 +58,17 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
 
     // spawn subprocess, redirect output to log and err files
     override fun runTarget(instance: Any, method: Method): FuzzingResult {
-        // TODO: pass the config explicitly rather than through system properties
-        val config = KFuzzConfig.fromSystemProperties()
-        // custom hooks
-        val customHookClasses = CustomHooks.findCustomHookClasses().map { it.canonicalName!! }
-        log.debug("found custom hooks in classes: {}", customHookClasses)
-        config.global.customHookClasses.addAll(customHookClasses)
+        var config = KFuzzConfig.fromSystemProperties()
         // annotation parameters
-        val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
+        config = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
             config.addAnnotationParams(annotation)
         } ?: config
-        val propertiesList = methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
+        // find custom hook classes
+        val customHookClasses = CustomHooks.findCustomHookClasses(config).map { it.name }
+        log.debug("found custom hooks in classes: $customHookClasses")
+        config.global.customHookClasses.addAll(customHookClasses)
+
+        val propertiesList = config.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = try {
             getDebugSetup(
