@@ -9,7 +9,7 @@ class JazzerTargetTest {
     @FuzzTest
     fun `yay jazzer test`(data: FuzzedDataProvider) {
         if (data.consumeBoolean()) return
-        println(data.consumeRemainingAsBytes())
+        System.getProperty(data.consumeRemainingAsString())
     }
 
     @FuzzTest
@@ -20,7 +20,7 @@ class JazzerTargetTest {
     }
 
     @FuzzTest
-    fun `autofuzz test to be ignored`(fuzzer: KFuzzer) {}
+    fun `autofuzz test to be ignored`(@Suppress("unused") fuzzer: KFuzzer) {}
 
     @KFuzzTest
     fun `normal test`(fuzzer: KFuzzer) {

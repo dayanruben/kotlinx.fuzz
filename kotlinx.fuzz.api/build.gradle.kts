@@ -7,6 +7,7 @@ plugins {
 dependencies {
     implementation(libs.junit.platform.engine)
     implementation(kotlin("reflect"))
+    implementation(libs.rgxgen)
 
     testRuntimeOnly(libs.junit.jupiter)
 }

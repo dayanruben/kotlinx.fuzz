@@ -9,7 +9,6 @@ dependencies {
     implementation(project(":kotlinx.fuzz.api"))
     implementation(kotlin("reflect"))
     implementation(libs.jacoco.agent)
-    implementation(libs.casr.adapter)
     implementation(libs.plan.jazzer)
     implementation(libs.slf4j.api)
 }

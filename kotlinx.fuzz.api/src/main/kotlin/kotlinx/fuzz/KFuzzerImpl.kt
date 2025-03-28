@@ -1,13 +1,19 @@
 package kotlinx.fuzz
 
 import com.github.curiousoddman.rgxgen.RgxGen
+import com.github.curiousoddman.rgxgen.config.RgxGenOption
+import com.github.curiousoddman.rgxgen.config.RgxGenProperties
+import com.github.curiousoddman.rgxgen.model.RgxGenCharsDefinition
+import com.github.curiousoddman.rgxgen.model.SymbolRange
+import com.github.curiousoddman.rgxgen.model.WhitespaceChar
+import com.github.curiousoddman.rgxgen.util.chars.CharList
 import java.math.BigDecimal
 import java.math.MathContext
 import java.nio.charset.Charset
-import java.util.*
+import java.util.Random
 import kotlinx.fuzz.KFuzzer.RegexConfiguration
 
-class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
+class KFuzzerImpl(data: ByteArray) : Random(), KFuzzer {
     private val iterator = Reader(data)
 
     private operator fun IntRange.contains(other: IntRange): Boolean =
@@ -518,12 +524,12 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         }
     }
 
-    override fun string(regex: Regex, configuration: RegexConfiguration): String {
+    override fun string(regex: Regex, configuration: KFuzzer.RegexConfiguration): String {
         val rgxGen = RgxGen.parse(configuration.asRegexProperties(), regex.pattern)
         return rgxGen.generate(this)
     }
 
-    override fun stringOrNull(regex: Regex, configuration: RegexConfiguration) = when {
+    override fun stringOrNull(regex: Regex, configuration: KFuzzer.RegexConfiguration) = when {
         boolean() -> string(regex, configuration)
         else -> null
     }
@@ -553,3 +559,37 @@ class KFuzzerImpl(data: ByteArray) : KFuzzer, Random() {
         fun readDouble(): Double = Double.fromBits(readLong())
     }
 }
+
+internal fun CharacterSet.toRgxGenProperties(): RgxGenCharsDefinition = RgxGenCharsDefinition.of(
+    ranges.map { SymbolRange.range(it.first.code, it.last.code) },
+    CharList.charList(symbols.joinToString("")),
+)
+
+internal fun RegexConfiguration.asRegexProperties(): RgxGenProperties {
+    val properties = RgxGenProperties()
+    RgxGenOption.INFINITE_PATTERN_REPETITION.setInProperties(
+        properties,
+        this.maxInfinitePatternLength,
+    )
+
+    RgxGenOption.CASE_INSENSITIVE.setInProperties(properties, caseInsensitive)
+    allowedCharacters?.let {
+        RgxGenOption.DOT_MATCHES_ONLY.setInProperties(
+            properties,
+            it.toRgxGenProperties(),
+        )
+    }
+
+    val rgxGenWhiteSpaces = WhitespaceChar.entries.associateBy { it.get() }
+    RgxGenOption.WHITESPACE_DEFINITION.setInProperties(
+        properties,
+        allowedWhitespaces.map {
+            rgxGenWhiteSpaces[it]
+                ?: error("$it is not a valid whitespace character, valid characters are: ${WhitespaceChar.entries.map { it.get() }}")
+        },
+    )
+    return properties
+}
+
+@Suppress("NOTHING_TO_INLINE")
+private inline fun <T : Comparable<T>> ClosedRange<T>.isNotEmpty(): Boolean = this.isEmpty() == false

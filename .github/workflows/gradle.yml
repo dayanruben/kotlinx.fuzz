@@ -53,6 +53,9 @@ jobs:
       - name: Exclude kotlinx.fuzz.test from dependency injection
         run: sed -i 's/^includeBuild("kotlinx.fuzz.test")$/\/\/includeBuild("kotlinx.fuzz.test")/' settings.gradle.kts
 
+      - name: Exclude kotlinx.fuzz.examples from dependency injection
+        run: sed -i 's/^includeBuild("kotlinx.fuzz.examples")$/\/\/includeBuild("kotlinx.fuzz.examples")/' settings.gradle.kts
+
       # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
       # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
       - name: Generate and submit dependency graph

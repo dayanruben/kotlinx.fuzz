@@ -11,7 +11,9 @@
 
 Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8. Also, the library is built using Kotlin version 2.0.21, which adds additional requirements. This is a subject to change in the future.
 
-## Usage
+## Simple setup
+
+Here we are going to give you a simple instruction on how to configure and run fuzzer in your project. If you want more detailed instructions, check out our [How to get started](docs/How%20to%20get%20started.md) guide.
 
 1. Add PLAN lab maven repository to your gradle config:
 
@@ -26,6 +28,7 @@ repositories {
 pluginManagement {
     repositories {
         maven(url = "https://plan-maven.apal-research.com")
+        maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-ide-plugin-dependencies")
     }
 }
 ```
@@ -118,7 +121,7 @@ Both of these tasks extend built-in Gradle `test` task, so you can provide addit
 * `coverage` folder contains binary JaCoCo `.exec` files with coverage for each individual fuzz test.
 * `jacoco-report` provides a JaCoCo coverage report in human-readable formats: HTML, CSV and XML.
 * `logs` contains fuzz engine logs for each of the fuzz tests.
-* `reproducers` folder contains crash seeds found by the fuzz engine. This folder is used by `kotlinx.fuzz` during `regression` mode. Each `crash-$hash` file is a unique crash found by the fuzz engine. Additionally, for each crash seed you can find `stacktrace-$hash` file that contains a stack trace of the found crash and `cluster-$hash` folder that contains all the other seeds that reproduce the same failure (you can read about in more in [Crash deduplication](docs/Crash%20deduplication.md)).
+* `reproducers` folder contains crash seeds found by the fuzz engine and reproducers of them. This folder is used by `kotlinx.fuzz` during `regression` mode. Each `crash-$hash` file is a unique crash found by the fuzz engine. Additionally, for each crash seed you can find `stacktrace-$hash` file that contains a stack trace of the found crash and `cluster-$hash` folder that contains all the other seeds that reproduce the same failure (you can read about in more in [Crash deduplication](docs/Crash%20deduplication.md)). You can find `reproducer-$hash.kt` as well in this directory. This files contain readable version of tests ran on specific inputs that lead to a crash. To run them you can just put them in the `test` directory and run as an ordinary test for your building system (you can read about in more in [Crash reproduction](docs/Crash%20reproduction.md)).  
 * `stats` contains fuzz engine's CSV reports for each individual fuzz test. CSV files contain information about number of executions, number of found crashes, coverage, etc.
 * `merged-coverage.exec` &mdash; JaCoCo binary file with the merged coverage of all the fuzz tests (this binary file is used to generate `jacoco-report` folder).
 * `overall-stats.csv` &mdash; final CSV report of Jazzer for each of the fuzz tests.

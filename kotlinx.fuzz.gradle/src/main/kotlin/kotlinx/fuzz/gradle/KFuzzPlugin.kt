@@ -1,9 +1,13 @@
 package kotlinx.fuzz.gradle
 
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.warn
+import kotlinx.serialization.json.Json
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -13,12 +17,10 @@ import org.gradle.api.tasks.*
 import org.gradle.api.tasks.options.Option
 import org.gradle.api.tasks.testing.Test
 import org.gradle.kotlin.dsl.*
-import java.io.File
-import java.nio.file.Path
-import kotlin.io.path.createDirectories
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 private const val REGRESSION_ENABLED_NAME = "kotlinx.fuzz.regressionEnabled"
+private const val USER_FILES_VAR_NAME = "kotlinx.fuzz.userFiles"
 
 private val Project.fuzzConfig: KFuzzConfig
     get() {
@@ -77,13 +79,18 @@ abstract class KFuzzPlugin : Plugin<Project> {
 
             doFirst {
                 systemProperties(fuzzConfig.toPropertiesMap())
-                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] =
+                    System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(
+                    this@registerFuzzTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                        .map { it.absolutePath },
+                )
             }
 
             // these 2 options forces task to generate report even if it failed
             // TODO: consider solution with fuzz.finalizedBy(generateReport)
             ignoreFailures = true
-            doLast{generateReport()}
+            doLast { generateReport() }
 
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -99,8 +106,12 @@ abstract class KFuzzPlugin : Plugin<Project> {
             doFirst {
                 val regressionConfig = KFuzzConfigBuilder.fromAnotherConfig(fuzzConfig).build()
                 systemProperties(regressionConfig.toPropertiesMap())
-                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] = System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
+                systemProperties[INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME] =
+                    System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME)
                 systemProperties[REGRESSION_ENABLED_NAME] = System.getProperty(REGRESSION_ENABLED_NAME)
+                systemProperties[USER_FILES_VAR_NAME] = Json.encodeToString(
+                    this@registerRegressionTask.extensions.getByType<SourceSetContainer>()["test"].allSource.files
+                        .toList().map { it.absolutePath })
             }
             useJUnitPlatform {
                 includeEngines("kotlinx.fuzz")
@@ -180,7 +191,6 @@ abstract class FuzzTask : Test() {
         group = "verification"
     }
 
-//    @TaskAction
     fun generateReport() {
         overallStats()
         if (fuzzConfig.target.dumpCoverage) {
