@@ -5,6 +5,7 @@ import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.addAnnotationParams
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.jacocoAgentJar
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.error
 import java.io.DataOutputStream
@@ -122,7 +123,7 @@ class JazzerEngine(private val config: KFuzzConfig) : KFuzzEngine {
                 .createDirectories()
                 .resolve("${method.fullName}.exec")
                 .absolutePathString()
-            val agentPath = config.coverage.jacocoAgentPath
+            val agentPath = jacocoAgentJar
 
             val opt =
                 "-javaagent:$agentPath=destfile=$coverageFile,dumponexit=true,output=file,jmx=false,includes=kotlinx.datetime.**"
