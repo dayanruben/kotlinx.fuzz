@@ -5,6 +5,7 @@ import com.code_intelligence.jazzer.junit.FuzzTest
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.jvm.javaMethod
@@ -125,6 +126,22 @@ class KotlinxFuzzJunitEngine : TestEngine {
         else -> TestExecutionResult.failed(finding)
     }
 
+    private fun handleFuzzingResult(result: FuzzingResult, method: Method) = when {
+        result.findingsNumber == 0 -> TestExecutionResult.successful()
+        method.isAnnotationPresent(IgnoreFailures::class.java) -> {
+            log.info { "Test failed, but is ignored by @IgnoreFailures: $result" }
+            TestExecutionResult.successful()
+        }
+
+        else -> TestExecutionResult.failed(
+            FuzzingFoundErrorsException(
+                "${result.findingsNumber} crashes were found in ${result.time}. They are presented in ${
+                    config.reproducerPathOf(method).absolutePathString()
+                }",
+            ),
+        )
+    }
+
     private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator? {
         val testClass = Class.forName(className).kotlin
         val testInstance = testClass.testInstance()
@@ -168,8 +185,8 @@ class KotlinxFuzzJunitEngine : TestEngine {
                 val method = descriptor.testMethod
                 val instance = method.declaringClass.kotlin.testInstance()
 
-                val finding = fuzzEngine.runTarget(instance, method)
-                val result = handleFinding(finding, method)
+                val fuzzingResult = fuzzEngine.runTarget(instance, method)
+                val result = handleFuzzingResult(fuzzingResult, method)
                 request.engineExecutionListener.executionFinished(descriptor, result)
             }
 

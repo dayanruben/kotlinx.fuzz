@@ -21,13 +21,12 @@ interface KFuzzEngine {
      *
      * @param instance --- instance of a class that contains method under fuzzing (harness)
      * @param method --- harness itself
-     * @return nullable throwable. Null iff harness ran without failures, cause (look at throwable field in
-     * org.junit.platform.engine.TestExecutionResult) otherwise
+     * @return FuzzingResult instance. It contains information about number of crashes and directory where they are located
      */
     fun runTarget(
         instance: Any,
         method: Method,
-    ): Throwable?
+    ): FuzzingResult
 
     /**
      * Finalises the engine, should be called once for every KFuzzEngine. All calls to fuzz engine after "finishExecution"
