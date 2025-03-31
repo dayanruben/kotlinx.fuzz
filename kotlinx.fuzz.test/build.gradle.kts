@@ -20,7 +20,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
 
-    testImplementation("org.jetbrains:jazzer-junit:0.0.4")
+    testImplementation("org.jetbrains:jazzer-junit:0.0.5")
 }
 
 fuzzConfig {
