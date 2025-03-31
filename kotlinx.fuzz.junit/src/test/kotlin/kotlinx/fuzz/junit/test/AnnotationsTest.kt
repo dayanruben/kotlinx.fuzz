@@ -3,6 +3,7 @@ package kotlinx.fuzz.junit.test
 import kotlin.reflect.KFunction
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -13,7 +14,6 @@ import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
 import org.junit.platform.testkit.engine.EngineTestKit
-import kotlin.test.assertTrue
 
 object AnnotationsTest {
     @BeforeEach
