@@ -110,8 +110,9 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         )
         if (config.target.dumpCoverage) {
             val coverageFile = config.coverageFile(method)
+            val includes = config.global.instrument.joinToString(separator = ":")
             val opt =
-                "-javaagent:$jacocoAgentJar=destfile=$coverageFile,dumponexit=true,output=file,jmx=false,includes=kotlinx.datetime.**"
+                "-javaagent:$jacocoAgentJar=destfile=$coverageFile,dumponexit=true,output=file,jmx=false,includes=$includes"
 
             command += opt
         }
