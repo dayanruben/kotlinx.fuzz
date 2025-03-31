@@ -30,6 +30,7 @@ import kotlinx.fuzz.config.KFuzzConfigBuilder
  * @property instrument Which packages to instrument with coverage tracking. Should include your files.
  * @property customHookExcludes In which packages NOT to apply custom hooks. Default: none
  * @property dumpCoverage Whether to dump coverage data. Default: true
+ * @property ignoreOldFindings Whether to ignore old findings for `keepGoing`. Default: false
  * @property coverage Section for specifying coverage params. See [CoverageConfigDSL]
  * @property engine Section for specifying engine params (currently only Jazzer). See [JazzerConfigDSL]
  *
@@ -53,6 +54,7 @@ open class FuzzConfigDSL(
     // ========== target ==========
     var maxFuzzTimePerTarget by KFConfigDelegate { target::maxFuzzTime }
     var keepGoing by KFConfigDelegate { target::keepGoing }
+    var ignoreOldFindings by KFConfigDelegate { target::ignoreOldFindings }
 
     // TODO: default to project packages?
     var instrument by KFConfigDelegate { global::instrument }
