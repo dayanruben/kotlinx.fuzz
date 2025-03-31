@@ -1,5 +1,6 @@
 package kotlinx.fuzz.jazzer
 
+import kotlinx.fuzz.FuzzingResult
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -13,6 +14,7 @@ import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
+import kotlinx.fuzz.log.error
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
@@ -56,11 +58,8 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         return listOf("-agentlib:jdwp=transport=dt_socket,server=n,suspend=y,address=$port")
     }
 
+    // spawn subprocess, redirect output to log and err files
     override fun runTarget(instance: Any, method: Method): FuzzingResult {
-        // spawn subprocess, redirect output to log and err files
-        val classpath = System.getProperty("java.class.path")
-        val javaCommand = System.getProperty("java.home") + "/bin/java"
-
         // TODO: pass the config explicitly rather than through system properties
         val config = KFuzzConfig.fromSystemProperties()
         val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
@@ -70,26 +69,52 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
             methodConfig.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
         val debugOptions = try {
-            getDebugSetup(System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(), method)
+            getDebugSetup(
+                System.getProperty(INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME).toInt(),
+                method,
+            )
         } catch (e: Exception) {
             emptyList()
         }
 
-        ProcessBuilder(
+        val command = buildCommand(debugOptions, propertiesList, config, method)
+        ProcessBuilder(*command.toTypedArray()).executeAndSaveLogs(
+            stdout = "${method.fullName}.log",
+            stderr = "${method.fullName}.err",
+        )
+
+        return getFuzzingResult(config, method)
+    }
+
+    private fun buildCommand(
+        debugOptions: List<String>,
+        propertiesList: List<String>,
+        config: KFuzzConfig,
+        method: Method,
+    ): List<String> {
+        val classpath = System.getProperty("java.class.path")
+        val javaCommand = System.getProperty("java.home") + "/bin/java"
+
+        val command = mutableListOf<String>(
             javaCommand,
             "-XX:-OmitStackTraceInFastThrow",
             "-classpath", classpath,
             "-Xmx${jazzerConfig.subprocessMaxHeapSizeMb}m",
             *debugOptions.toTypedArray(),
             *propertiesList.toTypedArray(),
-            JazzerLauncher::class.qualifiedName!!,
-            method.declaringClass.name, method.name,
-        ).executeAndSaveLogs(
-            stdout = "${method.fullName}.log",
-            stderr = "${method.fullName}.err",
         )
+        if (config.target.dumpCoverage) {
+            val coverageFile = config.coverageFile(method)
+            val includes = config.global.instrument.joinToString(separator = ":")
+            val opt =
+                "-javaagent:$jacocoAgentJar=destfile=$coverageFile,dumponexit=true,output=file,jmx=false,includes=$includes"
 
-        return getFuzzingResult(config, method)
+            command += opt
+        }
+        command += JazzerLauncher::class.qualifiedName!!
+        command += method.declaringClass.name
+        command += method.name
+        return command
     }
 
     private fun getFuzzingResult(config: KFuzzConfig, method: Method): FuzzingResult {
@@ -149,6 +174,12 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         }
     }
 }
+
+internal fun KFuzzConfig.coverageFile(method: Method): Path = global.workDir
+    .resolve("coverage")
+    .createDirectories()
+    .resolve("${method.fullName}.exec")
+    .absolute()
 
 internal fun KFuzzConfig.fuzzingResultPath(method: Method): Path =
     resultsDir.resolve("${method.fullName}.fuzzingResult")
