@@ -21,7 +21,7 @@ interface KFuzzEngine {
      *
      * @param instance --- instance of a class that contains method under fuzzing (harness)
      * @param method --- harness itself
-     * @return FuzzingResult instance. It contains information about number of crashes and directory where they are located
+     * @return FuzzingResult instance. It contains information about number of crashes and time spent
      */
     fun runTarget(
         instance: Any,
