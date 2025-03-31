@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectMethod
 import org.junit.platform.testkit.engine.EngineTestKit
+import kotlin.test.assertTrue
 
 object AnnotationsTest {
     @BeforeEach
@@ -59,8 +60,8 @@ object AnnotationsTest {
         val result = runMethodFuzz(AnnotationsTest::overriddenConfig)
         assertEquals(TestExecutionResult.Status.FAILED, result.status)
         val exception = result.throwable!!.get()  // no parent exception
-        assertEquals(
-            "second error", exception.message!!,
+        assertTrue(
+            exception.message!!.startsWith("2 crashes were found"),
             message = "wrong exception message\n${exception.stackTraceToString()}",
         )
     }

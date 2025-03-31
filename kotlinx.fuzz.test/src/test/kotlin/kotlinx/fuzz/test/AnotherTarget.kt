@@ -46,6 +46,7 @@ class AnotherTarget {
     }
 
     @KFuzzTest
+    @IgnoreFailures
     fun extensionFunctionCheck(data: KFuzzer) {
         if (data.asciiStringOrNull(9) == "abibaboba") {
             error("Expected failure")
