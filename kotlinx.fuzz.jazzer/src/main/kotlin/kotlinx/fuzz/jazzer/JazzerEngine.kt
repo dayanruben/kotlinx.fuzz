@@ -1,6 +1,5 @@
 package kotlinx.fuzz.jazzer
 
-import kotlinx.fuzz.FuzzingResult
 import java.io.DataOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -11,10 +10,10 @@ import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.*
+import kotlinx.fuzz.FuzzingResult
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.error
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
