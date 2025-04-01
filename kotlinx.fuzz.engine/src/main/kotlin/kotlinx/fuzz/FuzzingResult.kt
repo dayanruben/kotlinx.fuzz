@@ -1,6 +1,7 @@
 package kotlinx.fuzz
 
 import java.nio.file.Path
+import kotlin.io.path.absolutePathString
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.time.Duration
@@ -10,7 +11,9 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class FuzzingResult(val findingsNumber: Int, val time: Duration)
 
-class FuzzingFoundErrorsException(message: String) : Throwable(message)
+class FuzzingFoundErrorsException(result: FuzzingResult, path: Path) : Throwable(
+    "${result.findingsNumber} crashes were found in ${result.time}. They are presented in ${path.absolutePathString()}",
+)
 
 /**
  * Serializes [FuzzingResult] to the specified [path].

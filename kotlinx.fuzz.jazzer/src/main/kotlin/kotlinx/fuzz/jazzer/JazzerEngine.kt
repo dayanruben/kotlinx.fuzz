@@ -10,7 +10,6 @@ import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
 import kotlinx.fuzz.*
-import kotlinx.fuzz.FuzzingResult
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade

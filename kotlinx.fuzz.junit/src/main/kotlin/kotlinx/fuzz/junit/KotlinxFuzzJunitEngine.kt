@@ -5,7 +5,6 @@ import com.code_intelligence.jazzer.junit.FuzzTest
 import java.lang.reflect.Method
 import java.net.URI
 import kotlin.io.path.Path
-import kotlin.io.path.absolutePathString
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.jvm.javaMethod
@@ -133,13 +132,7 @@ class KotlinxFuzzJunitEngine : TestEngine {
             TestExecutionResult.successful()
         }
 
-        else -> TestExecutionResult.failed(
-            FuzzingFoundErrorsException(
-                "${result.findingsNumber} crashes were found in ${result.time}. They are presented in ${
-                    config.reproducerPathOf(method).absolutePathString()
-                }",
-            ),
-        )
+        else -> TestExecutionResult.failed(FuzzingFoundErrorsException(result, config.reproducerPathOf(method)))
     }
 
     private fun createReproducer(className: String, methodName: String): CrashReproducerGenerator? {
