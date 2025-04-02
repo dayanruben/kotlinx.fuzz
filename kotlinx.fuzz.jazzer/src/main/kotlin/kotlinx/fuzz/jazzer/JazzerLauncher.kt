@@ -6,27 +6,25 @@ import com.code_intelligence.jazzer.driver.FuzzTargetRunner
 import com.code_intelligence.jazzer.driver.LifecycleMethodsInvoker
 import com.code_intelligence.jazzer.driver.Opt
 import com.code_intelligence.jazzer.utils.Log
-import java.io.ObjectOutputStream
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Method
 import java.nio.file.Path
 import java.security.MessageDigest
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.*
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.javaMethod
 import kotlin.system.exitProcess
-import kotlinx.fuzz.KFuzzTest
+import kotlin.system.measureTimeMillis
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.deduplication.clusterCrashes
-import kotlinx.fuzz.listStackTraces
 import kotlinx.fuzz.log.LoggerFacade
 import kotlinx.fuzz.log.debug
 import kotlinx.fuzz.log.error
 import kotlinx.fuzz.log.info
-import kotlinx.fuzz.reproducerPathOf
 
 object JazzerLauncher {
     private val log = LoggerFacade.getLogger<JazzerLauncher>()
@@ -57,12 +55,13 @@ object JazzerLauncher {
 
         initJazzer()
 
-        val error = runTarget(instance, targetMethod)
-        error?.let {
-            log.error { "An exception occurred while fuzzing" }
-            log.error(error)
+        val result = runTarget(instance, targetMethod)
+        serializeFuzzingResult(result, config.fuzzingResultPath(targetMethod))
 
-            serializeException(error, config.exceptionPath(targetMethod))
+        if (result.findingsNumber != 0) {
+            log.error { "Crashes were found while fuzzing" }
+            log.error(result)
+
             exitProcess(1)
         }
         exitProcess(0)
@@ -91,32 +90,31 @@ object JazzerLauncher {
     }
 
     @OptIn(ExperimentalStdlibApi::class)
-    private fun runTarget(instance: Any, method: Method): Throwable? {
-        configureFuzzTargetHolder(method, instance)
+    private fun runTarget(instance: Any, method: Method): FuzzingResult {
+        val elapsed = measureTimeMillis {
+            configureFuzzTargetHolder(method, instance)
 
-        val reproducerPath = config.reproducerPathOf(method)
-        if (!reproducerPath.exists()) {
-            reproducerPath.createDirectories()
-        }
-
-        oldRepresentatives = reproducerPath.listStackTraces().size
-
-        val libFuzzerArgs = configure(reproducerPath, method)
-
-        val atomicFinding = AtomicReference<Throwable>()
-        FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
-            val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
-            val stopFuzzing = isTerminalFinding(hash, finding, reproducerPath)
-            if (stopFuzzing) {
-                atomicFinding.set(finding)
+            val reproducerPath = config.reproducerPathOf(method)
+            if (!reproducerPath.exists()) {
+                reproducerPath.createDirectories()
             }
-            stopFuzzing
+
+            oldRepresentatives = reproducerPath.listStackTraces().size
+
+            val libFuzzerArgs = configure(reproducerPath, method)
+
+            FuzzTargetRunner.registerFatalFindingDeterminatorForJUnit { bytes, finding ->
+                val hash = MessageDigest.getInstance("SHA-1").digest(bytes).toHexString()
+                isTerminalFinding(hash, finding, reproducerPath)
+            }
+
+            FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
         }
 
-        FuzzTargetRunner.startLibFuzzer(libFuzzerArgs)
-
-        return atomicFinding.get()
+        return FuzzingResult(countCrashes(config.reproducerPathOf(method)), elapsed.milliseconds)
     }
+
+    private fun countCrashes(reproducerPath: Path) = reproducerPath.listClusters().size - oldRepresentatives!!
 
     private fun configureFuzzTargetHolder(method: Method, instance: Any) {
         if (method.isAnnotationPresent(KFuzzTest::class.java)) {
@@ -157,16 +155,5 @@ object JazzerLauncher {
         Opt.reproducerPath.setIfDefault(config.global.reproducerDir.absolutePathString())
 
         AgentInstaller.install(Opt.hooks.get())
-    }
-}
-
-/**
- * Serializes [throwable] to the specified [path].
- */
-private fun serializeException(throwable: Throwable, path: Path) {
-    path.outputStream().buffered().use { outputStream ->
-        ObjectOutputStream(outputStream).use { objectOutputStream ->
-            objectOutputStream.writeObject(throwable)
-        }
     }
 }

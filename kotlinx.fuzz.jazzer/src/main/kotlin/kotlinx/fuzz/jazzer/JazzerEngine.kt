@@ -2,7 +2,6 @@ package kotlinx.fuzz.jazzer
 
 import java.io.DataOutputStream
 import java.io.InputStream
-import java.io.ObjectInputStream
 import java.io.OutputStream
 import java.lang.reflect.Method
 import java.net.ServerSocket
@@ -10,13 +9,10 @@ import java.net.Socket
 import java.nio.file.Path
 import kotlin.concurrent.thread
 import kotlin.io.path.*
-import kotlinx.fuzz.KFuzzEngine
-import kotlinx.fuzz.KFuzzTest
-import kotlinx.fuzz.addAnnotationParams
+import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
 import kotlinx.fuzz.log.LoggerFacade
-import kotlinx.fuzz.log.error
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
 
@@ -29,8 +25,8 @@ internal val KFuzzConfig.corpusDir: Path
 internal val KFuzzConfig.logsDir: Path
     get() = global.workDir.resolve("logs")
 
-internal val KFuzzConfig.exceptionsDir: Path
-    get() = global.workDir.resolve("exceptions")
+internal val KFuzzConfig.resultsDir: Path
+    get() = global.workDir.resolve("results")
 
 @Suppress("unused")
 class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
@@ -40,7 +36,7 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
     override fun initialise() {
         config.corpusDir.createDirectories()
         config.logsDir.createDirectories()
-        config.exceptionsDir.createDirectories()
+        config.resultsDir.createDirectories()
         config.global.reproducerDir.createDirectories()
     }
 
@@ -61,7 +57,7 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
     }
 
     // spawn subprocess, redirect output to log and err files
-    override fun runTarget(instance: Any, method: Method): Throwable? {
+    override fun runTarget(instance: Any, method: Method): FuzzingResult {
         // TODO: pass the config explicitly rather than through system properties
         val config = KFuzzConfig.fromSystemProperties()
         val methodConfig = method.getAnnotation(KFuzzTest::class.java)?.let { annotation ->
@@ -80,15 +76,12 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         }
 
         val command = buildCommand(debugOptions, propertiesList, config, method)
-        val exitCode = ProcessBuilder(*command.toTypedArray()).executeAndSaveLogs(
+        ProcessBuilder(*command.toTypedArray()).executeAndSaveLogs(
             stdout = "${method.fullName}.log",
             stderr = "${method.fullName}.err",
         )
 
-        return when (exitCode) {
-            0 -> null
-            else -> getException(config, method)
-        }
+        return getFuzzingResult(config, method)
     }
 
     private fun buildCommand(
@@ -122,14 +115,11 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         return command
     }
 
-    private fun getException(config: KFuzzConfig, method: Method): Throwable {
-        val path = config.exceptionPath(method)
+    private fun getFuzzingResult(config: KFuzzConfig, method: Method): FuzzingResult {
+        val path = config.fuzzingResultPath(method)
         return when {
-            path.notExists() -> Error("'path' = $path not exists. Can't read exception from test '${method.fullName}'")
-            else -> deserializeException(path) ?: run {
-                log.error { "Failed to deserialize exception for target '${method.fullName}'" }
-                Error("Failed to deserialize exception for target '${method.fullName}'")
-            }
+            path.notExists() -> throw Error("'path' = $path not exists. Can't read fuzzing result from test '${method.fullName}'")
+            else -> deserializeFuzzingResult(path)
         }
     }
 
@@ -189,16 +179,5 @@ internal fun KFuzzConfig.coverageFile(method: Method): Path = global.workDir
     .resolve("${method.fullName}.exec")
     .absolute()
 
-internal fun KFuzzConfig.exceptionPath(method: Method): Path =
-    exceptionsDir.resolve("${method.fullName}.exception")
-
-/**
- * Reads a Throwable from the specified [path].
- */
-private fun deserializeException(path: Path): Throwable? {
-    path.inputStream().buffered().use { inputStream ->
-        ObjectInputStream(inputStream).use { objectInputStream ->
-            return objectInputStream.readObject() as? Throwable
-        }
-    }
-}
+internal fun KFuzzConfig.fuzzingResultPath(method: Method): Path =
+    resultsDir.resolve("${method.fullName}.fuzzingResult")

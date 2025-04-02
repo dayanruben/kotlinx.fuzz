@@ -3,6 +3,7 @@ package kotlinx.fuzz.junit.test
 import kotlin.reflect.KFunction
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.fuzz.KFuzzTest
 import kotlinx.fuzz.KFuzzer
@@ -59,8 +60,8 @@ object AnnotationsTest {
         val result = runMethodFuzz(AnnotationsTest::overriddenConfig)
         assertEquals(TestExecutionResult.Status.FAILED, result.status)
         val exception = result.throwable!!.get()  // no parent exception
-        assertEquals(
-            "second error", exception.message!!,
+        assertTrue(
+            exception.message!!.startsWith("2 crashes were found"),
             message = "wrong exception message\n${exception.stackTraceToString()}",
         )
     }
