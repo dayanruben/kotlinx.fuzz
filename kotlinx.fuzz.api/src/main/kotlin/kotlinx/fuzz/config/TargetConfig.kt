@@ -6,11 +6,13 @@ interface TargetConfig {
     val maxFuzzTime: Duration
     val keepGoing: Long
     val dumpCoverage: Boolean
+    val ignoreOldFindings: Boolean
 
     object Defaults {
         const val MAX_FUZZ_TIME_STRING = "1m"
         const val KEEP_GOING = 0L
         const val DUMP_COVERAGE = true
+        const val IGNORE_OLD_FINDINGS = false
     }
 }
 
@@ -34,5 +36,11 @@ class TargetConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Targe
         intoString = { it.toString() },
         fromString = { it.toBooleanStrict() },
         default = TargetConfig.Defaults.DUMP_COVERAGE,
+    )
+    override var ignoreOldFindings: Boolean by builder.KFuzzPropProvider(
+        nameSuffix = "ignoreOldFindings",
+        intoString = { it.toString() },
+        fromString = { it.toBooleanStrict() },
+        default = TargetConfig.Defaults.IGNORE_OLD_FINDINGS,
     )
 }
