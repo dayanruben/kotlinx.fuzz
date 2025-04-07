@@ -6,12 +6,6 @@
 package org.plan.research.fuzz.utils
 
 import com.code_intelligence.jazzer.api.FuzzedDataProvider
-import com.code_intelligence.jazzer.junit.FuzzTest
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.reflections.Reflections
-import org.reflections.scanners.Scanners
-import org.reflections.util.ConfigurationBuilder
-import java.lang.reflect.Method
 
 fun FuzzedDataProvider.forceConsumeInts(size: Int): List<Int> {
     return List(size) { this.consumeInt() }
