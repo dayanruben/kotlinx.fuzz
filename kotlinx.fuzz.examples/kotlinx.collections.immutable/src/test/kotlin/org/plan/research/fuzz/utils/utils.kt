@@ -45,24 +45,3 @@ val initSize: Int =
     (System.getenv("INIT_SIZE")?.toIntOrNull() ?: 100).also { println("INIT_SIZE: $it") }
 
 const val MAX_BUFFER_SIZE = 32
-
-
-val Method.fullName: String
-    get() = "${declaringClass.canonicalName}.${name}"
-
-fun Method.isFuzzTarget(): Boolean {
-    return returnType == Void.TYPE && parameters.size == 1 && parameterTypes[0] == FuzzedDataProvider::class.java
-}
-
-fun main() {
-    val pkg = "fuzz"
-    
-    val refConfig = ConfigurationBuilder().forPackages(pkg).setScanners(Scanners.MethodsAnnotated)
-    val reflections = Reflections(refConfig)
-    val methods = reflections.getMethodsAnnotatedWith(FuzzTest::class.java)
-        .filter { it.declaringClass.packageName == pkg }
-
-    assertEquals(null, methods.firstOrNull { !it.isFuzzTarget() })
-
-    println(methods.groupBy { it.declaringClass }.values.joinToString("\n\n") { it.joinToString("\n") { it.fullName } })
-}
