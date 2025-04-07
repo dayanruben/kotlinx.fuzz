@@ -1,2 +1,2 @@
 const val GROUP_ID = "org.jetbrains"
-const val VERSION = "0.2.2"
+const val VERSION = "0.2.3"

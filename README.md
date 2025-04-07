@@ -37,14 +37,14 @@ pluginManagement {
 2. Add `kotlinx.fuzz` as a dependency:
 ```kotlin
 dependencies {
-    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.2")
+    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.3")
 }
 ```
 
 3. Apply `kotlinx.fuzz` plugin to your project:
 ```kotlin
 plugins {
-    id("kotlinx.fuzz.gradle") version "0.2.2"
+    id("kotlinx.fuzz.gradle") version "0.2.3"
 }
 ```
 
