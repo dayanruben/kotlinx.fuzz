@@ -11,7 +11,7 @@ class HookTargetTest {
         if (random.nextInt() != 5) error("hooks are not hooking")
     }
 
-    @KFuzzTest(maxFuzzTime = "3s", keepGoing = 1, customHookExcludes = ["kotlinx.fuzz.test.hooks.excluded"])
+    @KFuzzTest(maxFuzzTime = "3s", keepGoing = 1, customHookExcludes = ["kotlinx.fuzz.test.hooks.excluded.**"])
     fun excludedHook(kf: KFuzzer) {
         val random = kotlin.random.Random(kf.long())
         if (random.nextInt() == 5) error("hook was not excluded")

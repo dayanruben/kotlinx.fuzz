@@ -12,17 +12,16 @@ import org.reflections.util.ConfigurationBuilder
 
 object CustomHooks {
     fun findCustomHookClasses(config: KFuzzConfig): Set<Class<*>> {
-        val scanner = MethodsAnnotated
         val reflections = Reflections(ConfigurationBuilder().apply {
             forPackage("")
-            scanners += scanner
+            scanners += MethodsAnnotated
         })
-        val excludedPackagesMatchers = config.global.customHookExcludes.map {
+        val excludedClassesMatchers = config.global.customHookExcludes.map {
             FileSystems.getDefault().getPathMatcher("glob:$it")
         }
 
-        fun isExcluded(packageName: String) = excludedPackagesMatchers.any {
-            it.matches(Path("", packageName))
+        fun isExcluded(hookClass: Class<*>) = excludedClassesMatchers.any {
+            it.matches(Path("", hookClass.name))
         }
 
         val hookMethods = reflections.get(
@@ -30,10 +29,11 @@ object CustomHooks {
                 .with(MethodHook::class.java, MethodHooks::class.java)
                 .`as`(Method::class.java)
                 .filter {
-                    val classPackage = it.declaringClass.`package`?.name ?: return@filter true
+                    val hookClass = it.declaringClass
+                    val classPackage = hookClass.`package`?.name ?: return@filter true
                     when {
                         classPackage.startsWith("com.code_intelligence.jazzer") -> false
-                        isExcluded(classPackage) -> false
+                        isExcluded(hookClass) -> false
                         else -> true
                     }
                 })
