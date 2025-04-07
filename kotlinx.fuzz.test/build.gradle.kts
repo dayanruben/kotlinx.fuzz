@@ -4,7 +4,7 @@ import kotlin.time.Duration.Companion.seconds
 
 plugins {
     kotlin("jvm") version "2.0.21"
-    id("kotlinx.fuzz.gradle")
+    id("org.jetbrains.kotlinx.fuzz")
     kotlin("plugin.serialization") version "2.0.20"
 }
 
