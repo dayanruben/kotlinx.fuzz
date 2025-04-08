@@ -12,15 +12,8 @@ dependencies {
     implementation(libs.plan.jazzer)
     implementation(libs.slf4j.api)
     implementation(libs.reflections)
-
+    // Provide plan-jazzer-api for custom hooks
     api(libs.plan.jazzer.api)
 }
-
-// Provide plan-jazzer-api for custom hooks
-//configurations.create("exposedApi") {
-//    dependencies {
-//        api(libs.plan.jazzer.api)
-//    }
-//}
 
 configurePublishing()
