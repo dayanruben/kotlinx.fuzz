@@ -49,3 +49,9 @@ fuzzConfig {
 kotlin {
     jvmToolchain(8)
 }
+
+tasks.test {
+    useJUnitPlatform {
+        excludeEngines("junit-jupiter")
+    }
+}
