@@ -24,6 +24,7 @@ dependencies {
 tasks.test {
     useJUnitPlatform {
         excludeEngines("kotlinx.fuzz")
+        excludeTags("exclude")
     }
 }
 
