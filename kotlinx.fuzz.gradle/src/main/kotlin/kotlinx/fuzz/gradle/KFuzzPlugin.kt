@@ -33,11 +33,11 @@ abstract class KFuzzPlugin : Plugin<Project> {
     private val log = Logging.getLogger(KFuzzPlugin::class.java)!!
 
     override fun apply(project: Project) {
-        // versions are automatically deduced by Gradle
+        val pluginVersion = "0.2.3"
         project.dependencies {
-            add("testImplementation", "org.jetbrains:kotlinx.fuzz.api")
-            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.junit")
-            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.jazzer")
+            add("testImplementation", "org.jetbrains:kotlinx.fuzz.api:$pluginVersion")
+            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.junit:$pluginVersion")
+            add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.jazzer:$pluginVersion")
         }
 
         val projectPropertiesMap: Map<String, String> = project.properties.mapValues { (_, v) -> v.toString() }

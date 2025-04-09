@@ -22,6 +22,7 @@ Here we are going to give you a simple instruction on how to configure and run f
 pluginManagement {
     repositories {
         maven(url = "https://plan-maven.apal-research.com")
+        maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-ide-plugin-dependencies")
     }
 }
 ```
