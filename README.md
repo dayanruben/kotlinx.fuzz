@@ -23,28 +23,18 @@ repositories {
     maven(url = "https://plan-maven.apal-research.com")
 }
 ```
-`settings.gradle.kts`:
-```kotlin
-pluginManagement {
-    repositories {
-        maven(url = "https://plan-maven.apal-research.com")
-        maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-ide-plugin-dependencies")
-    }
-}
-```
-
 
 2. Add `kotlinx.fuzz` as a dependency:
 ```kotlin
 dependencies {
-    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.2")
+    testRuntimeOnly("org.jetbrains:kotlinx.fuzz.jazzer:0.2.3")
 }
 ```
 
 3. Apply `kotlinx.fuzz` plugin to your project:
 ```kotlin
 plugins {
-    id("kotlinx.fuzz.gradle") version "0.2.2"
+    id("org.jetbrains.kotlinx.fuzz") version "0.2.3"
 }
 ```
 
@@ -166,6 +156,7 @@ testImplementation("org.jetbrains:kotlinx.fuzz.jazzer")
   * Easy configuration
   * Verification of configuration options
 * Improved crash deduplication algorithm
+* New reproducer generation approach
 * Improved regression mode
 
 ## Trophy list

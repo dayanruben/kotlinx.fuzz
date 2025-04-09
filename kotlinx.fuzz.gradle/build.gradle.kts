@@ -2,7 +2,7 @@ plugins {
     id("kotlinx.fuzz.src-module")
     `kotlin-dsl`
     `maven-publish`
-//    alias(libs.plugins.gradle.publish)
+    alias(libs.plugins.gradle.publish)
 }
 
 dependencies {
@@ -21,8 +21,8 @@ gradlePlugin {
     website = "https://github.com/JetBrains-Research/kotlinx.fuzz"
     vcsUrl = "https://github.com/JetBrains-Research/kotlinx.fuzz.git"
     plugins {
-        create("kotlinx.fuzz.gradle") {
-            id = project.name
+        create("org.jetbrains.kotlinx.fuzz") {
+            id = "org.jetbrains.kotlinx.fuzz"
             displayName = "kotlinx.fuzz Gradle plugin"
             description = "Gradle plugin for using kotlinx.fuzz"
             tags = listOf("testing", "fuzzing")
