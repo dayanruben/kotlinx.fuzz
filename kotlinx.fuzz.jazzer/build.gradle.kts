@@ -11,6 +11,9 @@ dependencies {
     implementation(libs.jacoco.agent)
     implementation(libs.plan.jazzer)
     implementation(libs.slf4j.api)
+    implementation(libs.reflections)
+    // Provide plan-jazzer-api for custom hooks
+    api(libs.plan.jazzer.api)
 }
 
 configurePublishing()

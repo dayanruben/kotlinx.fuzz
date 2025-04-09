@@ -9,7 +9,8 @@ class JazzerTargetTest {
     @FuzzTest
     fun `yay jazzer test`(data: FuzzedDataProvider) {
         if (data.consumeBoolean()) return
-        System.getProperty(data.consumeRemainingAsString())
+        val key = data.consumeRemainingAsString()
+        if (key.isNotEmpty()) System.getProperty(key)
     }
 
     @FuzzTest

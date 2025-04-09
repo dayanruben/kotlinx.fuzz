@@ -12,6 +12,7 @@ import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.junit.KotlinxFuzzJunitEngine
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
@@ -81,6 +82,8 @@ object EngineTest {
     }
 
     object JazzerTestContainer {
+        // jazzer + reflections in same process = weird errors, so we disable this test in jupiter junit
+        @Tag("exclude")
         @FuzzTest
         @Suppress("BACKTICKS_PROHIBITED")
         fun `jazzer test`(data: FuzzedDataProvider) {
@@ -89,6 +92,7 @@ object EngineTest {
             }
         }
 
+        @Tag("exclude")
         @FuzzTest
         @Suppress("BACKTICKS_PROHIBITED")
         fun `jazzer test array`(data: ByteArray) {
