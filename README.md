@@ -17,6 +17,15 @@ Here we are going to give you a simple instruction on how to configure and run f
 
 1. Add PLAN lab maven repository to your gradle config:
 
+`settings.gradle.kts`:
+```kotlin
+pluginManagement {
+    repositories {
+        maven(url = "https://plan-maven.apal-research.com")
+    }
+}
+```
+
 `build.gradle.kts`:
 ```kotlin
 repositories {
