@@ -33,7 +33,7 @@ abstract class KFuzzPlugin : Plugin<Project> {
     private val log = Logging.getLogger(KFuzzPlugin::class.java)!!
 
     override fun apply(project: Project) {
-        val pluginVersion = "0.2.4"
+        val pluginVersion = "1.0.0"
         project.dependencies {
             add("testImplementation", "org.jetbrains:kotlinx.fuzz.api:$pluginVersion")
             add("testRuntimeOnly", "org.jetbrains:kotlinx.fuzz.junit:$pluginVersion")
