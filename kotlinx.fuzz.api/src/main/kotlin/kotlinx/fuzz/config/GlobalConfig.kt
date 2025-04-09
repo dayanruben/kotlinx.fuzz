@@ -11,7 +11,7 @@ interface GlobalConfig {
     val reproducerDir: Path
     val instrument: List<String>
     val customHookExcludes: List<String>
-    val customHookClasses: MutableSet<String>
+    val customHookClasses: Set<String>
     val logLevel: LogLevel
     val detailedLogging: Boolean
     val threads: Int
@@ -47,11 +47,11 @@ class GlobalConfigImpl internal constructor(builder: KFuzzConfigBuilder) : Globa
         fromString = { it.nonEmptySplit(",") },
         default = emptyList(),
     )
-    override val customHookClasses: MutableSet<String> by builder.KFuzzPropProvider(
+    override var customHookClasses: Set<String> by builder.KFuzzPropProvider(
         nameSuffix = "customHookClasses",
         intoString = { it.joinToString(",") },
-        fromString = { it.nonEmptySplit(",").toMutableSet() },
-        default = mutableSetOf(),
+        fromString = { it.nonEmptySplit(",").toSet() },
+        default = emptySet(),
     )
     override var detailedLogging: Boolean by builder.KFuzzPropProvider(
         nameSuffix = "detailedLogging",

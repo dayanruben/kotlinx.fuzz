@@ -12,6 +12,7 @@ import kotlin.io.path.*
 import kotlinx.fuzz.*
 import kotlinx.fuzz.config.JazzerConfig
 import kotlinx.fuzz.config.KFuzzConfig
+import kotlinx.fuzz.config.KFuzzConfigBuilder
 import kotlinx.fuzz.log.LoggerFacade
 
 private const val INTELLIJ_DEBUGGER_DISPATCH_PORT_VAR_NAME = "idea.debugger.dispatch.port"
@@ -66,7 +67,9 @@ class JazzerEngine(override val config: KFuzzConfig) : KFuzzEngine {
         // find custom hook classes
         val customHookClasses = CustomHooks.findCustomHookClasses(config).map { it.name }
         log.debug("found custom hooks in classes: {}", customHookClasses)
-        config.global.customHookClasses.addAll(customHookClasses)
+        config = KFuzzConfigBuilder.fromAnotherConfig(config).editOverride {
+            global.customHookClasses += customHookClasses
+        }.build()
 
         val propertiesList = config.toPropertiesMap().map { (property, value) -> "-D$property=$value" }
 
