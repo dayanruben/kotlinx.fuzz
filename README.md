@@ -15,7 +15,7 @@ Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8. Also, the libra
 
 Here we are going to give you a simple instruction on how to configure and run fuzzer in your project. If you want more detailed instructions, check out our [How to get started](docs/How%20to%20get%20started.md) guide.
 
-1. Add PLAN lab maven repository to your gradle config:
+1. Add PLAN lab maven repository and kotlin repository to your gradle config:
 
 `settings.gradle.kts`:
 ```kotlin
@@ -31,6 +31,7 @@ pluginManagement {
 ```kotlin
 repositories {
     maven(url = "https://plan-maven.apal-research.com")
+    maven(url = "https://maven.pkg.jetbrains.space/kotlin/p/kotlin/kotlin-ide-plugin-dependencies")
 }
 ```
 
