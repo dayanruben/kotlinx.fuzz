@@ -7,6 +7,12 @@
 * Custom JUnit engine that handles interactions with the fuzzing engine and allows for easy integration with IDE
 * Integration with Jazzer as the main fuzzing engine for now
 
+## Why fuzzing?
+
+Fuzz testing is a powerful technique capable of exposing undetected errors and vulnerabilities. Research has shown it to be highly effective in detecting critical software flaws. For example, Google’s [OSS-Fuzz](https://github.com/google/oss-fuzz) has discovered over 40,000 bugs in open-source projects.
+
+Despite its success in other ecosystems, fuzzing has not seen wide adoption in Kotlin development. Our goal with **kotlinx.fuzz** is to bridge this gap by introducing an efficient and scalable fuzzing framework specifically designed for Kotlin projects.
+
 ## Requirements
 
 Currently, `kotlinx.fuzz` works only for JVM and requires JDK 8. Also, the library is built using Kotlin version 2.0.21, which adds additional requirements. This is a subject to change in the future.
