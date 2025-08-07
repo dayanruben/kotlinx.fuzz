@@ -3,9 +3,9 @@ import kotlinx.fuzz.config.ReproducerType
 import kotlin.time.Duration.Companion.seconds
 
 plugins {
-    kotlin("jvm") version "2.0.21"
+    kotlin("jvm") version "2.2.0"
     id("org.jetbrains.kotlinx.fuzz")
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("plugin.serialization") version "2.2.0"
 }
 
 repositories {
@@ -17,8 +17,8 @@ repositories {
 dependencies {
     testImplementation(kotlin("test")) // adds green arrow in IDEA (no idea why)
 
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.8")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.4.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.9.0")
 
     testImplementation("org.jetbrains:jazzer-junit:0.0.5")
 
